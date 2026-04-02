@@ -1,9 +1,9 @@
-strictDepBuilds: true
-minimumReleaseAge: 7200
-trustPolicy: no-downgrade
-
 packages:
   - "cms-client"
   - "cms-server"
   - "portfolio"
   - "packages/*"
+minimumReleaseAge: 7200
+saveExact: true
+strictDepBuilds: true
+trustPolicy: no-downgrade
