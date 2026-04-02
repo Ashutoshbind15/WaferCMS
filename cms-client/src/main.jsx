@@ -3,11 +3,7 @@ import ReactDOM from "react-dom/client";
 import "./style.css";
 
 const App = () => {
-  return (
-    <div>
-      CMS Client
-    </div>
-  );
+  return <div>CMS Client</div>;
 };
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
