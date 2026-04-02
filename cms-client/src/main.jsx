@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 import "./style.css";
 
 const App = () => {
-  return <div>CMS Client</div>;
+  return <div className="text-3xl font-bold underline">CMS Client</div>;
 };
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
