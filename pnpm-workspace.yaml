@@ -6,3 +6,4 @@ packages:
   - "cms-client"
   - "cms-server"
   - "portfolio"
+  - "packages/*"

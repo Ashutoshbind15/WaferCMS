@@ -1,16 +1,27 @@
 {
-  "name": "portfolio",
+  "name": "portfolio-repo",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev:cms-server": "pnpm --filter cms-server run dev",
+    "dev:cms-client": "pnpm --filter cms-client run dev",
+    "dev:portfolio": "pnpm --filter portfolio run dev",
+    "typecheck:cms-server": "pnpm --workspace-root exec tsc --project cms-server/tsconfig.json --noEmit --ignoreDeprecations 6.0",
+    "typecheck:portfolio": "pnpm --workspace-root exec tsc --project portfolio/tsconfig.json --noEmit --ignoreDeprecations 6.0",
+    "typecheck:db": "pnpm --filter @packages/db run typecheck",
+    "db:generate": "pnpm --filter @packages/db run generate",
+    "db:migrate": "pnpm --filter @packages/db run migrate",
+    "db:push": "pnpm --filter @packages/db run push",
+    "db:studio": "pnpm --filter @packages/db run studio",
+    "format": "prettier --write ."
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.33.0",
   "devDependencies": {
-    "prettier": "3.8.1"
+    "prettier": "3.8.1",
+    "typescript": "6.0.2"
   }
 }
