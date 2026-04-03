@@ -11,6 +11,16 @@ services:
     restart: unless-stopped
     volumes:
       - drizzle-postgres-data:/var/lib/postgresql
+  rustfs:
+    image: rustfs/rustfs:latest
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - rustfs_data:/data
+    command: /data
+    restart: unless-stopped
 
 volumes:
   drizzle-postgres-data:
+  rustfs_data:
