@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import blogRouter from "./routes/blog.js";
+import filesRouter from "./routes/files.js";
 
 const app = express();
 
@@ -13,6 +14,7 @@ app.get("/ok", (req, res) => {
 });
 
 app.use("/blog", blogRouter);
+app.use("/files", filesRouter);
 
 app.listen(3001, () => {
   console.log("Server is running on port 3001");
