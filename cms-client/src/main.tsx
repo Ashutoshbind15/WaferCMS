@@ -1,24 +1,31 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { BrowserRouter, Outlet, Route, Routes } from "react-router";
 import "./style.css";
-import { Button } from "./components/ui/button";
-import RichTextEditor from "./components/editor/rich-text-editor";
+import App from "./App";
+import { AppNav } from "./components/layout/app-nav";
+import DashboardPage from "./pages/dashboard";
 
-const App = () => {
+function RootLayout() {
   return (
-    <div className="">
-      <p>CMS Client</p>
-      <Button
-        onClick={() => {
-          console.log("Button clicked");
-        }}
-      >
-        Click me
-      </Button>
-      <RichTextEditor content="" isEditable={true} />
-    </div>
+    <>
+      <AppNav />
+      <main className="mx-auto max-w-4xl p-4">
+        <Outlet />
+      </main>
+    </>
   );
-};
+}
 
-const root = ReactDOM.createRoot(document.getElementById("root")!);
-root.render(<App />);
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <Routes>
+        <Route element={<RootLayout />}>
+          <Route index element={<App />} />
+          <Route path="dashboard" element={<DashboardPage />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
+  </React.StrictMode>,
+);
