@@ -2,20 +2,30 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Header } from "@/components/layout/header";
 import { PageContainer } from "@/components/layout/page-container";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { FileCard } from "@/components/library/file-card";
 import {
   fetchLibraryFiles,
   uploadLibraryFile,
   type LibraryFileRecord,
 } from "@/lib/cms-api";
+import { formatBytes } from "@/lib/format-bytes";
 import { Upload } from "lucide-react";
+
+interface UploadEntry {
+  name: string;
+  size: number;
+  percent: number;
+}
 
 export default function LibraryPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<LibraryFileRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
+  const [uploads, setUploads] = useState<UploadEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  const uploading = uploads.length > 0;
 
   const load = useCallback(async () => {
     setError(null);
@@ -38,17 +48,29 @@ export default function LibraryPage() {
   const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const list = e.target.files;
     if (!list?.length) return;
-    setUploading(true);
+
+    const pending = Array.from(list);
     setError(null);
+
+    // Initialise progress entries for every file
+    setUploads(
+      pending.map((f) => ({ name: f.name, size: f.size, percent: 0 })),
+    );
+
     try {
-      for (const file of Array.from(list)) {
-        const row = await uploadLibraryFile(file);
+      for (let i = 0; i < pending.length; i++) {
+        const file = pending[i];
+        const row = await uploadLibraryFile(file, ({ percent }) => {
+          setUploads((prev) =>
+            prev.map((entry, j) => (j === i ? { ...entry, percent } : entry)),
+          );
+        });
         setFiles((prev) => [row, ...prev]);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {
-      setUploading(false);
+      setUploads([]);
       e.target.value = "";
     }
   };
@@ -78,9 +100,24 @@ export default function LibraryPage() {
         }
       />
       <PageContainer>
-        {error ? (
-          <p className="text-sm text-destructive">{error}</p>
-        ) : null}
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
+        {uploads.length > 0 && (
+          <div className="mb-4 space-y-3">
+            {uploads.map((entry) => (
+              <div key={entry.name} className="space-y-1">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span className="truncate">{entry.name}</span>
+                  <span className="ml-2 shrink-0">
+                    {entry.percent}% of {formatBytes(entry.size)}
+                  </span>
+                </div>
+                <Progress value={entry.percent} />
+              </div>
+            ))}
+          </div>
+        )}
+
         {loading ? (
           <p className="text-sm text-muted-foreground">Loading…</p>
         ) : files.length === 0 ? (
