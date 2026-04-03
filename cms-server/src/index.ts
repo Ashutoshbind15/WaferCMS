@@ -1,8 +1,8 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import blogRouter from "./routes/blog.js";
-import filesRouter from "./routes/files.js";
+import blogRouter from "./routes/blog";
+import filesRouter from "./routes/files";
 
 const app = express();
 
