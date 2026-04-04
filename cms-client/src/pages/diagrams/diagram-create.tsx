@@ -3,45 +3,34 @@ import { useNavigate } from "react-router";
 import { createDiagram } from "@/lib/cms-api";
 import { toast } from "sonner";
 import { DiagramForm } from "../../components/forms/diagram-form";
+import type { DiagramDocument } from "@packages/diagram";
+import { EMPTY_DOCUMENT } from "@packages/diagram";
+import { diagramSnapshot } from "./diagram-utils";
 
-const EMPTY_PAYLOAD = JSON.stringify({}, null, 2);
-
-const diagramSnapshot = (title: string, payloadText: string) =>
-  JSON.stringify({ title, payloadText });
-
-const EMPTY_DIAGRAM_SNAPSHOT = diagramSnapshot("", EMPTY_PAYLOAD);
+const EMPTY_SNAPSHOT = diagramSnapshot("", EMPTY_DOCUMENT);
 
 export default function DiagramCreatePage() {
   const navigate = useNavigate();
 
   const [title, setTitle] = useState("");
-  const [payloadText, setPayloadText] = useState(EMPTY_PAYLOAD);
+  const [document, setDocument] = useState<DiagramDocument>(EMPTY_DOCUMENT);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const dirty = diagramSnapshot(title, payloadText) !== EMPTY_DIAGRAM_SNAPSHOT;
-  const canClear = payloadText !== EMPTY_PAYLOAD;
+  const dirty = diagramSnapshot(title, document) !== EMPTY_SNAPSHOT;
+  const canClear = document.elements.length > 0;
 
   const handleClear = () => {
     setError(null);
-    setPayloadText(EMPTY_PAYLOAD);
+    setDocument(EMPTY_DOCUMENT);
   };
 
   const handleSave = async () => {
-    let parsedPayload: unknown;
-
-    try {
-      parsedPayload = JSON.parse(payloadText);
-    } catch {
-      setError("Diagram payload must be valid JSON.");
-      return;
-    }
-
     setSaving(true);
     setError(null);
 
     try {
-      const created = await createDiagram({ title, payload: parsedPayload });
+      const created = await createDiagram({ title, payload: document });
       toast.success("Diagram created.");
       navigate(`/diagrams/${created.id}`);
     } catch (e) {
@@ -57,18 +46,18 @@ export default function DiagramCreatePage() {
     <DiagramForm
       pageTitle="New Diagram"
       title={title}
-      payloadText={payloadText}
+      document={document}
       loading={false}
       saving={saving}
       dirty={dirty}
       canClear={canClear}
-      clearActionLabel="Clear payload"
+      clearActionLabel="Clear canvas"
       error={error}
       onBack={() => navigate("/diagrams")}
       onClear={handleClear}
       onSave={handleSave}
       onTitleChange={setTitle}
-      onPayloadChange={setPayloadText}
+      onDocumentChange={setDocument}
     />
   );
 }

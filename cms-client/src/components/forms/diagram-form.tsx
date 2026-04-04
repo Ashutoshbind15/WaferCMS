@@ -2,13 +2,14 @@ import { Header } from "@/components/layout/header";
 import { PageContainer } from "@/components/layout/page-container";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { DiagramCanvas } from "@/components/diagram-canvas";
+import type { DiagramDocument } from "@packages/diagram";
 import { ArrowLeft } from "lucide-react";
 
 type DiagramFormProps = {
   pageTitle: string;
   title: string;
-  payloadText: string;
+  document: DiagramDocument;
   loading: boolean;
   saving: boolean;
   dirty: boolean;
@@ -19,13 +20,13 @@ type DiagramFormProps = {
   onClear: () => void;
   onSave: () => Promise<void> | void;
   onTitleChange: (value: string) => void;
-  onPayloadChange: (value: string) => void;
+  onDocumentChange: (doc: DiagramDocument) => void;
 };
 
 export function DiagramForm({
   pageTitle,
   title,
-  payloadText,
+  document,
   loading,
   saving,
   dirty,
@@ -36,7 +37,7 @@ export function DiagramForm({
   onClear,
   onSave,
   onTitleChange,
-  onPayloadChange,
+  onDocumentChange,
 }: DiagramFormProps) {
   return (
     <>
@@ -74,34 +75,33 @@ export function DiagramForm({
               disabled={saving || loading || !dirty}
               onClick={() => void onSave()}
             >
-              {saving ? "Saving…" : "Save"}
+              {saving ? "Saving..." : "Save"}
             </Button>
           </div>
         }
       />
-      <PageContainer>
+      <PageContainer className="flex flex-1 flex-col overflow-hidden">
         {error ? (
           <p className="mb-4 text-sm text-destructive">{error}</p>
         ) : null}
 
         {loading ? (
-          <p className="text-sm text-muted-foreground">Loading…</p>
+          <p className="text-sm text-muted-foreground">Loading...</p>
         ) : (
-          <div className="mx-auto max-w-4xl space-y-4">
-            <Input
-              placeholder="Diagram title..."
-              value={title}
-              onChange={(e) => onTitleChange(e.target.value)}
-              className="h-11 text-lg font-semibold"
-            />
+          <div className="flex flex-1 flex-col overflow-hidden">
+            <div className="mb-3 px-1">
+              <Input
+                placeholder="Diagram title..."
+                value={title}
+                onChange={(e) => onTitleChange(e.target.value)}
+                className="h-11 text-lg font-semibold"
+              />
+            </div>
 
-            <div className="rounded-lg border border-border bg-card p-4">
-              <p className="mb-2 text-sm font-medium">Payload</p>
-              <Textarea
-                value={payloadText}
-                onChange={(e) => onPayloadChange(e.target.value)}
-                className="min-h-[26rem] font-mono text-sm"
-                spellCheck={false}
+            <div className="flex-1 overflow-hidden rounded-lg border border-border">
+              <DiagramCanvas
+                initialDocument={document}
+                onChange={onDocumentChange}
               />
             </div>
           </div>

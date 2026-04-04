@@ -3,31 +3,25 @@ import { useNavigate, useParams } from "react-router";
 import { fetchDiagram, updateDiagram } from "@/lib/cms-api";
 import { toast } from "sonner";
 import { DiagramForm } from "../../components/forms/diagram-form";
+import type { DiagramDocument } from "@packages/diagram";
+import { EMPTY_DOCUMENT } from "@packages/diagram";
+import { parsePayload, diagramSnapshot } from "./diagram-utils";
 
-const formatPayload = (payload: unknown) =>
-  JSON.stringify(payload ?? {}, null, 2);
-
-const EMPTY_PAYLOAD = formatPayload({});
-
-const diagramSnapshot = (title: string, payloadText: string) =>
-  JSON.stringify({ title, payloadText });
-
-const EMPTY_DIAGRAM_SNAPSHOT = diagramSnapshot("", EMPTY_PAYLOAD);
+const EMPTY_SNAPSHOT = diagramSnapshot("", EMPTY_DOCUMENT);
 
 export default function DiagramEditorPage() {
   const navigate = useNavigate();
   const { id } = useParams();
 
   const [title, setTitle] = useState("");
-  const [payloadText, setPayloadText] = useState(EMPTY_PAYLOAD);
+  const [document, setDocument] = useState<DiagramDocument>(EMPTY_DOCUMENT);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [savedSnapshot, setSavedSnapshot] = useState(EMPTY_DIAGRAM_SNAPSHOT);
+  const [savedSnapshot, setSavedSnapshot] = useState(EMPTY_SNAPSHOT);
 
-  const dirty =
-    !loading && diagramSnapshot(title, payloadText) !== savedSnapshot;
-  const canClear = payloadText !== EMPTY_PAYLOAD;
+  const dirty = !loading && diagramSnapshot(title, document) !== savedSnapshot;
+  const canClear = document.elements.length > 0;
 
   useEffect(() => {
     let cancelled = false;
@@ -38,10 +32,19 @@ export default function DiagramEditorPage() {
       try {
         const existing = await fetchDiagram(Number(id));
         if (!cancelled) {
-          const nextPayloadText = formatPayload(existing.payload);
+          let doc: DiagramDocument;
+          try {
+            doc = parsePayload(existing.payload);
+          } catch {
+            // Corrupt/legacy data — fall back to empty and warn
+            doc = EMPTY_DOCUMENT;
+            setError(
+              "Saved diagram payload could not be parsed. Starting with an empty canvas.",
+            );
+          }
           setTitle(existing.title);
-          setPayloadText(nextPayloadText);
-          setSavedSnapshot(diagramSnapshot(existing.title, nextPayloadText));
+          setDocument(doc);
+          setSavedSnapshot(diagramSnapshot(existing.title, doc));
         }
       } catch (e) {
         if (!cancelled) {
@@ -62,31 +65,30 @@ export default function DiagramEditorPage() {
 
   const handleClear = () => {
     setError(null);
-    setPayloadText(EMPTY_PAYLOAD);
+    setDocument(EMPTY_DOCUMENT);
   };
 
   const handleSave = async () => {
-    let parsedPayload: unknown;
-
-    try {
-      parsedPayload = JSON.parse(payloadText);
-    } catch {
-      setError("Diagram payload must be valid JSON.");
-      return;
-    }
-
     setSaving(true);
     setError(null);
 
     try {
       const updated = await updateDiagram(Number(id), {
         title,
-        payload: parsedPayload,
+        payload: document,
       });
-      const nextPayloadText = formatPayload(updated.payload);
+
+      // Re-parse the returned payload for the saved snapshot
+      let savedDoc: DiagramDocument;
+      try {
+        savedDoc = parsePayload(updated.payload);
+      } catch {
+        savedDoc = document;
+      }
+
       setTitle(updated.title);
-      setPayloadText(nextPayloadText);
-      setSavedSnapshot(diagramSnapshot(updated.title, nextPayloadText));
+      setDocument(savedDoc);
+      setSavedSnapshot(diagramSnapshot(updated.title, savedDoc));
       toast.success("Diagram saved.");
     } catch (e) {
       const message = e instanceof Error ? e.message : "Failed to save diagram";
@@ -101,18 +103,18 @@ export default function DiagramEditorPage() {
     <DiagramForm
       pageTitle="Edit Diagram"
       title={title}
-      payloadText={payloadText}
+      document={document}
       loading={loading}
       saving={saving}
       dirty={dirty}
       canClear={canClear}
-      clearActionLabel="Clear payload"
+      clearActionLabel="Clear canvas"
       error={error}
       onBack={() => navigate("/diagrams")}
       onClear={handleClear}
       onSave={handleSave}
       onTitleChange={setTitle}
-      onPayloadChange={setPayloadText}
+      onDocumentChange={setDocument}
     />
   );
 }
