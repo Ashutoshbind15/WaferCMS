@@ -7,8 +7,10 @@ import {
 } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
-import { all, createLowlight } from "lowlight";
+import DragHandle from "@tiptap/extension-drag-handle-react";
+import { common, createLowlight } from "lowlight";
 import "@catppuccin/highlightjs/css/catppuccin-mocha.css";
+import type { RichTextContent } from "./rich-text-document";
 import CodeBlockComponent from "./code-block";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
@@ -35,12 +37,9 @@ import {
   Trash2,
   GripHorizontalIcon,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import DragHandle from "@tiptap/extension-drag-handle-react";
 
-const lowlight = createLowlight(all);
+const lowlight = createLowlight(common);
 
-// Extended code block with React node view
 const ExtendedCodeBlock = CodeBlockLowlight.extend({
   addNodeView() {
     return ReactNodeViewRenderer(CodeBlockComponent);
@@ -52,36 +51,30 @@ const ExtendedCodeBlock = CodeBlockLowlight.extend({
 });
 
 function RichTextEditor({
-  content,
+  initialContent,
   isEditable,
+  onChange,
 }: {
-  content: string;
+  initialContent: RichTextContent;
   isEditable: boolean;
+  onChange?: (content: RichTextContent) => void;
 }) {
   const editor = useEditor({
     extensions: [StarterKit, ExtendedCodeBlock],
-    content: content,
+    content: initialContent,
     editable: isEditable,
     editorProps: {
       attributes: {
         class: "prose prose-base m-5 focus:outline-none",
       },
     },
+    onUpdate: ({ editor: currentEditor }) => {
+      onChange?.(currentEditor.getJSON() as RichTextContent);
+    },
   });
 
-  const handleSave = async () => {
-    if (!editor) {
-      console.log("Editor not initialized");
-      return;
-    }
-
-    const editorContent = editor.getJSON();
-    console.log("Editor JSON content:", editorContent);
-    console.log("Editor HTML content:", editor.getHTML());
-  };
-
   return (
-    <div className="">
+    <div>
       <DragHandle
         editor={editor}
         computePositionConfig={{
@@ -97,7 +90,6 @@ function RichTextEditor({
           className="h-[calc(100vh-20rem)] overflow-y-auto"
         />
       </div>
-      <Button onClick={handleSave}>Save</Button>
     </div>
   );
 }

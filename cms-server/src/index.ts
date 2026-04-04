@@ -2,6 +2,8 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import blogRouter from "./routes/blog";
+import contentRouter from "./routes/content";
+import diagramsRouter from "./routes/diagrams";
 import filesRouter from "./routes/files";
 
 const app = express();
@@ -14,6 +16,8 @@ app.get("/ok", (req, res) => {
 });
 
 app.use("/blog", blogRouter);
+app.use("/content", contentRouter);
+app.use("/diagrams", diagramsRouter);
 app.use("/files", filesRouter);
 
 app.listen(3001, () => {

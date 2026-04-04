@@ -1,40 +1,84 @@
-import { useNavigate } from "react-router";
-import { Header } from "@/components/layout/header";
-import { PageContainer } from "@/components/layout/page-container";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router";
+import { fetchDiagram, updateDiagram } from "@/lib/cms-api";
+import { DiagramForm } from "../../components/forms/diagram-form";
+
+const formatPayload = (payload: unknown) =>
+  JSON.stringify(payload ?? {}, null, 2);
 
 export default function DiagramEditorPage() {
   const navigate = useNavigate();
+  const { id } = useParams();
+
+  const [title, setTitle] = useState("");
+  const [payloadText, setPayloadText] = useState("{}\n");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const existing = await fetchDiagram(Number(id));
+        if (!cancelled) {
+          setTitle(existing.title);
+          setPayloadText(formatPayload(existing.payload));
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : "Failed to load diagram");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  const handleSave = async () => {
+    let parsedPayload: unknown;
+
+    try {
+      parsedPayload = JSON.parse(payloadText);
+    } catch {
+      setError("Diagram payload must be valid JSON.");
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      await updateDiagram(Number(id), { title, payload: parsedPayload });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to save diagram");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
-    <>
-      <Header
-        title="Edit Diagram"
-        action={
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/diagrams")}
-            >
-              <ArrowLeft className="mr-1 h-4 w-4" />
-              Back
-            </Button>
-            <Button disabled>Save</Button>
-          </div>
-        }
-      />
-      <PageContainer>
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-32 text-center">
-          <p className="text-sm font-medium text-muted-foreground">
-            Diagram editor placeholder
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            The diagram canvas and tools will appear here.
-          </p>
-        </div>
-      </PageContainer>
-    </>
+    <DiagramForm
+      pageTitle="Edit Diagram"
+      title={title}
+      payloadText={payloadText}
+      loading={loading}
+      saving={saving}
+      error={error}
+      onBack={() => navigate("/diagrams")}
+      onSave={handleSave}
+      onTitleChange={setTitle}
+      onPayloadChange={setPayloadText}
+    />
   );
 }

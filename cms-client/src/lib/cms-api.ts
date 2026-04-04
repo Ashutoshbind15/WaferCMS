@@ -2,6 +2,51 @@ const base =
   import.meta.env.VITE_CMS_API_BASE?.replace(/\/$/, "") ??
   "http://localhost:3001";
 
+type EntityRecord = {
+  id: number;
+  title: string;
+  payload: unknown;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ContentRecord = EntityRecord;
+export type DiagramRecord = EntityRecord;
+
+export type BlogBlockReference = {
+  type: "content" | "diagram";
+  refId: number;
+};
+
+export type BlogListBlockRecord = BlogBlockReference & {
+  blockId: number;
+  order: number;
+  title: string;
+};
+
+export type BlogListRecord = {
+  id: number;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  blocks: BlogListBlockRecord[];
+};
+
+export type BlogBlockRecord = BlogBlockReference & {
+  blockId: number;
+  order: number;
+  title: string;
+  payload: unknown;
+};
+
+export type BlogRecord = {
+  id: number;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  blocks: BlogBlockRecord[];
+};
+
 export type LibraryFileRecord = {
   id: number;
   objectKey: string;
@@ -12,18 +57,148 @@ export type LibraryFileRecord = {
   createdAt: string;
 };
 
-export async function fetchLibraryFiles(): Promise<LibraryFileRecord[]> {
-  const res = await fetch(`${base}/files`);
-  if (!res.ok) {
-    throw new Error(await res.text());
+const getErrorMessage = async (res: Response) => {
+  const raw = await res.text();
+
+  try {
+    const data = JSON.parse(raw) as { error?: string };
+    return data.error ?? `Request failed (${res.status})`;
+  } catch {
+    return raw || `Request failed (${res.status})`;
   }
-  return res.json();
+};
+
+async function requestJson<T>(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+): Promise<T> {
+  const res = await fetch(input, init);
+  if (!res.ok) {
+    throw new Error(await getErrorMessage(res));
+  }
+  return res.json() as Promise<T>;
+}
+
+async function deleteJson(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+): Promise<{ deleted: true }> {
+  const res = await fetch(input, init);
+  if (!res.ok) {
+    throw new Error(await getErrorMessage(res));
+  }
+  return res.json() as Promise<{ deleted: true }>;
+}
+
+export async function fetchContentList(): Promise<ContentRecord[]> {
+  return requestJson<ContentRecord[]>(`${base}/content`);
+}
+
+export async function fetchContent(id: number): Promise<ContentRecord> {
+  return requestJson<ContentRecord>(`${base}/content/${id}`);
+}
+
+export async function createContent(input: {
+  title: string;
+  payload: unknown;
+}): Promise<ContentRecord> {
+  return requestJson<ContentRecord>(`${base}/content`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function updateContent(
+  id: number,
+  input: { title: string; payload: unknown },
+): Promise<ContentRecord> {
+  return requestJson<ContentRecord>(`${base}/content/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function deleteContent(id: number) {
+  return deleteJson(`${base}/content/${id}`, { method: "DELETE" });
+}
+
+export async function fetchDiagramList(): Promise<DiagramRecord[]> {
+  return requestJson<DiagramRecord[]>(`${base}/diagrams`);
+}
+
+export async function fetchDiagram(id: number): Promise<DiagramRecord> {
+  return requestJson<DiagramRecord>(`${base}/diagrams/${id}`);
+}
+
+export async function createDiagram(input: {
+  title: string;
+  payload: unknown;
+}): Promise<DiagramRecord> {
+  return requestJson<DiagramRecord>(`${base}/diagrams`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function updateDiagram(
+  id: number,
+  input: { title: string; payload: unknown },
+): Promise<DiagramRecord> {
+  return requestJson<DiagramRecord>(`${base}/diagrams/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function deleteDiagram(id: number) {
+  return deleteJson(`${base}/diagrams/${id}`, { method: "DELETE" });
+}
+
+export async function fetchBlogList(): Promise<BlogListRecord[]> {
+  return requestJson<BlogListRecord[]>(`${base}/blog`);
+}
+
+export async function fetchBlog(id: number): Promise<BlogRecord> {
+  return requestJson<BlogRecord>(`${base}/blog/${id}`);
+}
+
+export async function createBlog(input: {
+  title: string;
+  blocks: BlogBlockReference[];
+}): Promise<BlogRecord> {
+  return requestJson<BlogRecord>(`${base}/blog`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function updateBlog(
+  id: number,
+  input: { title: string; blocks: BlogBlockReference[] },
+): Promise<BlogRecord> {
+  return requestJson<BlogRecord>(`${base}/blog/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function deleteBlog(id: number) {
+  return deleteJson(`${base}/blog/${id}`, { method: "DELETE" });
+}
+
+export async function fetchLibraryFiles(): Promise<LibraryFileRecord[]> {
+  return requestJson<LibraryFileRecord[]>(`${base}/files`);
 }
 
 export type UploadProgressCallback = (event: {
   loaded: number;
   total: number;
-  /** 0-100 */
   percent: number;
 }) => void;
 
@@ -55,7 +230,14 @@ export function uploadLibraryFile(
           reject(new Error("Invalid JSON response"));
         }
       } else {
-        reject(new Error(xhr.responseText || `Upload failed (${xhr.status})`));
+        try {
+          const parsed = JSON.parse(xhr.responseText) as { error?: string };
+          reject(new Error(parsed.error || `Upload failed (${xhr.status})`));
+        } catch {
+          reject(
+            new Error(xhr.responseText || `Upload failed (${xhr.status})`),
+          );
+        }
       }
     });
 

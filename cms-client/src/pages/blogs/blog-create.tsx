@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate } from "react-router";
 import {
-  fetchBlog,
+  createBlog,
   fetchContentList,
   fetchDiagramList,
-  updateBlog,
   type BlogBlockReference,
   type ContentRecord,
   type DiagramRecord,
@@ -14,8 +13,7 @@ import {
   type EditableBlogBlock,
 } from "../../components/forms/blog-form";
 
-export default function BlogEditorPage() {
-  const { id } = useParams();
+export default function BlogCreatePage() {
   const navigate = useNavigate();
 
   const [title, setTitle] = useState("");
@@ -32,28 +30,16 @@ export default function BlogEditorPage() {
     const load = async () => {
       setLoading(true);
       setError(null);
+
       try {
         const [content, diagrams] = await Promise.all([
           fetchContentList(),
           fetchDiagramList(),
         ]);
 
-        if (cancelled) {
-          return;
-        }
-
-        setContentOptions(content);
-        setDiagramOptions(diagrams);
-
-        const blog = await fetchBlog(Number(id));
         if (!cancelled) {
-          setTitle(blog.title);
-          setBlocks(
-            blog.blocks.map((block) => ({
-              type: block.type,
-              refId: block.refId,
-            })),
-          );
+          setContentOptions(content);
+          setDiagramOptions(diagrams);
         }
       } catch (e) {
         if (!cancelled) {
@@ -70,7 +56,7 @@ export default function BlogEditorPage() {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, []);
 
   const handleSave = async () => {
     const payload: BlogBlockReference[] = blocks.map((block) => ({
@@ -82,7 +68,8 @@ export default function BlogEditorPage() {
     setError(null);
 
     try {
-      await updateBlog(Number(id), { title, blocks: payload });
+      const created = await createBlog({ title, blocks: payload });
+      navigate(`/blogs/${created.id}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to save blog");
     } finally {
@@ -92,7 +79,7 @@ export default function BlogEditorPage() {
 
   return (
     <BlogForm
-      pageTitle="Edit Blog"
+      pageTitle="New Blog"
       title={title}
       blocks={blocks}
       contentOptions={contentOptions}

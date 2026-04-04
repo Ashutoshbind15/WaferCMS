@@ -1,5 +1,6 @@
 import { Button } from "./components/ui/button";
 import RichTextEditor from "./components/editor/rich-text-editor";
+import { EMPTY_EDITOR_DOC } from "./components/editor/rich-text-document";
 
 const App = () => {
   return (
@@ -12,7 +13,7 @@ const App = () => {
       >
         Click me
       </Button>
-      <RichTextEditor content="" isEditable={true} />
+      <RichTextEditor initialContent={EMPTY_EDITOR_DOC} isEditable={true} />
     </div>
   );
 };
