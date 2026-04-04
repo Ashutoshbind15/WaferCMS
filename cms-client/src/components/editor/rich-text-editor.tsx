@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import {
   useEditor,
   EditorContent,
@@ -59,6 +60,8 @@ function RichTextEditor({
   isEditable: boolean;
   onChange?: (content: RichTextContent) => void;
 }) {
+  const isApplyingExternalContent = useRef(false);
+
   const editor = useEditor({
     extensions: [StarterKit, ExtendedCodeBlock],
     content: initialContent,
@@ -69,9 +72,30 @@ function RichTextEditor({
       },
     },
     onUpdate: ({ editor: currentEditor }) => {
+      if (isApplyingExternalContent.current) {
+        return;
+      }
+
       onChange?.(currentEditor.getJSON() as RichTextContent);
     },
   });
+
+  useEffect(() => {
+    if (!editor) {
+      return;
+    }
+
+    if (JSON.stringify(editor.getJSON()) === JSON.stringify(initialContent)) {
+      return;
+    }
+
+    isApplyingExternalContent.current = true;
+    try {
+      editor.commands.setContent(initialContent, { emitUpdate: false });
+    } finally {
+      isApplyingExternalContent.current = false;
+    }
+  }, [editor, initialContent]);
 
   return (
     <div>

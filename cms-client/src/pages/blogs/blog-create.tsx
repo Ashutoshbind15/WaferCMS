@@ -8,10 +8,16 @@ import {
   type ContentRecord,
   type DiagramRecord,
 } from "@/lib/cms-api";
+import { toast } from "sonner";
 import {
   BlogForm,
   type EditableBlogBlock,
 } from "../../components/forms/blog-form";
+
+const blogSnapshot = (title: string, blocks: EditableBlogBlock[]) =>
+  JSON.stringify({ title, blocks });
+
+const EMPTY_BLOG_SNAPSHOT = blogSnapshot("", []);
 
 export default function BlogCreatePage() {
   const navigate = useNavigate();
@@ -23,6 +29,9 @@ export default function BlogCreatePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const dirty = blogSnapshot(title, blocks) !== EMPTY_BLOG_SNAPSHOT;
+  const canClear = blocks.length > 0;
 
   useEffect(() => {
     let cancelled = false;
@@ -58,6 +67,11 @@ export default function BlogCreatePage() {
     };
   }, []);
 
+  const handleClear = () => {
+    setError(null);
+    setBlocks([]);
+  };
+
   const handleSave = async () => {
     const payload: BlogBlockReference[] = blocks.map((block) => ({
       type: block.type,
@@ -69,9 +83,12 @@ export default function BlogCreatePage() {
 
     try {
       const created = await createBlog({ title, blocks: payload });
+      toast.success("Blog created.");
       navigate(`/blogs/${created.id}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to save blog");
+      const message = e instanceof Error ? e.message : "Failed to save blog";
+      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -86,8 +103,12 @@ export default function BlogCreatePage() {
       diagramOptions={diagramOptions}
       loading={loading}
       saving={saving}
+      dirty={dirty}
+      canClear={canClear}
+      clearActionLabel="Clear blocks"
       error={error}
       onBack={() => navigate("/blogs")}
+      onClear={handleClear}
       onSave={handleSave}
       onTitleChange={setTitle}
       onBlocksChange={setBlocks}

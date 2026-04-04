@@ -29,8 +29,12 @@ type ContentFormProps = {
   payload: RichTextContent;
   loading: boolean;
   saving: boolean;
+  dirty: boolean;
+  canClear: boolean;
+  clearActionLabel: string;
   error: string | null;
   onBack: () => void;
+  onClear: () => void;
   onSave: () => Promise<void> | void;
   onTitleChange: (value: string) => void;
   onPayloadChange: (value: RichTextContent) => void;
@@ -42,8 +46,12 @@ export function ContentForm({
   payload,
   loading,
   saving,
+  dirty,
+  canClear,
+  clearActionLabel,
   error,
   onBack,
+  onClear,
   onSave,
   onTitleChange,
   onPayloadChange,
@@ -58,7 +66,32 @@ export function ContentForm({
               <ArrowLeft className="mr-1 h-4 w-4" />
               Back
             </Button>
-            <Button disabled={saving || loading} onClick={() => void onSave()}>
+            {dirty ? (
+              <span
+                className="inline-flex items-center"
+                title="Unsaved changes"
+              >
+                <span className="sr-only">Unsaved changes</span>
+                <span
+                  aria-hidden
+                  className="size-2.5 rounded-full bg-amber-500"
+                />
+              </span>
+            ) : null}
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={saving || loading || !canClear}
+              onClick={onClear}
+              title={clearActionLabel}
+              aria-label={clearActionLabel}
+            >
+              Clear
+            </Button>
+            <Button
+              disabled={saving || loading || !dirty}
+              onClick={() => void onSave()}
+            >
               {saving ? "Saving…" : "Save"}
             </Button>
           </div>

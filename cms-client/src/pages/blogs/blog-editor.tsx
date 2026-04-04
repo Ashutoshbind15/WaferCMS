@@ -9,10 +9,20 @@ import {
   type ContentRecord,
   type DiagramRecord,
 } from "@/lib/cms-api";
+import { toast } from "sonner";
 import {
   BlogForm,
   type EditableBlogBlock,
 } from "../../components/forms/blog-form";
+
+const blogSnapshot = (title: string, blocks: EditableBlogBlock[]) =>
+  JSON.stringify({ title, blocks });
+
+const EMPTY_BLOG_SNAPSHOT = blogSnapshot("", []);
+
+const toEditableBlocks = (
+  blocks: Array<Pick<BlogBlockReference, "type" | "refId">>,
+) => blocks.map((block) => ({ type: block.type, refId: block.refId }));
 
 export default function BlogEditorPage() {
   const { id } = useParams();
@@ -25,6 +35,10 @@ export default function BlogEditorPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [savedSnapshot, setSavedSnapshot] = useState(EMPTY_BLOG_SNAPSHOT);
+
+  const dirty = !loading && blogSnapshot(title, blocks) !== savedSnapshot;
+  const canClear = blocks.length > 0;
 
   useEffect(() => {
     let cancelled = false;
@@ -47,13 +61,10 @@ export default function BlogEditorPage() {
 
         const blog = await fetchBlog(Number(id));
         if (!cancelled) {
+          const nextBlocks = toEditableBlocks(blog.blocks);
           setTitle(blog.title);
-          setBlocks(
-            blog.blocks.map((block) => ({
-              type: block.type,
-              refId: block.refId,
-            })),
-          );
+          setBlocks(nextBlocks);
+          setSavedSnapshot(blogSnapshot(blog.title, nextBlocks));
         }
       } catch (e) {
         if (!cancelled) {
@@ -72,6 +83,11 @@ export default function BlogEditorPage() {
     };
   }, [id]);
 
+  const handleClear = () => {
+    setError(null);
+    setBlocks([]);
+  };
+
   const handleSave = async () => {
     const payload: BlogBlockReference[] = blocks.map((block) => ({
       type: block.type,
@@ -82,9 +98,16 @@ export default function BlogEditorPage() {
     setError(null);
 
     try {
-      await updateBlog(Number(id), { title, blocks: payload });
+      const updated = await updateBlog(Number(id), { title, blocks: payload });
+      const nextBlocks = toEditableBlocks(updated.blocks);
+      setTitle(updated.title);
+      setBlocks(nextBlocks);
+      setSavedSnapshot(blogSnapshot(updated.title, nextBlocks));
+      toast.success("Blog saved.");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to save blog");
+      const message = e instanceof Error ? e.message : "Failed to save blog";
+      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -99,8 +122,12 @@ export default function BlogEditorPage() {
       diagramOptions={diagramOptions}
       loading={loading}
       saving={saving}
+      dirty={dirty}
+      canClear={canClear}
+      clearActionLabel="Clear blocks"
       error={error}
       onBack={() => navigate("/blogs")}
+      onClear={handleClear}
       onSave={handleSave}
       onTitleChange={setTitle}
       onBlocksChange={setBlocks}

@@ -4,6 +4,7 @@ import "./style.css";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { Toaster } from "@/components/ui/sonner";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 
 import ContentListPage from "./pages/content/content-list";
@@ -24,6 +25,7 @@ function RootLayout() {
       <SidebarInset>
         <Outlet />
       </SidebarInset>
+      <Toaster />
     </>
   );
 }

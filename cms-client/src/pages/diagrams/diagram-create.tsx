@@ -1,9 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { createDiagram } from "@/lib/cms-api";
+import { toast } from "sonner";
 import { DiagramForm } from "../../components/forms/diagram-form";
 
-const EMPTY_PAYLOAD = "{}\n";
+const EMPTY_PAYLOAD = JSON.stringify({}, null, 2);
+
+const diagramSnapshot = (title: string, payloadText: string) =>
+  JSON.stringify({ title, payloadText });
+
+const EMPTY_DIAGRAM_SNAPSHOT = diagramSnapshot("", EMPTY_PAYLOAD);
 
 export default function DiagramCreatePage() {
   const navigate = useNavigate();
@@ -12,6 +18,14 @@ export default function DiagramCreatePage() {
   const [payloadText, setPayloadText] = useState(EMPTY_PAYLOAD);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const dirty = diagramSnapshot(title, payloadText) !== EMPTY_DIAGRAM_SNAPSHOT;
+  const canClear = payloadText !== EMPTY_PAYLOAD;
+
+  const handleClear = () => {
+    setError(null);
+    setPayloadText(EMPTY_PAYLOAD);
+  };
 
   const handleSave = async () => {
     let parsedPayload: unknown;
@@ -28,9 +42,12 @@ export default function DiagramCreatePage() {
 
     try {
       const created = await createDiagram({ title, payload: parsedPayload });
+      toast.success("Diagram created.");
       navigate(`/diagrams/${created.id}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to save diagram");
+      const message = e instanceof Error ? e.message : "Failed to save diagram";
+      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -43,8 +60,12 @@ export default function DiagramCreatePage() {
       payloadText={payloadText}
       loading={false}
       saving={saving}
+      dirty={dirty}
+      canClear={canClear}
+      clearActionLabel="Clear payload"
       error={error}
       onBack={() => navigate("/diagrams")}
+      onClear={handleClear}
       onSave={handleSave}
       onTitleChange={setTitle}
       onPayloadChange={setPayloadText}
