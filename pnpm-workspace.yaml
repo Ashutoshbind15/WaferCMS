@@ -5,7 +5,8 @@ packages:
   - "packages/*"
 minimumReleaseAge: 7200
 saveExact: true
-# note: was commented out when running shadcn init
+# note: was commented out when running shadcn init, also during adding bento-grid
+# component
 strictDepBuilds: true
 trustPolicy: no-downgrade
 trustPolicyExclude:
