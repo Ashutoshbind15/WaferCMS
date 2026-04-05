@@ -1,6 +1,5 @@
-export type RichTextContent = Record<string, unknown>;
-
-export const EMPTY_EDITOR_DOC: RichTextContent = {
-  type: "doc",
-  content: [{ type: "paragraph" }],
-};
+export {
+  EMPTY_EDITOR_DOC,
+  normalizeRichTextPayload,
+  type RichTextContent,
+} from "@packages/rich-text";

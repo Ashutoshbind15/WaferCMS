@@ -1,18 +1,9 @@
 import { useEffect, useRef } from "react";
-import {
-  useEditor,
-  EditorContent,
-  ReactNodeViewRenderer,
-  type Editor,
-  useEditorState,
-} from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
+import { useEditor, EditorContent, type Editor, useEditorState } from "@tiptap/react";
 import DragHandle from "@tiptap/extension-drag-handle-react";
-import { common, createLowlight } from "lowlight";
 import "@catppuccin/highlightjs/css/catppuccin-mocha.css";
+import { richTextExtensions } from "@packages/rich-text";
 import type { RichTextContent } from "./rich-text-document";
-import CodeBlockComponent from "./code-block";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Bold,
@@ -39,18 +30,6 @@ import {
   GripHorizontalIcon,
 } from "lucide-react";
 
-const lowlight = createLowlight(common);
-
-const ExtendedCodeBlock = CodeBlockLowlight.extend({
-  addNodeView() {
-    return ReactNodeViewRenderer(CodeBlockComponent);
-  },
-}).configure({
-  lowlight,
-  tabSize: 2,
-  enableTabIndentation: true,
-});
-
 function RichTextEditor({
   initialContent,
   isEditable,
@@ -63,7 +42,7 @@ function RichTextEditor({
   const isApplyingExternalContent = useRef(false);
 
   const editor = useEditor({
-    extensions: [StarterKit, ExtendedCodeBlock],
+    extensions: richTextExtensions,
     content: initialContent,
     editable: isEditable,
     editorProps: {
