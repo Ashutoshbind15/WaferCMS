@@ -256,6 +256,9 @@ importers:
       '@packages/db':
         specifier: workspace:*
         version: link:../packages/db
+      '@packages/diagram':
+        specifier: workspace:*
+        version: link:../packages/diagram
       '@packages/rich-text':
         specifier: workspace:*
         version: link:../packages/rich-text
