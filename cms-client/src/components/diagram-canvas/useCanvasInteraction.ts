@@ -10,8 +10,8 @@ import type {
 } from "@packages/diagram";
 import { generateSeed, getElementBounds } from "@packages/diagram";
 import { screenToCanvas } from "./coordinate-utils";
-import { hitTest, hitTestResizeHandle } from "./hit-test";
-import type { HandlePosition } from "./hit-test";
+import { hitTest, hitTestResizeHandle, hitTestConnectionPoint } from "./hit-test";
+import type { HandlePosition, ConnectionPointHit } from "./hit-test";
 import { useElementDrag } from "./useElementDrag";
 import { useElementResize } from "./useElementResize";
 import { useArrowCreation } from "./useArrowCreation";
@@ -77,9 +77,20 @@ export function useCanvasInteraction(
     arrowStart,
     previewEnd,
     handleArrowClick,
+    handleArrowPointClick,
     updatePreview,
     cancelArrow,
   } = useArrowCreation(elements, dispatch);
+
+  // Hovered connection point while arrow tool is active
+  const [hoveredConnectionPoint, setHoveredConnectionPoint] =
+    useState<ConnectionPointHit | null>(null);
+
+  useEffect(() => {
+    if (tool !== "arrow") {
+      setHoveredConnectionPoint(null);
+    }
+  }, [tool]);
 
   // Interaction mode
   const [mode, setMode] = useState<InteractionMode>("none");
@@ -241,6 +252,50 @@ export function useCanvasInteraction(
     setEditingTarget(null);
   }, []);
 
+  // ── Pointer down on a connection point (arrow tool) ──
+  const handleConnectionPointPointerDown = useCallback(
+    (e: React.PointerEvent, elementId: string, point: { x: number; y: number }) => {
+      if (editingTarget || tool !== "arrow") return;
+
+      e.preventDefault();
+      e.stopPropagation();
+      handleArrowPointClick(point, elementId);
+    },
+    [editingTarget, tool, handleArrowPointClick],
+  );
+
+  // ── Pointer down on a visible resize handle (rendered above the canvas hit layer) ──
+  const handleResizeHandlePointerDown = useCallback(
+    (e: React.PointerEvent, handle: HandlePosition) => {
+      if (editingTarget) return;
+      if (tool !== "select" || selectedIds.size !== 1) return;
+
+      const selectedId = Array.from(selectedIds)[0];
+      const selectedEl = elements.find((el) => el.id === selectedId);
+      if (!selectedEl || selectedEl.type === "arrow") return;
+
+      const svg = svgRef.current;
+      if (!svg) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      const canvasPoint = getCanvasPoint(e);
+      setMode("resizing");
+      startResize(selectedId, handle, canvasPoint);
+      svg.setPointerCapture(e.pointerId);
+    },
+    [
+      editingTarget,
+      tool,
+      selectedIds,
+      elements,
+      svgRef,
+      getCanvasPoint,
+      startResize,
+    ],
+  );
+
   // ── Pointer down on SVG ──
   const handlePointerDown = useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {
@@ -267,7 +322,8 @@ export function useCanvasInteraction(
 
       // Arrow tool
       if (tool === "arrow") {
-        handleArrowClick(canvasPoint);
+        const snapThreshold = HANDLE_SIZE / viewport.zoom;
+        handleArrowClick(canvasPoint, snapThreshold);
         return;
       }
 
@@ -365,11 +421,7 @@ export function useCanvasInteraction(
         if (selectedIds.size === 1) {
           const selectedId = Array.from(selectedIds)[0];
           const selectedEl = elements.find((el) => el.id === selectedId);
-          if (
-            selectedEl &&
-            selectedEl.type !== "arrow" &&
-            selectedEl.type !== "text"
-          ) {
+          if (selectedEl && selectedEl.type !== "arrow") {
             const bounds = getElementBounds(selectedEl);
             // Adjust handle size based on zoom
             const handleSizeCanvas = HANDLE_SIZE / viewport.zoom;
@@ -550,9 +602,16 @@ export function useCanvasInteraction(
         return;
       }
 
-      // Arrow preview
-      if (tool === "arrow" && arrowStart) {
-        updatePreview(canvasPoint);
+      // Arrow tool: track hovered connection point and preview snap
+      if (tool === "arrow") {
+        const snapThreshold = HANDLE_SIZE / viewport.zoom;
+        setHoveredConnectionPoint(
+          hitTestConnectionPoint(canvasPoint, elements, snapThreshold),
+        );
+        if (arrowStart) {
+          updatePreview(canvasPoint, snapThreshold);
+        }
+        return;
       }
     },
     [
@@ -567,6 +626,7 @@ export function useCanvasInteraction(
       tool,
       arrowStart,
       updatePreview,
+      elements,
     ],
   );
 
@@ -624,9 +684,12 @@ export function useCanvasInteraction(
     handlePointerMove,
     handlePointerUp,
     handleDoubleClick,
+    handleResizeHandlePointerDown,
+    handleConnectionPointPointerDown,
     getCursor,
     arrowStart,
     previewEnd,
+    hoveredConnectionPoint,
     spaceHeld,
     handleSize: HANDLE_SIZE,
     // Text editing

@@ -1,11 +1,11 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import type { DiagramElement, ArrowElement } from "@packages/diagram";
 import {
   generateSeed,
   getAnchorPoint,
   getElementCenter,
 } from "@packages/diagram";
-import { hitTest } from "./hit-test";
+import { hitTest, hitTestConnectionPoint } from "./hit-test";
 import type { CanvasAction } from "./useCanvasReducer";
 
 interface ArrowStartState {
@@ -33,79 +33,146 @@ export function useArrowCreation(
     null,
   );
 
+  const createArrow = useCallback(
+    (
+      startPoint: { x: number; y: number },
+      endPoint: { x: number; y: number },
+      startBinding?: string,
+      endBinding?: string,
+    ) => {
+      const arrow: ArrowElement = {
+        id: crypto.randomUUID(),
+        type: "arrow",
+        seed: generateSeed(),
+        startX: startPoint.x,
+        startY: startPoint.y,
+        endX: endPoint.x,
+        endY: endPoint.y,
+        startBinding,
+        endBinding,
+      };
+
+      dispatch({ type: "ADD_ELEMENT", element: arrow });
+      dispatch({ type: "SET_TOOL", tool: "select" });
+      dispatch({ type: "SET_SELECTION", ids: [arrow.id] });
+
+      setArrowStart(null);
+      setPreviewEnd(null);
+    },
+    [dispatch],
+  );
+
+  const resolveStartPoint = useCallback(
+    (
+      startState: ArrowStartState,
+      endRef: { x: number; y: number },
+      endBinding?: string,
+    ) => {
+      if (!startState.binding) return startState.point;
+
+      const startTarget = elements.find((e) => e.id === startState.binding);
+      if (!startTarget || startTarget.type === "arrow") return startState.point;
+
+      const endTarget = endBinding
+        ? elements.find((e) => e.id === endBinding)
+        : null;
+      const anchorFrom = endTarget
+        ? getElementCenter(endTarget)
+        : endRef;
+
+      return getAnchorPoint(startTarget, anchorFrom);
+    },
+    [elements],
+  );
+
+  const handleArrowPointClick = useCallback(
+    (
+      point: { x: number; y: number },
+      binding?: string,
+    ) => {
+      if (!arrowStart) {
+        setArrowStart({ point, binding });
+        setPreviewEnd(point);
+        return;
+      }
+
+      createArrow(arrowStart.point, point, arrowStart.binding, binding);
+    },
+    [arrowStart, createArrow],
+  );
+
   const handleArrowClick = useCallback(
-    (canvasPoint: { x: number; y: number }) => {
+    (canvasPoint: { x: number; y: number }, snapThreshold?: number) => {
+      if (snapThreshold != null) {
+        const connHit = hitTestConnectionPoint(
+          canvasPoint,
+          elements,
+          snapThreshold,
+        );
+        if (connHit) {
+          handleArrowPointClick(connHit.point, connHit.elementId);
+          return;
+        }
+      }
+
       const hitElement = hitTest(canvasPoint, elements);
-      // Only bind to shapes, not text or other arrows
       const bindableHit =
-        hitElement && hitElement.type !== "text" && hitElement.type !== "arrow"
-          ? hitElement
-          : null;
+        hitElement && hitElement.type !== "arrow" ? hitElement : null;
 
       if (!arrowStart) {
-        // First click: set start point
         const startPoint = bindableHit
           ? getAnchorPoint(bindableHit, canvasPoint)
           : canvasPoint;
 
-        setArrowStart({
-          point: startPoint,
-          binding: bindableHit?.id,
-        });
-        setPreviewEnd(canvasPoint);
+        handleArrowPointClick(startPoint, bindableHit?.id);
       } else {
-        // Second click: create the arrow
         const endPoint = bindableHit
           ? getAnchorPoint(bindableHit, arrowStart.point)
           : canvasPoint;
+        const startPoint = resolveStartPoint(
+          arrowStart,
+          endPoint,
+          bindableHit?.id,
+        );
 
-        // Recalculate start anchor now that we know the actual end target
-        let startPoint = arrowStart.point;
-        if (arrowStart.binding) {
-          const startTarget = elements.find((e) => e.id === arrowStart.binding);
-          if (
-            startTarget &&
-            startTarget.type !== "text" &&
-            startTarget.type !== "arrow"
-          ) {
-            const endRef = bindableHit
-              ? getElementCenter(bindableHit)
-              : canvasPoint;
-            startPoint = getAnchorPoint(startTarget, endRef);
-          }
-        }
-
-        const arrow: ArrowElement = {
-          id: crypto.randomUUID(),
-          type: "arrow",
-          seed: generateSeed(),
-          startX: startPoint.x,
-          startY: startPoint.y,
-          endX: endPoint.x,
-          endY: endPoint.y,
-          startBinding: arrowStart.binding,
-          endBinding: bindableHit?.id,
-        };
-
-        dispatch({ type: "ADD_ELEMENT", element: arrow });
-        dispatch({ type: "SET_TOOL", tool: "select" });
-        dispatch({ type: "SET_SELECTION", ids: [arrow.id] });
-
-        // Reset
-        setArrowStart(null);
-        setPreviewEnd(null);
+        createArrow(
+          startPoint,
+          endPoint,
+          arrowStart.binding,
+          bindableHit?.id,
+        );
       }
     },
-    [arrowStart, elements, dispatch],
+    [arrowStart, elements, handleArrowPointClick, resolveStartPoint, createArrow],
   );
 
   const updatePreview = useCallback(
-    (canvasPoint: { x: number; y: number }) => {
-      if (arrowStart) {
+    (canvasPoint: { x: number; y: number }, snapThreshold?: number) => {
+      if (!arrowStart) return;
+
+      if (snapThreshold != null) {
+        const connHit = hitTestConnectionPoint(
+          canvasPoint,
+          elements,
+          snapThreshold,
+        );
+        if (connHit) {
+          setPreviewEnd(connHit.point);
+          return;
+        }
+      }
+
+      const hitElement = hitTest(canvasPoint, elements);
+      const bindableHit =
+        hitElement && hitElement.type !== "arrow" ? hitElement : null;
+
+      if (bindableHit) {
+        setPreviewEnd(getAnchorPoint(bindableHit, arrowStart.point));
+      } else {
         setPreviewEnd(canvasPoint);
       }
     },
-    [arrowStart],
+    [arrowStart, elements],
   );
 
   const cancelArrow = useCallback(() => {
@@ -117,6 +184,7 @@ export function useArrowCreation(
     arrowStart,
     previewEnd,
     handleArrowClick,
+    handleArrowPointClick,
     updatePreview,
     cancelArrow,
   };

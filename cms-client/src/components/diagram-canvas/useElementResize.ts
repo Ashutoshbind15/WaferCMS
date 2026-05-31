@@ -63,7 +63,11 @@ export function useElementResize(
         dy,
       );
 
-      const patch = boundsToElementPatch(resize.originalElement, newBounds);
+      const patch = boundsToElementPatch(
+        resize.originalElement,
+        newBounds,
+        resize.startBounds,
+      );
       if (patch) {
         dispatch({ type: "UPDATE_ELEMENT", id: resize.elementId, patch });
       }
@@ -139,6 +143,7 @@ function computeResizedBounds(
 function boundsToElementPatch(
   original: DiagramElement,
   bounds: Bounds,
+  resizeStartBounds: Bounds,
 ): Partial<DiagramElement> | null {
   switch (original.type) {
     case "rectangle":
@@ -163,9 +168,25 @@ function boundsToElementPatch(
       };
     }
 
-    case "text":
-      // Text elements can't really be resized — just reposition
-      return { x: bounds.x, y: bounds.y };
+    case "text": {
+      const scaleX =
+        resizeStartBounds.width > 0
+          ? bounds.width / resizeStartBounds.width
+          : 1;
+      const scaleY =
+        resizeStartBounds.height > 0
+          ? bounds.height / resizeStartBounds.height
+          : 1;
+      const scale = Math.sqrt(scaleX * scaleY);
+      const baseFontSize = original.fontSize ?? 16;
+      return {
+        x: bounds.x,
+        y: bounds.y,
+        width: bounds.width,
+        height: bounds.height,
+        fontSize: Math.max(8, baseFontSize * scale),
+      };
+    }
 
     case "arrow":
       // Arrows aren't resized via handles
@@ -198,7 +219,6 @@ function recalculateArrowAnchorsForElement(
     if (
       el.startBinding === resizedId &&
       startTarget &&
-      startTarget.type !== "text" &&
       startTarget.type !== "arrow"
     ) {
       const otherEnd = endTarget
@@ -209,12 +229,7 @@ function recalculateArrowAnchorsForElement(
       patch.startY = anchor.y;
     }
 
-    if (
-      el.endBinding === resizedId &&
-      endTarget &&
-      endTarget.type !== "text" &&
-      endTarget.type !== "arrow"
-    ) {
+    if (el.endBinding === resizedId && endTarget && endTarget.type !== "arrow") {
       const otherEnd = startTarget
         ? getElementCenter(startTarget)
         : { x: el.startX, y: el.startY };

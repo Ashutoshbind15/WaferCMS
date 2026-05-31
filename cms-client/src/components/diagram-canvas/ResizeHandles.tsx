@@ -33,8 +33,8 @@ export function ResizeHandles({
   const bounds = useMemo(() => getElementBounds(element), [element]);
   const handles = useMemo(() => getResizeHandles(bounds), [bounds]);
 
-  // Don't show resize handles for arrows or text elements
-  if (element.type === "arrow" || element.type === "text") return null;
+  // Arrows are resized by dragging endpoints, not handles
+  if (element.type === "arrow") return null;
 
   return (
     <g className="resize-handles">

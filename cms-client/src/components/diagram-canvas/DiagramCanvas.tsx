@@ -7,6 +7,7 @@ import { GridBackground } from "./GridBackground";
 import { ElementRenderer } from "./ElementRenderer";
 import { SelectionOverlay } from "./SelectionOverlay";
 import { ResizeHandles } from "./ResizeHandles";
+import { ConnectionPoints } from "./ConnectionPoints";
 import { ArrowPreview } from "./ArrowPreview";
 import { InlineTextEditor } from "./InlineTextEditor";
 import { Toolbar } from "./Toolbar";
@@ -68,9 +69,12 @@ export function DiagramCanvas({
     handlePointerMove,
     handlePointerUp,
     handleDoubleClick,
+    handleResizeHandlePointerDown,
+    handleConnectionPointPointerDown,
     getCursor,
     arrowStart,
     previewEnd,
+    hoveredConnectionPoint,
     spaceHeld,
     handleSize,
     // Text editing
@@ -200,13 +204,24 @@ export function DiagramCanvas({
 
           {/* Resize handles for single selected element */}
           {singleSelectedElement &&
-            singleSelectedElement.type !== "arrow" &&
-            singleSelectedElement.type !== "text" && (
+            singleSelectedElement.type !== "arrow" && (
               <ResizeHandles
                 element={singleSelectedElement}
                 handleSize={handleSizeCanvas}
+                onHandlePointerDown={handleResizeHandlePointerDown}
               />
             )}
+
+          {/* Connection points while arrow tool is active */}
+          {state.tool === "arrow" && (
+            <ConnectionPoints
+              elements={state.document.elements}
+              pointRadius={handleSizeCanvas}
+              hoveredPoint={hoveredConnectionPoint}
+              activeStartPoint={arrowStart?.point ?? null}
+              onPointerDown={handleConnectionPointPointerDown}
+            />
+          )}
 
           {/* Arrow creation preview */}
           {arrowStart && previewEnd && (

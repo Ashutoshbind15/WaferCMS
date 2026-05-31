@@ -163,12 +163,7 @@ function recalculateArrowAnchors(
       : null;
 
     // Determine the "other" end's position for anchor calculation
-    if (
-      startBound &&
-      startTarget &&
-      startTarget.type !== "text" &&
-      startTarget.type !== "arrow"
-    ) {
+    if (startBound && startTarget && startTarget.type !== "arrow") {
       const otherEnd = endTarget
         ? getElementCenter(endTarget)
         : { x: el.endX, y: el.endY };
@@ -177,12 +172,7 @@ function recalculateArrowAnchors(
       patch.startY = anchor.y;
     }
 
-    if (
-      endBound &&
-      endTarget &&
-      endTarget.type !== "text" &&
-      endTarget.type !== "arrow"
-    ) {
+    if (endBound && endTarget && endTarget.type !== "arrow") {
       const otherEnd = startTarget
         ? getElementCenter(startTarget)
         : { x: el.startX, y: el.startY };

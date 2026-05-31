@@ -1,5 +1,9 @@
 import type { DiagramElement, Bounds } from "@packages/diagram";
-import { getElementBounds, getElementCenter } from "@packages/diagram";
+import {
+  getElementBounds,
+  getElementCenter,
+  getElementConnectionPoints,
+} from "@packages/diagram";
 
 /**
  * Hit-test threshold for arrows (distance in canvas-space pixels).
@@ -51,6 +55,43 @@ export function hitTestElement(
         ARROW_HIT_THRESHOLD,
       );
   }
+}
+
+// ── Connection points (arrow attachment) ──
+
+export interface ConnectionPointHit {
+  elementId: string;
+  point: { x: number; y: number };
+}
+
+/**
+ * Find the nearest connection point within `threshold` canvas pixels of `point`.
+ * Prefers topmost elements (last in array order).
+ */
+export function hitTestConnectionPoint(
+  point: { x: number; y: number },
+  elements: DiagramElement[],
+  threshold: number,
+): ConnectionPointHit | null {
+  let best: ConnectionPointHit | null = null;
+  let bestDistSq = threshold * threshold;
+
+  for (let i = elements.length - 1; i >= 0; i--) {
+    const el = elements[i];
+    if (el.type === "arrow") continue;
+
+    for (const conn of getElementConnectionPoints(el)) {
+      const dx = point.x - conn.x;
+      const dy = point.y - conn.y;
+      const distSq = dx * dx + dy * dy;
+      if (distSq <= bestDistSq) {
+        bestDistSq = distSq;
+        best = { elementId: el.id, point: conn };
+      }
+    }
+  }
+
+  return best;
 }
 
 // ── Resize handle types ──
