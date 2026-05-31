@@ -4,6 +4,8 @@ import {
   getElementBounds,
   getAnchorPoint,
   getElementCenter,
+  scaleFontSizeForResize,
+  DEFAULT_SHAPE_LABEL_FONT_SIZE,
 } from "@packages/diagram";
 import type { HandlePosition } from "./hit-test";
 import type { CanvasAction } from "./useCanvasReducer";
@@ -147,13 +149,22 @@ function boundsToElementPatch(
 ): Partial<DiagramElement> | null {
   switch (original.type) {
     case "rectangle":
-    case "cylinder":
-      return {
+    case "cylinder": {
+      const patch: Partial<DiagramElement> = {
         x: bounds.x,
         y: bounds.y,
         width: bounds.width,
         height: bounds.height,
       };
+      if (original.text) {
+        patch.fontSize = scaleFontSizeForResize(
+          original.fontSize ?? DEFAULT_SHAPE_LABEL_FONT_SIZE,
+          bounds,
+          resizeStartBounds,
+        );
+      }
+      return patch;
+    }
 
     case "circle": {
       // Circle radius is min(width, height) / 2 to keep it circular
@@ -161,30 +172,33 @@ function boundsToElementPatch(
         MIN_SIZE / 2,
         Math.min(bounds.width, bounds.height) / 2,
       );
-      return {
+      const patch: Partial<DiagramElement> = {
         cx: bounds.x + bounds.width / 2,
         cy: bounds.y + bounds.height / 2,
         radius,
       };
+      if (original.text) {
+        patch.fontSize = scaleFontSizeForResize(
+          original.fontSize ?? DEFAULT_SHAPE_LABEL_FONT_SIZE,
+          bounds,
+          resizeStartBounds,
+        );
+      }
+      return patch;
     }
 
     case "text": {
-      const scaleX =
-        resizeStartBounds.width > 0
-          ? bounds.width / resizeStartBounds.width
-          : 1;
-      const scaleY =
-        resizeStartBounds.height > 0
-          ? bounds.height / resizeStartBounds.height
-          : 1;
-      const scale = Math.sqrt(scaleX * scaleY);
       const baseFontSize = original.fontSize ?? 16;
       return {
         x: bounds.x,
         y: bounds.y,
         width: bounds.width,
         height: bounds.height,
-        fontSize: Math.max(8, baseFontSize * scale),
+        fontSize: scaleFontSizeForResize(
+          baseFontSize,
+          bounds,
+          resizeStartBounds,
+        ),
       };
     }
 

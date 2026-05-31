@@ -8,7 +8,7 @@ import type {
   TextElement,
   Viewport,
 } from "@packages/diagram";
-import { generateSeed, getElementBounds } from "@packages/diagram";
+import { generateSeed, getElementBounds, DEFAULT_SHAPE_LABEL_FONT_SIZE } from "@packages/diagram";
 import { screenToCanvas } from "./coordinate-utils";
 import { hitTest, hitTestResizeHandle, hitTestConnectionPoint } from "./hit-test";
 import type { HandlePosition, ConnectionPointHit } from "./hit-test";
@@ -212,7 +212,7 @@ export function useCanvasInteraction(
         y: bounds.y,
         width: bounds.width,
         height: bounds.height,
-        fontSize: 14,
+        fontSize: element.fontSize ?? DEFAULT_SHAPE_LABEL_FONT_SIZE,
       });
     }
   }, []);

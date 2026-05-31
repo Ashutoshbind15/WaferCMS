@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { DiagramElement } from "@packages/diagram";
-import { getElementRoughPaths, getElementBounds } from "@packages/diagram";
+import { getElementRoughPaths, getElementBounds, DEFAULT_SHAPE_LABEL_FONT_SIZE } from "@packages/diagram";
 import { TextRenderer } from "./TextRenderer";
 
 interface ElementRendererProps {
@@ -68,7 +68,7 @@ export function ElementRenderer({ element, isSelected }: ElementRendererProps) {
             cx={bounds.x + bounds.width / 2}
             cy={bounds.y + bounds.height / 2}
             text={element.text}
-            fontSize={14}
+            fontSize={element.fontSize ?? DEFAULT_SHAPE_LABEL_FONT_SIZE}
           />
         )}
     </g>
