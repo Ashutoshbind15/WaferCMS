@@ -139,9 +139,9 @@ importers:
 
   cms-server:
     dependencies:
-      '@packages/db':
+      '@packages/cms-db':
         specifier: workspace:*
-        version: link:../packages/db
+        version: link:../packages/cms-db
       '@packages/storage':
         specifier: workspace:*
         version: link:../packages/storage
@@ -174,7 +174,7 @@ importers:
         specifier: 4.21.0
         version: 4.21.0
 
-  packages/db:
+  packages/cms-db:
     dependencies:
       dotenv:
         specifier: 17.3.1
@@ -204,6 +204,28 @@ importers:
       zod:
         specifier: 4.3.6
         version: 4.3.6
+
+  packages/portfolio-db:
+    dependencies:
+      dotenv:
+        specifier: 17.3.1
+        version: 17.3.1
+      drizzle-orm:
+        specifier: 0.45.2
+        version: 0.45.2(@types/pg@8.20.0)(pg@8.20.0)
+      pg:
+        specifier: 8.20.0
+        version: 8.20.0
+    devDependencies:
+      '@types/node':
+        specifier: 25.5.0
+        version: 25.5.0
+      '@types/pg':
+        specifier: 8.20.0
+        version: 8.20.0
+      drizzle-kit:
+        specifier: 0.31.10
+        version: 0.31.10
 
   packages/rich-text:
     dependencies:
@@ -269,12 +291,12 @@ importers:
       '@catppuccin/highlightjs':
         specifier: 1.0.1
         version: 1.0.1
-      '@packages/db':
-        specifier: workspace:*
-        version: link:../packages/db
       '@packages/diagram':
         specifier: workspace:*
         version: link:../packages/diagram
+      '@packages/portfolio-db':
+        specifier: workspace:*
+        version: link:../packages/portfolio-db
       '@packages/rich-text':
         specifier: workspace:*
         version: link:../packages/rich-text

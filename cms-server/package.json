@@ -19,7 +19,7 @@
     "tsx": "4.21.0"
   },
   "dependencies": {
-    "@packages/db": "workspace:*",
+    "@packages/cms-db": "workspace:*",
     "@packages/storage": "workspace:*",
     "cors": "2.8.6",
     "dotenv": "17.3.1",

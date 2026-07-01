@@ -5,7 +5,7 @@ import {
   getContentRecord,
   listContentRecords,
   updateContentRecord,
-} from "@packages/db/access";
+} from "@packages/cms-db/access";
 import { parseIdParam, sendRouteError } from "../lib/http";
 
 const router: Router = Router();

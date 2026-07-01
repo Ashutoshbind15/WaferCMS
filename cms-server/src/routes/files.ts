@@ -2,7 +2,7 @@ import { Router } from "express";
 import multer from "multer";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { insertFileMetadata, listFileMetadata } from "@packages/db/access";
+import { insertFileMetadata, listFileMetadata } from "@packages/cms-db/access";
 import { putObject } from "@packages/storage/lib";
 
 const upload = multer({ storage: multer.memoryStorage() });
