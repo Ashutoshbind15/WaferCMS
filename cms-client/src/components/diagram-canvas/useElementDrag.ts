@@ -1,7 +1,11 @@
 import { useCallback, useRef } from "react";
-import type { DiagramElement, Viewport } from "@packages/diagram";
-import { getAnchorPoint, getElementCenter } from "@packages/diagram";
+import type { DiagramElement } from "@packages/diagram";
 import type { CanvasAction } from "./useCanvasReducer";
+import {
+  applyElementPatches,
+  dispatchBoundArrowAnchorUpdates,
+  getBoundArrowAnchorUpdates,
+} from "./arrowAnchors";
 
 interface DragState {
   /** IDs of elements being dragged */
@@ -113,7 +117,16 @@ export function useElementDrag(
       }
 
       if (updates.length > 0) {
-        dispatch({ type: "UPDATE_ELEMENTS", updates });
+        const movedIds = new Set(drag.elementIds);
+        const projectedElements = applyElementPatches(elements, updates);
+        const arrowUpdates = getBoundArrowAnchorUpdates(
+          movedIds,
+          projectedElements,
+        );
+        dispatch({
+          type: "UPDATE_ELEMENTS",
+          updates: [...updates, ...arrowUpdates],
+        });
       }
     },
     [elements, dispatch],
@@ -124,7 +137,7 @@ export function useElementDrag(
 
     // After drag, recalculate arrow anchor points for bound arrows
     const draggedIds = new Set(dragRef.current.elementIds);
-    recalculateArrowAnchors(draggedIds, elements, dispatch);
+    dispatchBoundArrowAnchorUpdates(draggedIds, elements, dispatch);
 
     dragRef.current = null;
     return true;
@@ -133,60 +146,4 @@ export function useElementDrag(
   const isDragging = useCallback(() => dragRef.current !== null, []);
 
   return { startDrag, continueDrag, endDrag, isDragging };
-}
-
-/**
- * After moving elements, recalculate anchor points for any arrows
- * bound to those elements.
- */
-function recalculateArrowAnchors(
-  movedIds: Set<string>,
-  elements: DiagramElement[],
-  dispatch: React.Dispatch<CanvasAction>,
-) {
-  const updates: { id: string; patch: Partial<DiagramElement> }[] = [];
-
-  for (const el of elements) {
-    if (el.type !== "arrow") continue;
-
-    const startBound = el.startBinding && movedIds.has(el.startBinding);
-    const endBound = el.endBinding && movedIds.has(el.endBinding);
-
-    if (!startBound && !endBound) continue;
-
-    const patch: Record<string, number | undefined> = {};
-    const startTarget = el.startBinding
-      ? elements.find((e) => e.id === el.startBinding)
-      : null;
-    const endTarget = el.endBinding
-      ? elements.find((e) => e.id === el.endBinding)
-      : null;
-
-    // Determine the "other" end's position for anchor calculation
-    if (startBound && startTarget && startTarget.type !== "arrow") {
-      const otherEnd = endTarget
-        ? getElementCenter(endTarget)
-        : { x: el.endX, y: el.endY };
-      const anchor = getAnchorPoint(startTarget, otherEnd);
-      patch.startX = anchor.x;
-      patch.startY = anchor.y;
-    }
-
-    if (endBound && endTarget && endTarget.type !== "arrow") {
-      const otherEnd = startTarget
-        ? getElementCenter(startTarget)
-        : { x: el.startX, y: el.startY };
-      const anchor = getAnchorPoint(endTarget, otherEnd);
-      patch.endX = anchor.x;
-      patch.endY = anchor.y;
-    }
-
-    if (Object.keys(patch).length > 0) {
-      updates.push({ id: el.id, patch });
-    }
-  }
-
-  if (updates.length > 0) {
-    dispatch({ type: "UPDATE_ELEMENTS", updates });
-  }
 }

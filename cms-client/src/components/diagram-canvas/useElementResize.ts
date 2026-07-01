@@ -2,13 +2,16 @@ import { useCallback, useRef } from "react";
 import type { DiagramElement, Bounds } from "@packages/diagram";
 import {
   getElementBounds,
-  getAnchorPoint,
-  getElementCenter,
   scaleFontSizeForResize,
   DEFAULT_SHAPE_LABEL_FONT_SIZE,
 } from "@packages/diagram";
 import type { HandlePosition } from "./hit-test";
 import type { CanvasAction } from "./useCanvasReducer";
+import {
+  applyElementPatches,
+  dispatchBoundArrowAnchorUpdates,
+  getBoundArrowAnchorUpdates,
+} from "./arrowAnchors";
 
 /** Minimum size constraint for shapes */
 const MIN_SIZE = 20;
@@ -71,10 +74,19 @@ export function useElementResize(
         resize.startBounds,
       );
       if (patch) {
-        dispatch({ type: "UPDATE_ELEMENT", id: resize.elementId, patch });
+        const elementUpdates = [{ id: resize.elementId, patch }];
+        const projectedElements = applyElementPatches(elements, elementUpdates);
+        const arrowUpdates = getBoundArrowAnchorUpdates(
+          new Set([resize.elementId]),
+          projectedElements,
+        );
+        dispatch({
+          type: "UPDATE_ELEMENTS",
+          updates: [...elementUpdates, ...arrowUpdates],
+        });
       }
     },
-    [dispatch],
+    [elements, dispatch],
   );
 
   const endResize = useCallback(() => {
@@ -82,7 +94,7 @@ export function useElementResize(
 
     // Recalculate bound arrow anchors after resize
     const resizedId = resizeRef.current.elementId;
-    recalculateArrowAnchorsForElement(resizedId, elements, dispatch);
+    dispatchBoundArrowAnchorUpdates(new Set([resizedId]), elements, dispatch);
 
     resizeRef.current = null;
     return true;
@@ -205,59 +217,5 @@ function boundsToElementPatch(
     case "arrow":
       // Arrows aren't resized via handles
       return null;
-  }
-}
-
-/**
- * After resizing an element, recalculate anchors for arrows bound to it.
- */
-function recalculateArrowAnchorsForElement(
-  resizedId: string,
-  elements: DiagramElement[],
-  dispatch: React.Dispatch<CanvasAction>,
-) {
-  const updates: { id: string; patch: Partial<DiagramElement> }[] = [];
-
-  for (const el of elements) {
-    if (el.type !== "arrow") continue;
-    if (el.startBinding !== resizedId && el.endBinding !== resizedId) continue;
-
-    const patch: Record<string, number> = {};
-    const startTarget = el.startBinding
-      ? elements.find((e) => e.id === el.startBinding)
-      : null;
-    const endTarget = el.endBinding
-      ? elements.find((e) => e.id === el.endBinding)
-      : null;
-
-    if (
-      el.startBinding === resizedId &&
-      startTarget &&
-      startTarget.type !== "arrow"
-    ) {
-      const otherEnd = endTarget
-        ? getElementCenter(endTarget)
-        : { x: el.endX, y: el.endY };
-      const anchor = getAnchorPoint(startTarget, otherEnd);
-      patch.startX = anchor.x;
-      patch.startY = anchor.y;
-    }
-
-    if (el.endBinding === resizedId && endTarget && endTarget.type !== "arrow") {
-      const otherEnd = startTarget
-        ? getElementCenter(startTarget)
-        : { x: el.startX, y: el.startY };
-      const anchor = getAnchorPoint(endTarget, otherEnd);
-      patch.endX = anchor.x;
-      patch.endY = anchor.y;
-    }
-
-    if (Object.keys(patch).length > 0) {
-      updates.push({ id: el.id, patch });
-    }
-  }
-
-  if (updates.length > 0) {
-    dispatch({ type: "UPDATE_ELEMENTS", updates });
   }
 }
