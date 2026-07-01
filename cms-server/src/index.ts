@@ -1,7 +1,6 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import blogRouter from "./routes/blog";
 import contentRouter from "./routes/content";
 import diagramsRouter from "./routes/diagrams";
 import filesRouter from "./routes/files";
@@ -15,7 +14,6 @@ app.get("/ok", (req, res) => {
   res.send("CMS Server is running");
 });
 
-app.use("/blog", blogRouter);
 app.use("/content", contentRouter);
 app.use("/diagrams", diagramsRouter);
 app.use("/files", filesRouter);

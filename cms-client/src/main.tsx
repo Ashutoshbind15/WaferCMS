@@ -14,10 +14,6 @@ import DiagramsListPage from "./pages/diagrams/diagrams-list";
 import DiagramCreatePage from "./pages/diagrams/diagram-create";
 import DiagramEditorPage from "./pages/diagrams/diagram-editor";
 import LibraryPage from "./pages/library/library-page";
-import BlogsListPage from "./pages/blogs/blogs-list";
-import BlogCreatePage from "./pages/blogs/blog-create";
-import BlogEditorPage from "./pages/blogs/blog-editor";
-
 function RootLayout() {
   return (
     <>
@@ -47,10 +43,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="diagrams/:id" element={<DiagramEditorPage />} />
 
             <Route path="library" element={<LibraryPage />} />
-
-            <Route path="blogs" element={<BlogsListPage />} />
-            <Route path="blogs/new" element={<BlogCreatePage />} />
-            <Route path="blogs/:id" element={<BlogEditorPage />} />
           </Route>
         </Routes>
       </SidebarProvider>

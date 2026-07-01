@@ -13,40 +13,6 @@ type EntityRecord = {
 export type ContentRecord = EntityRecord;
 export type DiagramRecord = EntityRecord;
 
-export type BlogBlockReference = {
-  type: "content" | "diagram";
-  refId: number;
-};
-
-export type BlogListBlockRecord = BlogBlockReference & {
-  blockId: number;
-  order: number;
-  title: string;
-};
-
-export type BlogListRecord = {
-  id: number;
-  title: string;
-  createdAt: string;
-  updatedAt: string;
-  blocks: BlogListBlockRecord[];
-};
-
-export type BlogBlockRecord = BlogBlockReference & {
-  blockId: number;
-  order: number;
-  title: string;
-  payload: unknown;
-};
-
-export type BlogRecord = {
-  id: number;
-  title: string;
-  createdAt: string;
-  updatedAt: string;
-  blocks: BlogBlockRecord[];
-};
-
 export type LibraryFileRecord = {
   id: number;
   objectKey: string;
@@ -156,40 +122,6 @@ export async function updateDiagram(
 
 export async function deleteDiagram(id: number) {
   return deleteJson(`${base}/diagrams/${id}`, { method: "DELETE" });
-}
-
-export async function fetchBlogList(): Promise<BlogListRecord[]> {
-  return requestJson<BlogListRecord[]>(`${base}/blog`);
-}
-
-export async function fetchBlog(id: number): Promise<BlogRecord> {
-  return requestJson<BlogRecord>(`${base}/blog/${id}`);
-}
-
-export async function createBlog(input: {
-  title: string;
-  blocks: BlogBlockReference[];
-}): Promise<BlogRecord> {
-  return requestJson<BlogRecord>(`${base}/blog`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
-  });
-}
-
-export async function updateBlog(
-  id: number,
-  input: { title: string; blocks: BlogBlockReference[] },
-): Promise<BlogRecord> {
-  return requestJson<BlogRecord>(`${base}/blog/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
-  });
-}
-
-export async function deleteBlog(id: number) {
-  return deleteJson(`${base}/blog/${id}`, { method: "DELETE" });
 }
 
 export async function fetchLibraryFiles(): Promise<LibraryFileRecord[]> {

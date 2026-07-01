@@ -1,5 +1,5 @@
 import { NavLink, useMatch } from "react-router";
-import { FileText, PenTool, BookOpen, ImageIcon, Plus } from "lucide-react";
+import { FileText, PenTool, ImageIcon, Plus } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -20,9 +20,6 @@ export function AppSidebar() {
 
   const diagramsList = useMatch({ path: "/diagrams", end: true });
   const diagramById = useMatch("/diagrams/:id");
-
-  const blogsList = useMatch({ path: "/blogs", end: true });
-  const blogNew = useMatch("/blogs/new");
 
   const library = useMatch({ path: "/library", end: true });
 
@@ -93,38 +90,6 @@ export function AppSidebar() {
                   <NavLink to="/diagrams">
                     <PenTool />
                     <span>All diagrams</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Blogs</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={Boolean(blogsList)}
-                  tooltip="All posts"
-                >
-                  <NavLink to="/blogs" end>
-                    <BookOpen />
-                    <span>All posts</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={Boolean(blogNew)}
-                  tooltip="New post"
-                >
-                  <NavLink to="/blogs/new">
-                    <Plus />
-                    <span>New post</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
