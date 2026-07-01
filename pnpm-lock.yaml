@@ -48,6 +48,9 @@ importers:
       '@packages/diagram':
         specifier: workspace:*
         version: link:../packages/diagram
+      '@packages/diagram-react':
+        specifier: workspace:*
+        version: link:../packages/diagram-react
       '@packages/rich-text':
         specifier: workspace:*
         version: link:../packages/rich-text
@@ -102,9 +105,6 @@ importers:
       react-router:
         specifier: 7.15.1
         version: 7.15.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      roughjs:
-        specifier: 4.6.6
-        version: 4.6.6
       shadcn:
         specifier: 4.1.1
         version: 4.1.1(@types/node@25.5.0)(typescript@6.0.2)
@@ -205,6 +205,31 @@ importers:
         specifier: 4.3.6
         version: 4.3.6
 
+  packages/diagram-react:
+    dependencies:
+      '@packages/diagram':
+        specifier: workspace:*
+        version: link:../diagram
+      lucide-react:
+        specifier: 1.7.0
+        version: 1.7.0(react@19.2.4)
+      react:
+        specifier: 19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: 19.2.4
+        version: 19.2.4(react@19.2.4)
+    devDependencies:
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: 19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      typescript:
+        specifier: 6.0.2
+        version: 6.0.2
+
   packages/portfolio-db:
     dependencies:
       dotenv:
@@ -294,6 +319,9 @@ importers:
       '@packages/diagram':
         specifier: workspace:*
         version: link:../packages/diagram
+      '@packages/diagram-react':
+        specifier: workspace:*
+        version: link:../packages/diagram-react
       '@packages/portfolio-db':
         specifier: workspace:*
         version: link:../packages/portfolio-db

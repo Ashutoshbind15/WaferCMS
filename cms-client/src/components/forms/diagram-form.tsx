@@ -2,7 +2,7 @@ import { Header } from "@/components/layout/header";
 import { PageContainer } from "@/components/layout/page-container";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { DiagramCanvas } from "@/components/diagram-canvas";
+import { DiagramCanvas } from "@packages/diagram-react/editor";
 import type { DiagramDocument } from "@packages/diagram";
 import { ArrowLeft } from "lucide-react";
 
