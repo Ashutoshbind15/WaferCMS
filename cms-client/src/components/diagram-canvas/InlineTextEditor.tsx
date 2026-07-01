@@ -39,8 +39,12 @@ const MIN_HEIGHT = 24;
  * Inline text editor overlay rendered inside the SVG via `<foreignObject>`.
  * - Auto-focuses on mount
  * - Commits on blur or Escape
- * - For shape labels: Enter commits (single-line)
- * - For standalone text: Enter inserts newline, Escape or blur commits
+ * - Enter inserts a newline (multi-line text)
+ *
+ * Shape labels are rendered "in place": a transparent, borderless textarea
+ * centered within the shape's bounds so it looks like the text is being
+ * typed directly into the shape itself, rather than an opaque box sitting
+ * on top of it.
  */
 export function InlineTextEditor({
   target,
@@ -48,6 +52,17 @@ export function InlineTextEditor({
   onCancel,
 }: InlineTextEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const isShapeLabel = target.kind === "shape-label";
+
+  // Auto-resize the textarea to fit its content (shape labels only —
+  // standalone text has a fixed, user-resizable box via CSS `resize`).
+  const autoGrow = useCallback(() => {
+    if (!isShapeLabel) return;
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }, [isShapeLabel]);
 
   // Auto-focus on mount
   useEffect(() => {
@@ -59,8 +74,9 @@ export function InlineTextEditor({
       textarea.focus();
       // Select all text for easy replacement
       textarea.select();
+      autoGrow();
     });
-  }, []);
+  }, [autoGrow]);
 
   const handleCommit = useCallback(() => {
     const value = textareaRef.current?.value ?? "";
@@ -74,21 +90,16 @@ export function InlineTextEditor({
       if (e.key === "Escape") {
         e.preventDefault();
         handleCommit();
-        return;
       }
 
-      // For shape labels: Enter commits (single-line)
-      if (e.key === "Enter" && target.kind === "shape-label") {
-        e.preventDefault();
-        handleCommit();
-        return;
-      }
-
-      // For standalone text: Enter inserts a newline (default textarea behavior)
-      // No special handling needed
+      // Enter inserts a newline (default textarea behavior)
     },
-    [target.kind, handleCommit],
+    [handleCommit],
   );
+
+  const handleInput = useCallback(() => {
+    autoGrow();
+  }, [autoGrow]);
 
   const handleBlur = useCallback(() => {
     handleCommit();
@@ -101,6 +112,57 @@ export function InlineTextEditor({
 
   const editorWidth = Math.max(target.width, MIN_WIDTH);
   const editorHeight = Math.max(target.height, MIN_HEIGHT);
+
+  // Shape labels: render "in place" — a borderless, transparent textarea
+  // that grows with content and is centered within the shape's bounds.
+  if (isShapeLabel) {
+    return (
+      <foreignObject
+        x={target.x}
+        y={target.y}
+        width={editorWidth}
+        height={editorHeight}
+        style={{ overflow: "visible" }}
+      >
+        <div
+          style={{
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxSizing: "border-box",
+          }}
+        >
+          <textarea
+            ref={textareaRef}
+            defaultValue={target.text}
+            onKeyDown={handleKeyDown}
+            onInput={handleInput}
+            onBlur={handleBlur}
+            onPointerDown={handlePointerDown}
+            rows={1}
+            style={{
+              width: "100%",
+              fontSize: `${target.fontSize}px`,
+              fontFamily: "'Segoe UI', system-ui, sans-serif",
+              lineHeight: "1.2",
+              padding: "0",
+              margin: "0",
+              border: "none",
+              background: "transparent",
+              color: "inherit",
+              outline: "none",
+              resize: "none",
+              overflow: "visible",
+              textAlign: "center",
+              boxSizing: "border-box",
+            }}
+          />
+        </div>
+      </foreignObject>
+    );
+  }
 
   return (
     <foreignObject
@@ -134,8 +196,7 @@ export function InlineTextEditor({
           resize: "both",
           overflow: "auto",
           boxSizing: "border-box",
-          // For shape labels, center the text
-          textAlign: target.kind === "shape-label" ? "center" : "left",
+          textAlign: "left",
         }}
       />
     </foreignObject>

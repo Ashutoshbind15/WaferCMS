@@ -1,11 +1,18 @@
 import { useMemo } from "react";
 import type { DiagramElement } from "@packages/diagram";
-import { getElementRoughPaths, getElementBounds, DEFAULT_SHAPE_LABEL_FONT_SIZE } from "@packages/diagram";
+import {
+  getElementRoughPaths,
+  getElementBounds,
+  DEFAULT_SHAPE_LABEL_FONT_SIZE,
+  DEFAULT_TEXT_FONT_SIZE,
+} from "@packages/diagram";
 import { TextRenderer } from "./TextRenderer";
 
 interface ElementRendererProps {
   element: DiagramElement;
   isSelected: boolean;
+  /** When true, skip rendering text so the inline editor doesn't overlap it */
+  isEditingText?: boolean;
 }
 
 /**
@@ -18,7 +25,11 @@ interface ElementRendererProps {
  * Note: pointer events are handled at the canvas level via hit-testing,
  * not per-element. The `data-element-id` attribute is for identification only.
  */
-export function ElementRenderer({ element, isSelected }: ElementRendererProps) {
+export function ElementRenderer({
+  element,
+  isSelected,
+  isEditingText = false,
+}: ElementRendererProps) {
   const paths = useMemo(() => getElementRoughPaths(element), [element]);
   const bounds = useMemo(() => getElementBounds(element), [element]);
 
@@ -48,18 +59,19 @@ export function ElementRenderer({ element, isSelected }: ElementRendererProps) {
       ))}
 
       {/* Standalone text elements — multi-line support */}
-      {element.type === "text" && (
+      {element.type === "text" && !isEditingText && (
         <TextRenderer
           mode="standalone"
           x={element.x}
           y={element.y}
           text={element.text}
-          fontSize={element.fontSize ?? 16}
+          fontSize={element.fontSize ?? DEFAULT_TEXT_FONT_SIZE}
         />
       )}
 
       {/* Shape labels — centered multi-line text */}
-      {element.type !== "text" &&
+      {!isEditingText &&
+        element.type !== "text" &&
         element.type !== "arrow" &&
         "text" in element &&
         element.text && (

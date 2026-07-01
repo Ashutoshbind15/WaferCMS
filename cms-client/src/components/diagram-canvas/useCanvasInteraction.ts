@@ -8,7 +8,12 @@ import type {
   TextElement,
   Viewport,
 } from "@packages/diagram";
-import { generateSeed, getElementBounds, DEFAULT_SHAPE_LABEL_FONT_SIZE } from "@packages/diagram";
+import {
+  generateSeed,
+  getElementBounds,
+  DEFAULT_SHAPE_LABEL_FONT_SIZE,
+  DEFAULT_TEXT_FONT_SIZE,
+} from "@packages/diagram";
 import { screenToCanvas } from "./coordinate-utils";
 import { hitTest, hitTestResizeHandle, hitTestConnectionPoint } from "./hit-test";
 import type { HandlePosition, ConnectionPointHit } from "./hit-test";
@@ -22,7 +27,6 @@ import type { EditingTarget } from "./InlineTextEditor";
 const DEFAULT_RECT_SIZE = { width: 150, height: 80 };
 const DEFAULT_CIRCLE_RADIUS = 50;
 const DEFAULT_CYLINDER_SIZE = { width: 100, height: 120 };
-const DEFAULT_TEXT_FONT_SIZE = 16;
 
 /** Handle half-size in canvas-space pixels */
 const HANDLE_SIZE = 5;
@@ -327,9 +331,22 @@ export function useCanvasInteraction(
         return;
       }
 
-      // Text tool: create a new text element and immediately enter editing
+      // Text tool: clicking directly on an existing element inserts/edits
+      // text within that element (its "parent") in place, rather than
+      // stacking an unrelated standalone text element on top of it.
       if (tool === "text") {
         e.preventDefault();
+
+        const hitElement = hitTest(canvasPoint, elements);
+        if (hitElement && hitElement.type !== "arrow") {
+          dispatch({ type: "SET_TOOL", tool: "select" });
+          dispatch({ type: "SET_SELECTION", ids: [hitElement.id] });
+          openTextEditor(hitElement);
+          return;
+        }
+
+        // Empty canvas: create a new standalone text element
+        // todo [medium]: not working atm.
         const elementId = crypto.randomUUID();
         const seed = generateSeed();
         const fontSize = DEFAULT_TEXT_FONT_SIZE;
@@ -498,6 +515,7 @@ export function useCanvasInteraction(
       startDrag,
       startResize,
       editingTarget,
+      openTextEditor,
     ],
   );
 

@@ -1,8 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import type { DiagramDocument } from "@packages/diagram";
+import {
+  getElementBounds,
+  DEFAULT_SHAPE_LABEL_FONT_SIZE,
+  DEFAULT_TEXT_FONT_SIZE,
+} from "@packages/diagram";
 import { useCanvasReducer } from "./useCanvasReducer";
 import { getViewBox } from "./coordinate-utils";
-import { screenToCanvas } from "./coordinate-utils";
+import { screenToCanvas, canvasToScreen } from "./coordinate-utils";
 import { GridBackground } from "./GridBackground";
 import { ElementRenderer } from "./ElementRenderer";
 import { SelectionOverlay } from "./SelectionOverlay";
@@ -11,6 +16,7 @@ import { ConnectionPoints } from "./ConnectionPoints";
 import { ArrowPreview } from "./ArrowPreview";
 import { InlineTextEditor } from "./InlineTextEditor";
 import { Toolbar } from "./Toolbar";
+import { FontSizePopup } from "./FontSizePopup";
 import { useCanvasInteraction } from "./useCanvasInteraction";
 
 // ── Zoom limits ──
@@ -155,6 +161,47 @@ export function DiagramCanvas({
   // Handle size in canvas-space (adjust for zoom)
   const handleSizeCanvas = handleSize / state.document.viewport.zoom;
 
+  // ── Font size popup: shown for a single selected element that has
+  // (or can have) text, so its font size can be changed independently
+  // of the parent element's width/height. ──
+  const fontSizeElement =
+    !editingTarget &&
+    singleSelectedElement &&
+    singleSelectedElement.type !== "arrow" &&
+    (singleSelectedElement.type === "text" ||
+      ("text" in singleSelectedElement && !!singleSelectedElement.text))
+      ? singleSelectedElement
+      : null;
+
+  let fontSizePopup: React.ReactNode = null;
+  if (fontSizeElement) {
+    const bounds = getElementBounds(fontSizeElement);
+    const anchor = canvasToScreen(
+      bounds.x + bounds.width / 2,
+      bounds.y,
+      state.document.viewport,
+      size,
+    );
+    const defaultFontSize =
+      fontSizeElement.type === "text"
+        ? DEFAULT_TEXT_FONT_SIZE
+        : DEFAULT_SHAPE_LABEL_FONT_SIZE;
+    fontSizePopup = (
+      <FontSizePopup
+        fontSize={fontSizeElement.fontSize ?? defaultFontSize}
+        screenX={anchor.x}
+        screenY={anchor.y}
+        onChange={(fontSize) =>
+          dispatch({
+            type: "UPDATE_ELEMENT",
+            id: fontSizeElement.id,
+            patch: { fontSize },
+          })
+        }
+      />
+    );
+  }
+
   return (
     <div className="flex h-full flex-col">
       {/* Toolbar */}
@@ -193,6 +240,7 @@ export function DiagramCanvas({
               key={el.id}
               element={el}
               isSelected={state.selectedIds.has(el.id)}
+              isEditingText={editingTarget?.elementId === el.id}
             />
           ))}
 
@@ -203,7 +251,8 @@ export function DiagramCanvas({
           />
 
           {/* Resize handles for single selected element */}
-          {singleSelectedElement &&
+          {!editingTarget &&
+            singleSelectedElement &&
             singleSelectedElement.type !== "arrow" && (
               <ResizeHandles
                 element={singleSelectedElement}
@@ -213,7 +262,7 @@ export function DiagramCanvas({
             )}
 
           {/* Connection points while arrow tool is active */}
-          {state.tool === "arrow" && (
+          {!editingTarget && state.tool === "arrow" && (
             <ConnectionPoints
               elements={state.document.elements}
               pointRadius={handleSizeCanvas}
@@ -242,6 +291,9 @@ export function DiagramCanvas({
             />
           )}
         </svg>
+
+        {/* Font size popup for the selected text-bearing element */}
+        {fontSizePopup}
       </div>
     </div>
   );
