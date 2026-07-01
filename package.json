@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev:all": "pnpm --parallel --filter cms-server --filter cms-client --filter portfolio run dev",
     "dev:cms-server": "pnpm --filter cms-server run dev",
     "dev:cms-client": "pnpm --filter cms-client run dev",
     "dev:portfolio": "pnpm --filter portfolio run dev",
