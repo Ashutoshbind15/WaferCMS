@@ -1,5 +1,5 @@
-import { EMPTY_DOCUMENT, parseDiagramDocument } from "@packages/diagram";
-import type { DiagramDocument } from "@packages/diagram";
+import { EMPTY_DOCUMENT, parseDiagramDocument } from "@scribblesvg/core";
+import type { DiagramDocument } from "@scribblesvg/core";
 
 /**
  * Safely parse a DB payload into a DiagramDocument.

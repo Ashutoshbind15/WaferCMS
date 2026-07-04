@@ -45,15 +45,15 @@ importers:
       '@fontsource-variable/inter':
         specifier: 5.2.8
         version: 5.2.8
-      '@packages/diagram':
-        specifier: workspace:*
-        version: link:../packages/diagram
-      '@packages/diagram-react':
-        specifier: workspace:*
-        version: link:../packages/diagram-react
       '@packages/rich-text':
         specifier: workspace:*
         version: link:../packages/rich-text
+      '@scribblesvg/core':
+        specifier: 0.1.0
+        version: 0.1.0
+      '@scribblesvg/react-utils':
+        specifier: 0.1.0
+        version: 0.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@tailwindcss/vite':
         specifier: 4.2.2
         version: 4.2.2(vite@8.0.16(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(tsx@4.21.0))
@@ -196,40 +196,6 @@ importers:
         specifier: 0.31.10
         version: 0.31.10
 
-  packages/diagram:
-    dependencies:
-      roughjs:
-        specifier: 4.6.6
-        version: 4.6.6
-      zod:
-        specifier: 4.3.6
-        version: 4.3.6
-
-  packages/diagram-react:
-    dependencies:
-      '@packages/diagram':
-        specifier: workspace:*
-        version: link:../diagram
-      lucide-react:
-        specifier: 1.7.0
-        version: 1.7.0(react@19.2.4)
-      react:
-        specifier: 19.2.4
-        version: 19.2.4
-      react-dom:
-        specifier: 19.2.4
-        version: 19.2.4(react@19.2.4)
-    devDependencies:
-      '@types/react':
-        specifier: 19.2.14
-        version: 19.2.14
-      '@types/react-dom':
-        specifier: 19.2.3
-        version: 19.2.3(@types/react@19.2.14)
-      typescript:
-        specifier: 6.0.2
-        version: 6.0.2
-
   packages/portfolio-db:
     dependencies:
       dotenv:
@@ -316,18 +282,18 @@ importers:
       '@catppuccin/highlightjs':
         specifier: 1.0.1
         version: 1.0.1
-      '@packages/diagram':
-        specifier: workspace:*
-        version: link:../packages/diagram
-      '@packages/diagram-react':
-        specifier: workspace:*
-        version: link:../packages/diagram-react
       '@packages/portfolio-db':
         specifier: workspace:*
         version: link:../packages/portfolio-db
       '@packages/rich-text':
         specifier: workspace:*
         version: link:../packages/rich-text
+      '@scribblesvg/core':
+        specifier: 0.1.0
+        version: 0.1.0
+      '@scribblesvg/react-utils':
+        specifier: 0.1.0
+        version: 0.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@tabler/icons-react':
         specifier: 3.41.1
         version: 3.41.1(react@19.2.4)
@@ -2170,6 +2136,15 @@ packages:
 
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
+
+  '@scribblesvg/core@0.1.0':
+    resolution: {integrity: sha512-+wwZ7hJIg1n951gFoAGtLBwOP4myC3OUYlb4jmD67FI1oSQBwNKjIY1YD0Jj6dAxvhaQtvA0IsDpNZa77XtBRw==}
+
+  '@scribblesvg/react-utils@0.1.0':
+    resolution: {integrity: sha512-AqGM8uOUrHnwVgeIMgOpuPhDqWJyaJ0YCjHS63skfp3TMog134fcZQJnD2+R7NAGShOW8T0EcWoHEd3BDTqEzw==}
+    peerDependencies:
+      react: ^18.0.0 || ^19.0.0
+      react-dom: ^18.0.0 || ^19.0.0
 
   '@sec-ant/readable-stream@0.4.1':
     resolution: {integrity: sha512-831qok9r2t8AlxLko40y2ebgSDhenenCatLVeW/uBtnHPyhHOvG0C7TvfgecV+wHzIm5KUICgzmVpWS+IMEAeg==}
@@ -6585,6 +6560,18 @@ snapshots:
   '@rolldown/pluginutils@1.0.0-rc.7': {}
 
   '@rolldown/pluginutils@1.0.1': {}
+
+  '@scribblesvg/core@0.1.0':
+    dependencies:
+      roughjs: 4.6.6
+      zod: 4.3.6
+
+  '@scribblesvg/react-utils@0.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
+    dependencies:
+      '@scribblesvg/core': 0.1.0
+      lucide-react: 1.7.0(react@19.2.4)
+      react: 19.2.4
+      react-dom: 19.2.4(react@19.2.4)
 
   '@sec-ant/readable-stream@0.4.1': {}
 

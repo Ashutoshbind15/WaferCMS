@@ -4,6 +4,8 @@ packages:
   - "portfolio"
   - "packages/*"
 minimumReleaseAge: 7200
+minimumReleaseAgeExclude:
+  - "@scribblesvg/*"
 overrides:
   '@hono/node-server@<1.19.13': '>=1.19.13'
   brace-expansion@>=5.0.0 <5.0.6: '>=5.0.6'

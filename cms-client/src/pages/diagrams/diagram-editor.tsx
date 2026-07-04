@@ -3,8 +3,8 @@ import { useNavigate, useParams } from "react-router";
 import { fetchDiagram, updateDiagram } from "@/lib/cms-api";
 import { toast } from "sonner";
 import { DiagramForm } from "../../components/forms/diagram-form";
-import type { DiagramDocument } from "@packages/diagram";
-import { EMPTY_DOCUMENT } from "@packages/diagram";
+import type { DiagramDocument } from "@scribblesvg/core";
+import { EMPTY_DOCUMENT } from "@scribblesvg/core";
 import { parsePayload, diagramSnapshot } from "./diagram-utils";
 
 const EMPTY_SNAPSHOT = diagramSnapshot("", EMPTY_DOCUMENT);

@@ -2,8 +2,8 @@ import { Header } from "@/components/layout/header";
 import { PageContainer } from "@/components/layout/page-container";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { DiagramCanvas } from "@packages/diagram-react/editor";
-import type { DiagramDocument } from "@packages/diagram";
+import { DiagramCanvas } from "@scribblesvg/react-utils/editor";
+import type { DiagramDocument } from "@scribblesvg/core";
 import { ArrowLeft } from "lucide-react";
 
 type DiagramFormProps = {

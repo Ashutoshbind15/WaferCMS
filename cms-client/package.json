@@ -21,8 +21,8 @@
   },
   "dependencies": {
     "@packages/rich-text": "workspace:*",
-    "@packages/diagram": "workspace:*",
-    "@packages/diagram-react": "workspace:*",
+    "@scribblesvg/core": "0.1.0",
+    "@scribblesvg/react-utils": "0.1.0",
     "@catppuccin/highlightjs": "1.0.1",
     "@fontsource-variable/inter": "5.2.8",
     "@tailwindcss/vite": "4.2.2",
