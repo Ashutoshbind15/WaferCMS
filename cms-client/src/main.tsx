@@ -15,6 +15,7 @@ import DiagramsListPage from "./pages/diagrams/diagrams-list";
 import DiagramCreatePage from "./pages/diagrams/diagram-create";
 import DiagramEditorPage from "./pages/diagrams/diagram-editor";
 import LibraryPage from "./pages/library/library-page";
+import ApiKeysPage from "./pages/api-keys/api-keys-page";
 function RootLayout() {
   return (
     <>
@@ -44,6 +45,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="diagrams/:id" element={<DiagramEditorPage />} />
 
             <Route path="library" element={<LibraryPage />} />
+
+            <Route path="api-keys" element={<ApiKeysPage />} />
           </Route>
         </Routes>
       </SidebarProvider>

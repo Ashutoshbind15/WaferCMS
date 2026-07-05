@@ -1,5 +1,5 @@
 import { NavLink, useMatch } from "react-router";
-import { FileText, PenTool, ImageIcon, Plus } from "lucide-react";
+import { FileText, PenTool, ImageIcon, Plus, KeyRound } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -22,6 +22,7 @@ export function AppSidebar() {
   const diagramById = useMatch("/diagrams/:id");
 
   const library = useMatch({ path: "/library", end: true });
+  const apiKeys = useMatch({ path: "/api-keys", end: true });
 
   const diagramsActive = Boolean(diagramsList || diagramById);
 
@@ -110,6 +111,26 @@ export function AppSidebar() {
                   <NavLink to="/library">
                     <ImageIcon />
                     <span>Library</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Settings</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={Boolean(apiKeys)}
+                  tooltip="API keys"
+                >
+                  <NavLink to="/api-keys">
+                    <KeyRound />
+                    <span>API keys</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>

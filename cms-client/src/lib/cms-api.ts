@@ -228,3 +228,43 @@ export function uploadLibraryFile(
     xhr.send(body);
   });
 }
+
+export type ApiKeyScope = "read" | "write" | "read_write";
+
+export type ApiKeyRecord = {
+  id: number;
+  label: string;
+  keyPrefix: string;
+  scope: ApiKeyScope;
+  enabled: boolean;
+  createdAt: string;
+  lastUsedAt: string | null;
+};
+
+export type CreatedApiKeyRecord = ApiKeyRecord & {
+  rawKey: string;
+};
+
+export async function fetchApiKeys(): Promise<ApiKeyRecord[]> {
+  const result = await requestJson<{ data: ApiKeyRecord[] }>(`${base}/api-keys`);
+  return result.data;
+}
+
+export async function createApiKey(input: {
+  label: string;
+  scope: ApiKeyScope;
+}): Promise<CreatedApiKeyRecord> {
+  return requestJson<CreatedApiKeyRecord>(`${base}/api-keys`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function revokeApiKey(id: number): Promise<ApiKeyRecord> {
+  return requestJson<ApiKeyRecord>(`${base}/api-keys/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ enabled: false }),
+  });
+}

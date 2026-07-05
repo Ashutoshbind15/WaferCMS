@@ -11,8 +11,13 @@ export const parseIdParam = (value: string): number => {
 export const sendRouteError = (res: Response, error: unknown) => {
   const message = error instanceof Error ? error.message : "Unexpected error";
 
-  if (message === "Invalid id." || message === "Title is required.") {
+  if (message === "Invalid id." || message === "Title is required." || message === "Label is required.") {
     res.status(400).json({ error: message });
+    return;
+  }
+
+  if (message.startsWith("API key ") && message.endsWith(" not found.")) {
+    res.status(404).json({ error: message });
     return;
   }
 

@@ -1,4 +1,11 @@
-import { integer, json, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  integer,
+  json,
+  pgTable,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
 
 export const blogContent = pgTable("blog_content", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -25,4 +32,18 @@ export const fileMetadata = pgTable("file_metadata", {
   contentType: text(),
   byteLength: integer().notNull(),
   createdAt: timestamp().notNull().defaultNow(),
+});
+
+export const apiKeyScopeValues = ["read", "write", "read_write"] as const;
+export type ApiKeyScope = (typeof apiKeyScopeValues)[number];
+
+export const apiKey = pgTable("api_key", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  label: text().notNull(),
+  keyPrefix: text().notNull(),
+  keyHash: text().notNull().unique(),
+  scope: text().notNull().$type<ApiKeyScope>(),
+  enabled: boolean().notNull().default(true),
+  createdAt: timestamp().notNull().defaultNow(),
+  lastUsedAt: timestamp(),
 });
