@@ -6,13 +6,14 @@ import {
   listDiagramRecords,
   updateDiagramRecord,
 } from "@packages/cms-db/access";
+import { parseListQuery } from "../lib/pagination";
 import { parseIdParam, sendRouteError } from "../lib/http";
 
 const router: Router = Router();
 
-router.get("/", async (_req, res) => {
+router.get("/", async (req, res) => {
   try {
-    const result = await listDiagramRecords();
+    const result = await listDiagramRecords(parseListQuery(req.query));
     res.json(result);
   } catch (error) {
     sendRouteError(res, error);

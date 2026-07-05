@@ -10,6 +10,41 @@ type EntityRecord = {
   updatedAt: string;
 };
 
+export type PagePagination = {
+  mode: "page";
+  page: number;
+  limit: number;
+  hasPrev: boolean;
+  hasNext: boolean;
+  total?: number;
+  totalPages?: number;
+};
+
+export type PaginatedResult<T> = {
+  data: T[];
+  pagination: PagePagination;
+};
+
+export type ListQuery = {
+  page?: number;
+  limit?: number;
+  count?: boolean;
+};
+
+const buildListQuery = (query: ListQuery = {}) => {
+  const params = new URLSearchParams();
+  if (query.page !== undefined) {
+    params.set("page", String(query.page));
+  }
+  if (query.limit !== undefined) {
+    params.set("limit", String(query.limit));
+  }
+  if (query.count) {
+    params.set("count", "true");
+  }
+  return params.toString();
+};
+
 export type ContentRecord = EntityRecord;
 export type DiagramRecord = EntityRecord;
 
@@ -56,8 +91,12 @@ async function deleteJson(
   return res.json() as Promise<{ deleted: true }>;
 }
 
-export async function fetchContentList(): Promise<ContentRecord[]> {
-  return requestJson<ContentRecord[]>(`${base}/content`);
+export async function fetchContentList(
+  query: ListQuery = { count: true },
+): Promise<PaginatedResult<ContentRecord>> {
+  const qs = buildListQuery(query);
+  const url = qs ? `${base}/content?${qs}` : `${base}/content`;
+  return requestJson<PaginatedResult<ContentRecord>>(url);
 }
 
 export async function fetchContent(id: number): Promise<ContentRecord> {
@@ -90,8 +129,12 @@ export async function deleteContent(id: number) {
   return deleteJson(`${base}/content/${id}`, { method: "DELETE" });
 }
 
-export async function fetchDiagramList(): Promise<DiagramRecord[]> {
-  return requestJson<DiagramRecord[]>(`${base}/diagrams`);
+export async function fetchDiagramList(
+  query: ListQuery = { count: true },
+): Promise<PaginatedResult<DiagramRecord>> {
+  const qs = buildListQuery(query);
+  const url = qs ? `${base}/diagrams?${qs}` : `${base}/diagrams`;
+  return requestJson<PaginatedResult<DiagramRecord>>(url);
 }
 
 export async function fetchDiagram(id: number): Promise<DiagramRecord> {
@@ -124,8 +167,12 @@ export async function deleteDiagram(id: number) {
   return deleteJson(`${base}/diagrams/${id}`, { method: "DELETE" });
 }
 
-export async function fetchLibraryFiles(): Promise<LibraryFileRecord[]> {
-  return requestJson<LibraryFileRecord[]>(`${base}/files`);
+export async function fetchLibraryFiles(
+  query: ListQuery = { count: true },
+): Promise<PaginatedResult<LibraryFileRecord>> {
+  const qs = buildListQuery(query);
+  const url = qs ? `${base}/files?${qs}` : `${base}/files`;
+  return requestJson<PaginatedResult<LibraryFileRecord>>(url);
 }
 
 export type UploadProgressCallback = (event: {

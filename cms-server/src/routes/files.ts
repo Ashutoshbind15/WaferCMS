@@ -4,6 +4,8 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { insertFileMetadata, listFileMetadata } from "@packages/cms-db/access";
 import { putObject } from "@packages/storage/lib";
+import { parseListQuery } from "../lib/pagination";
+import { sendRouteError } from "../lib/http";
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -24,9 +26,13 @@ function publicObjectUrl(objectKey: string): string {
   return `${base}/${pathPart}`;
 }
 
-router.get("/", async (_req, res) => {
-  const rows = await listFileMetadata();
-  res.status(200).json(rows);
+router.get("/", async (req, res) => {
+  try {
+    const result = await listFileMetadata(parseListQuery(req.query));
+    res.status(200).json(result);
+  } catch (error) {
+    sendRouteError(res, error);
+  }
 });
 
 router.post("/", upload.single("file"), async (req, res) => {

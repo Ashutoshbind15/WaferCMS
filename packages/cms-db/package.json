@@ -6,6 +6,7 @@
   "exports": {
     "./access": "./access.ts",
     "./db": "./db.ts",
+    "./pagination": "./pagination.ts",
     "./schema": "./schema.ts"
   },
   "scripts": {

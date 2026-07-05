@@ -1,5 +1,10 @@
-import { desc, eq } from "drizzle-orm";
+import { count, desc, eq } from "drizzle-orm";
 import db from "./db";
+import {
+  type ListPageQuery,
+  type PaginatedRows,
+  paginateRows,
+} from "./pagination";
 import { blogContent, blogDiagram, fileMetadata } from "./schema";
 
 type ContentRow = typeof blogContent.$inferSelect;
@@ -9,11 +14,23 @@ type FileMetadataRow = typeof fileMetadata.$inferSelect;
 const isNonEmptyString = (value: unknown): value is string =>
   typeof value === "string" && value.trim().length > 0;
 
-export const listContentRecords = async (): Promise<ContentRow[]> => {
-  return db
-    .select()
-    .from(blogContent)
-    .orderBy(desc(blogContent.updatedAt), desc(blogContent.id));
+export const listContentRecords = async (
+  query: ListPageQuery,
+): Promise<PaginatedRows<ContentRow>> => {
+  return paginateRows({
+    query,
+    fetchPage: (limit, offset) =>
+      db
+        .select()
+        .from(blogContent)
+        .orderBy(desc(blogContent.updatedAt), desc(blogContent.id))
+        .limit(limit)
+        .offset(offset),
+    fetchTotal: async () => {
+      const [row] = await db.select({ value: count() }).from(blogContent);
+      return row?.value ?? 0;
+    },
+  });
 };
 
 export const getContentRecord = async (
@@ -87,11 +104,23 @@ export const deleteContentRecord = async (id: number) => {
   return { deleted: true };
 };
 
-export const listDiagramRecords = async (): Promise<DiagramRow[]> => {
-  return db
-    .select()
-    .from(blogDiagram)
-    .orderBy(desc(blogDiagram.updatedAt), desc(blogDiagram.id));
+export const listDiagramRecords = async (
+  query: ListPageQuery,
+): Promise<PaginatedRows<DiagramRow>> => {
+  return paginateRows({
+    query,
+    fetchPage: (limit, offset) =>
+      db
+        .select()
+        .from(blogDiagram)
+        .orderBy(desc(blogDiagram.updatedAt), desc(blogDiagram.id))
+        .limit(limit)
+        .offset(offset),
+    fetchTotal: async () => {
+      const [row] = await db.select({ value: count() }).from(blogDiagram);
+      return row?.value ?? 0;
+    },
+  });
 };
 
 export const getDiagramRecord = async (
@@ -190,6 +219,21 @@ export const insertFileMetadata = async (row: {
   return rowOut;
 };
 
-export const listFileMetadata = async (): Promise<FileMetadataRow[]> => {
-  return db.select().from(fileMetadata).orderBy(desc(fileMetadata.createdAt));
+export const listFileMetadata = async (
+  query: ListPageQuery,
+): Promise<PaginatedRows<FileMetadataRow>> => {
+  return paginateRows({
+    query,
+    fetchPage: (limit, offset) =>
+      db
+        .select()
+        .from(fileMetadata)
+        .orderBy(desc(fileMetadata.createdAt), desc(fileMetadata.id))
+        .limit(limit)
+        .offset(offset),
+    fetchTotal: async () => {
+      const [row] = await db.select({ value: count() }).from(fileMetadata);
+      return row?.value ?? 0;
+    },
+  });
 };

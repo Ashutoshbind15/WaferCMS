@@ -16,6 +16,11 @@ export const sendRouteError = (res: Response, error: unknown) => {
     return;
   }
 
+  if (message === "Invalid page." || message === "Invalid limit.") {
+    res.status(400).json({ error: message });
+    return;
+  }
+
   if (message.includes("must include a valid type and refId")) {
     res.status(400).json({ error: message });
     return;

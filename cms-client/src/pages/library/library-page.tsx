@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ListPagination } from "@/components/layout/list-pagination";
 import { Header } from "@/components/layout/header";
 import { PageContainer } from "@/components/layout/page-container";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import {
   fetchLibraryFiles,
   uploadLibraryFile,
   type LibraryFileRecord,
+  type PagePagination,
 } from "@/lib/cms-api";
 import { formatBytes } from "@/lib/format-bytes";
 import { Upload } from "lucide-react";
@@ -21,17 +23,22 @@ interface UploadEntry {
 export default function LibraryPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<LibraryFileRecord[]>([]);
+  const [pagination, setPagination] = useState<PagePagination | null>(null);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [uploads, setUploads] = useState<UploadEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const uploading = uploads.length > 0;
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (targetPage: number) => {
     setError(null);
     setLoading(true);
     try {
-      setFiles(await fetchLibraryFiles());
+      const result = await fetchLibraryFiles({ page: targetPage, count: true });
+      setFiles(result.data);
+      setPagination(result.pagination);
+      setPage(result.pagination.page);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load files");
     } finally {
@@ -40,8 +47,8 @@ export default function LibraryPage() {
   }, []);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    void load(page);
+  }, [load, page]);
 
   const onPickFiles = () => inputRef.current?.click();
 
@@ -52,7 +59,6 @@ export default function LibraryPage() {
     const pending = Array.from(list);
     setError(null);
 
-    // Initialise progress entries for every file
     setUploads(
       pending.map((f) => ({ name: f.name, size: f.size, percent: 0 })),
     );
@@ -60,13 +66,14 @@ export default function LibraryPage() {
     try {
       for (let i = 0; i < pending.length; i++) {
         const file = pending[i];
-        const row = await uploadLibraryFile(file, ({ percent }) => {
+        await uploadLibraryFile(file, ({ percent }) => {
           setUploads((prev) =>
             prev.map((entry, j) => (j === i ? { ...entry, percent } : entry)),
           );
         });
-        setFiles((prev) => [row, ...prev]);
       }
+      setPage(1);
+      await load(1);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {
@@ -136,6 +143,14 @@ export default function LibraryPage() {
             ))}
           </div>
         )}
+
+        {pagination ? (
+          <ListPagination
+            pagination={pagination}
+            disabled={loading}
+            onPageChange={setPage}
+          />
+        ) : null}
       </PageContainer>
     </>
   );
