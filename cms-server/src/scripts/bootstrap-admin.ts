@@ -1,7 +1,12 @@
 import "dotenv/config";
 import * as readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
-import { countUsers, createUser } from "@packages/cms-db/users";
+import {
+  countUsers,
+  findUserByUsername,
+  hashPassword,
+  insertUser,
+} from "@packages/cms-db/users";
 
 const parseUsernameArg = (): string | null => {
   const index = process.argv.indexOf("--username");
@@ -43,7 +48,20 @@ const main = async () => {
     process.exit(1);
   }
 
-  const user = await createUser({ username, password });
+  const trimmedUsername = username.trim();
+  if (!trimmedUsername) {
+    console.error("Username is required.");
+    process.exit(1);
+  }
+
+  const duplicate = await findUserByUsername(trimmedUsername);
+  if (duplicate) {
+    console.error("Username already exists.");
+    process.exit(1);
+  }
+
+  const passwordHash = await hashPassword(password);
+  const user = await insertUser({ username: trimmedUsername, passwordHash });
   console.log(`Created admin user "${user.username}" (id ${user.id}).`);
 };
 

@@ -1,10 +1,9 @@
 import type { NextFunction, Request, Response } from "express";
 import {
   findEnabledApiKeyByHash,
-  hashApiKey,
-  scopeAllowsMethod,
   touchApiKeyLastUsed,
 } from "@packages/cms-db/api-keys";
+import { hashApiKey, scopeAllowsMethod } from "../lib/api-keys";
 import { parseBearerToken } from "../lib/auth";
 
 export type ApiKeyAuthContext = {

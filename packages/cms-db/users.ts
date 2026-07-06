@@ -40,30 +40,15 @@ export const countUsers = async (): Promise<number> => {
   return row?.count ?? 0;
 };
 
-export const createUser = async (input: {
+export const insertUser = async (input: {
   username: string;
-  password: string;
+  passwordHash: string;
 }): Promise<UserRecord> => {
-  const username = input.username.trim();
-  if (!username) {
-    throw new Error("Username is required.");
-  }
-  if (!input.password) {
-    throw new Error("Password is required.");
-  }
-
-  const existing = await findUserByUsername(username);
-  if (existing) {
-    throw new Error("Username already exists.");
-  }
-
-  const passwordHash = await hashPassword(input.password);
-
   const [created] = await db
     .insert(user)
     .values({
-      username,
-      passwordHash,
+      username: input.username,
+      passwordHash: input.passwordHash,
     })
     .returning({
       id: user.id,

@@ -1,14 +1,9 @@
-import { createHash } from "node:crypto";
 import { desc, eq } from "drizzle-orm";
 import db from "./db";
-import {
-  apiKey,
-  apiKeyScopeValues,
-  type ApiKeyScope,
-} from "./schema";
+import { apiKey, type ApiKeyScope } from "./schema";
 
 export type { ApiKeyScope };
-export { apiKeyScopeValues };
+export { apiKeyScopeValues } from "./schema";
 
 export type ApiKeyRecord = {
   id: number;
@@ -24,13 +19,6 @@ type ApiKeyAuthRecord = ApiKeyRecord & {
   keyHash: string;
 };
 
-export const hashApiKey = (rawKey: string, pepper: string): string =>
-  createHash("sha256").update(`${pepper}${rawKey}`).digest("hex");
-
-export const isApiKeyScope = (value: unknown): value is ApiKeyScope =>
-  typeof value === "string" &&
-  (apiKeyScopeValues as readonly string[]).includes(value);
-
 const toApiKeyRecord = (row: typeof apiKey.$inferSelect): ApiKeyRecord => ({
   id: row.id,
   label: row.label,
@@ -41,26 +29,18 @@ const toApiKeyRecord = (row: typeof apiKey.$inferSelect): ApiKeyRecord => ({
   lastUsedAt: row.lastUsedAt,
 });
 
-export const createApiKey = async (input: {
+export const insertApiKey = async (input: {
   label: string;
+  keyPrefix: string;
+  keyHash: string;
   scope: ApiKeyScope;
-  rawKey: string;
-  pepper: string;
 }): Promise<ApiKeyRecord> => {
-  const label = input.label.trim();
-  if (!label) {
-    throw new Error("Label is required.");
-  }
-
-  const keyPrefix = input.rawKey.slice(0, 8);
-  const keyHash = hashApiKey(input.rawKey, input.pepper);
-
   const [created] = await db
     .insert(apiKey)
     .values({
-      label,
-      keyPrefix,
-      keyHash,
+      label: input.label,
+      keyPrefix: input.keyPrefix,
+      keyHash: input.keyHash,
       scope: input.scope,
     })
     .returning();
@@ -126,26 +106,4 @@ export const touchApiKeyLastUsed = async (id: number): Promise<void> => {
     .update(apiKey)
     .set({ lastUsedAt: new Date() })
     .where(eq(apiKey.id, id));
-};
-
-export const scopeAllowsMethod = (
-  scope: ApiKeyScope,
-  method: string,
-): boolean => {
-  const normalized = method.toUpperCase();
-
-  if (normalized === "GET" || normalized === "HEAD") {
-    return scope === "read" || scope === "read_write";
-  }
-
-  if (
-    normalized === "POST" ||
-    normalized === "PUT" ||
-    normalized === "PATCH" ||
-    normalized === "DELETE"
-  ) {
-    return scope === "write" || scope === "read_write";
-  }
-
-  return false;
 };

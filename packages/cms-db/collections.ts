@@ -8,48 +8,13 @@ import {
 import {
   collection,
   collectionField,
-  collectionFieldTypeValues,
   type CollectionFieldType,
 } from "./schema";
 
 type CollectionRow = typeof collection.$inferSelect;
 export type CollectionFieldRow = typeof collectionField.$inferSelect;
 
-const isNonEmptyString = (value: unknown): value is string =>
-  typeof value === "string" && value.trim().length > 0;
-
-const slugPattern = /^[a-z][a-z0-9-]*$/;
-
 const normalizeSlug = (value: string) => value.trim().toLowerCase();
-
-const normalizeFieldKey = (value: string) => value.trim().toLowerCase();
-
-const assertValidSlug = (slug: string) => {
-  if (!slugPattern.test(slug)) {
-    throw new Error(
-      "Slug must start with a letter and contain only lowercase letters, numbers, and hyphens.",
-    );
-  }
-};
-
-const assertValidFieldKey = (key: string) => {
-  if (!slugPattern.test(key)) {
-    throw new Error(
-      "Field key must start with a letter and contain only lowercase letters, numbers, and hyphens.",
-    );
-  }
-};
-
-const assertValidFieldType = (fieldType: string): CollectionFieldType => {
-  if (
-    !(collectionFieldTypeValues as readonly string[]).includes(fieldType)
-  ) {
-    throw new Error(
-      `Field type must be one of: ${collectionFieldTypeValues.join(", ")}.`,
-    );
-  }
-  return fieldType as CollectionFieldType;
-};
 
 export const listCollectionRecords = async (
   query: ListPageQuery,
@@ -95,22 +60,12 @@ export const addCollectionRecord = async (input: {
   title: string;
   description?: string | null;
 }): Promise<CollectionRow> => {
-  if (!isNonEmptyString(input.title)) {
-    throw new Error("Title is required.");
-  }
-  if (!isNonEmptyString(input.slug)) {
-    throw new Error("Slug is required.");
-  }
-
-  const slug = normalizeSlug(input.slug);
-  assertValidSlug(slug);
-
   const [created] = await db
     .insert(collection)
     .values({
-      slug,
-      title: input.title.trim(),
-      description: input.description?.trim() || null,
+      slug: input.slug,
+      title: input.title,
+      description: input.description ?? null,
       updatedAt: new Date(),
     })
     .returning();
@@ -130,22 +85,12 @@ export const updateCollectionRecord = async (
     description?: string | null;
   },
 ): Promise<CollectionRow> => {
-  if (!isNonEmptyString(input.title)) {
-    throw new Error("Title is required.");
-  }
-  if (!isNonEmptyString(input.slug)) {
-    throw new Error("Slug is required.");
-  }
-
-  const slug = normalizeSlug(input.slug);
-  assertValidSlug(slug);
-
   const [updated] = await db
     .update(collection)
     .set({
-      slug,
-      title: input.title.trim(),
-      description: input.description?.trim() || null,
+      slug: input.slug,
+      title: input.title,
+      description: input.description ?? null,
       updatedAt: new Date(),
     })
     .where(eq(collection.id, id))
@@ -172,8 +117,6 @@ export const deleteCollectionRecord = async (id: number) => {
 export const listCollectionFieldRecords = async (
   collectionId: number,
 ): Promise<CollectionFieldRow[]> => {
-  await assertCollectionExists(collectionId);
-
   return db
     .select()
     .from(collectionField)
@@ -202,23 +145,10 @@ export const addCollectionFieldRecord = async (
   input: {
     key: string;
     label: string;
-    fieldType: string;
+    fieldType: CollectionFieldType;
     required?: boolean;
   },
 ): Promise<CollectionFieldRow> => {
-  await assertCollectionExists(collectionId);
-
-  if (!isNonEmptyString(input.key)) {
-    throw new Error("Field key is required.");
-  }
-  if (!isNonEmptyString(input.label)) {
-    throw new Error("Field label is required.");
-  }
-
-  const key = normalizeFieldKey(input.key);
-  assertValidFieldKey(key);
-  const fieldType = assertValidFieldType(input.fieldType);
-
   const existing = await db
     .select({ value: count() })
     .from(collectionField)
@@ -229,9 +159,9 @@ export const addCollectionFieldRecord = async (
     .insert(collectionField)
     .values({
       collectionId,
-      key,
-      label: input.label.trim(),
-      fieldType,
+      key: input.key,
+      label: input.label,
+      fieldType: input.fieldType,
       position,
       required: input.required ?? false,
       updatedAt: new Date(),
@@ -251,27 +181,16 @@ export const updateCollectionFieldRecord = async (
   input: {
     key: string;
     label: string;
-    fieldType: string;
+    fieldType: CollectionFieldType;
     required?: boolean;
   },
 ): Promise<CollectionFieldRow> => {
-  if (!isNonEmptyString(input.key)) {
-    throw new Error("Field key is required.");
-  }
-  if (!isNonEmptyString(input.label)) {
-    throw new Error("Field label is required.");
-  }
-
-  const key = normalizeFieldKey(input.key);
-  assertValidFieldKey(key);
-  const fieldType = assertValidFieldType(input.fieldType);
-
   const [updated] = await db
     .update(collectionField)
     .set({
-      key,
-      label: input.label.trim(),
-      fieldType,
+      key: input.key,
+      label: input.label,
+      fieldType: input.fieldType,
       required: input.required ?? false,
       updatedAt: new Date(),
     })
@@ -307,11 +226,4 @@ export const deleteCollectionFieldRecord = async (
     throw new Error(`Collection field ${fieldId} not found.`);
   }
   return { deleted: true as const };
-};
-
-const assertCollectionExists = async (collectionId: number) => {
-  const existing = await getCollectionRecord(collectionId);
-  if (!existing) {
-    throw new Error(`Collection ${collectionId} not found.`);
-  }
 };

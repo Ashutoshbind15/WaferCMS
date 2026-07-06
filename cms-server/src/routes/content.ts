@@ -1,69 +1,18 @@
 import { Router } from "express";
 import {
-  addContentRecord,
-  deleteContentRecord,
-  getContentRecord,
-  listContentRecords,
-  updateContentRecord,
-} from "@packages/cms-db/access";
-import { parseListQuery } from "../lib/pagination";
-import { parseIdParam, sendRouteError } from "../lib/http";
+  createContent,
+  deleteContent,
+  getContent,
+  listContent,
+  updateContent,
+} from "../controllers/content";
 
 const router: Router = Router();
 
-router.get("/", async (req, res) => {
-  try {
-    const result = await listContentRecords(parseListQuery(req.query));
-    res.json(result);
-  } catch (error) {
-    sendRouteError(res, error);
-  }
-});
-
-router.get("/:id", async (req, res) => {
-  try {
-    const result = await getContentRecord(parseIdParam(req.params.id));
-    if (!result) {
-      res.status(404).json({ error: `Content ${req.params.id} not found.` });
-      return;
-    }
-    res.json(result);
-  } catch (error) {
-    sendRouteError(res, error);
-  }
-});
-
-router.post("/", async (req, res) => {
-  try {
-    const { title, payload } = req.body;
-    const result = await addContentRecord(title, payload);
-    res.status(201).json(result);
-  } catch (error) {
-    sendRouteError(res, error);
-  }
-});
-
-router.put("/:id", async (req, res) => {
-  try {
-    const { title, payload } = req.body;
-    const result = await updateContentRecord(
-      parseIdParam(req.params.id),
-      title,
-      payload,
-    );
-    res.json(result);
-  } catch (error) {
-    sendRouteError(res, error);
-  }
-});
-
-router.delete("/:id", async (req, res) => {
-  try {
-    const result = await deleteContentRecord(parseIdParam(req.params.id));
-    res.json(result);
-  } catch (error) {
-    sendRouteError(res, error);
-  }
-});
+router.get("/", listContent);
+router.get("/:id", getContent);
+router.post("/", createContent);
+router.put("/:id", updateContent);
+router.delete("/:id", deleteContent);
 
 export default router;

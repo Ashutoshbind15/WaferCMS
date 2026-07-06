@@ -11,9 +11,6 @@ type ContentRow = typeof blogContent.$inferSelect;
 type DiagramRow = typeof blogDiagram.$inferSelect;
 export type FileMetadataRow = typeof fileMetadata.$inferSelect;
 
-const isNonEmptyString = (value: unknown): value is string =>
-  typeof value === "string" && value.trim().length > 0;
-
 export const listContentRecords = async (
   query: ListPageQuery,
 ): Promise<PaginatedRows<ContentRow>> => {
@@ -47,14 +44,10 @@ export const addContentRecord = async (
   title: string,
   payload: unknown,
 ): Promise<ContentRow> => {
-  if (!isNonEmptyString(title)) {
-    throw new Error("Title is required.");
-  }
-
   const [created] = await db
     .insert(blogContent)
     .values({
-      title: title.trim(),
+      title,
       payload,
       updatedAt: new Date(),
     })
@@ -72,14 +65,10 @@ export const updateContentRecord = async (
   title: string,
   payload: unknown,
 ): Promise<ContentRow> => {
-  if (!isNonEmptyString(title)) {
-    throw new Error("Title is required.");
-  }
-
   const [updated] = await db
     .update(blogContent)
     .set({
-      title: title.trim(),
+      title,
       payload,
       updatedAt: new Date(),
     })
@@ -137,14 +126,10 @@ export const addDiagramRecord = async (
   title: string,
   payload: unknown,
 ): Promise<DiagramRow> => {
-  if (!isNonEmptyString(title)) {
-    throw new Error("Title is required.");
-  }
-
   const [created] = await db
     .insert(blogDiagram)
     .values({
-      title: title.trim(),
+      title,
       payload,
       updatedAt: new Date(),
     })
@@ -162,14 +147,10 @@ export const updateDiagramRecord = async (
   title: string,
   payload: unknown,
 ): Promise<DiagramRow> => {
-  if (!isNonEmptyString(title)) {
-    throw new Error("Title is required.");
-  }
-
   const [updated] = await db
     .update(blogDiagram)
     .set({
-      title: title.trim(),
+      title,
       payload,
       updatedAt: new Date(),
     })
@@ -263,37 +244,4 @@ export const listFileMetadata = async (
       return row?.value ?? 0;
     },
   });
-};
-
-export type FileResponse = {
-  id: number;
-  originalFilename: string;
-  contentType: string | null;
-  byteLength: number;
-  isPublic: boolean;
-  createdAt: Date;
-  url?: string;
-};
-
-/**
- * Serialize a file_metadata row for API responses. `objectKey` is internal and
- * never exposed. `url` is included only for public files — private files omit
- * it so the bytes endpoint stays the only way to fetch them (with auth).
- */
-export const toFileResponse = (
-  row: FileMetadataRow,
-  baseUrl: string,
-): FileResponse => {
-  const out: FileResponse = {
-    id: row.id,
-    originalFilename: row.originalFilename,
-    contentType: row.contentType,
-    byteLength: row.byteLength,
-    isPublic: row.isPublic,
-    createdAt: row.createdAt,
-  };
-  if (row.isPublic) {
-    out.url = `${baseUrl}/files/${row.id}`;
-  }
-  return out;
 };
