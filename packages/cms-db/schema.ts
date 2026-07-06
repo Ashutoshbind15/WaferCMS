@@ -27,12 +27,13 @@ export const blogDiagram = pgTable("blog_diagram", {
 
 export const fileMetadata = pgTable("file_metadata", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  /** Internal storage key (UUID-prefixed). Never exposed in API responses. */
   objectKey: text().notNull().unique(),
-  /** Stable URL for the public portfolio app (CDN, reverse proxy, or direct RustFS). */
-  publicUrl: text().notNull(),
   originalFilename: text().notNull(),
   contentType: text(),
   byteLength: integer().notNull(),
+  /** When true, asset bytes are reachable via GET /files/:id without auth. */
+  isPublic: boolean().notNull().default(true),
   createdAt: timestamp().notNull().defaultNow(),
 });
 

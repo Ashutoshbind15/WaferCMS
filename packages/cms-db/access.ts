@@ -9,7 +9,7 @@ import { blogContent, blogDiagram, fileMetadata } from "./schema";
 
 type ContentRow = typeof blogContent.$inferSelect;
 type DiagramRow = typeof blogDiagram.$inferSelect;
-type FileMetadataRow = typeof fileMetadata.$inferSelect;
+export type FileMetadataRow = typeof fileMetadata.$inferSelect;
 
 const isNonEmptyString = (value: unknown): value is string =>
   typeof value === "string" && value.trim().length > 0;
@@ -196,19 +196,19 @@ export const deleteDiagramRecord = async (id: number) => {
 
 export const insertFileMetadata = async (row: {
   objectKey: string;
-  publicUrl: string;
   originalFilename: string;
   contentType: string | null;
   byteLength: number;
+  isPublic?: boolean;
 }): Promise<FileMetadataRow> => {
   const [rowOut] = await db
     .insert(fileMetadata)
     .values({
       objectKey: row.objectKey,
-      publicUrl: row.publicUrl,
       originalFilename: row.originalFilename,
       contentType: row.contentType,
       byteLength: row.byteLength,
+      isPublic: row.isPublic ?? true,
     })
     .returning();
 
@@ -217,6 +217,33 @@ export const insertFileMetadata = async (row: {
   }
 
   return rowOut;
+};
+
+export const getFileMetadataById = async (
+  id: number,
+): Promise<FileMetadataRow | null> => {
+  const [row] = await db
+    .select()
+    .from(fileMetadata)
+    .where(eq(fileMetadata.id, id));
+  return row ?? null;
+};
+
+export const updateFileMetadata = async (
+  id: number,
+  patch: { isPublic: boolean },
+): Promise<FileMetadataRow> => {
+  const [updated] = await db
+    .update(fileMetadata)
+    .set({ isPublic: patch.isPublic })
+    .where(eq(fileMetadata.id, id))
+    .returning();
+
+  if (!updated) {
+    throw new Error(`File ${id} not found.`);
+  }
+
+  return updated;
 };
 
 export const listFileMetadata = async (
@@ -236,4 +263,37 @@ export const listFileMetadata = async (
       return row?.value ?? 0;
     },
   });
+};
+
+export type FileResponse = {
+  id: number;
+  originalFilename: string;
+  contentType: string | null;
+  byteLength: number;
+  isPublic: boolean;
+  createdAt: Date;
+  url?: string;
+};
+
+/**
+ * Serialize a file_metadata row for API responses. `objectKey` is internal and
+ * never exposed. `url` is included only for public files — private files omit
+ * it so the bytes endpoint stays the only way to fetch them (with auth).
+ */
+export const toFileResponse = (
+  row: FileMetadataRow,
+  baseUrl: string,
+): FileResponse => {
+  const out: FileResponse = {
+    id: row.id,
+    originalFilename: row.originalFilename,
+    contentType: row.contentType,
+    byteLength: row.byteLength,
+    isPublic: row.isPublic,
+    createdAt: row.createdAt,
+  };
+  if (row.isPublic) {
+    out.url = `${baseUrl}/files/${row.id}`;
+  }
+  return out;
 };

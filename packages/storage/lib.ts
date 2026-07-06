@@ -2,9 +2,11 @@ import "dotenv/config";
 import {
   S3Client,
   PutObjectCommand,
+  GetObjectCommand,
   HeadBucketCommand,
   CreateBucketCommand,
 } from "@aws-sdk/client-s3";
+import type { Readable } from "node:stream";
 
 const bucket = process.env.RUSTFS_BUCKET ?? "cms-files";
 
@@ -40,4 +42,45 @@ export async function putObject(params: {
       ContentType: params.contentType ?? "application/octet-stream",
     }),
   );
+}
+
+export type GetObjectResult = {
+  body: Readable;
+  contentType: string | undefined;
+  contentLength: number | undefined;
+  etag: string | undefined;
+  lastModified: Date | undefined;
+  /** 206 when a Range was requested and honored, 200 otherwise. */
+  statusCode: 200 | 206;
+  contentRange: string | undefined;
+};
+
+/**
+ * Fetch an object as a stream. Pass an optional `range` (raw `Range` header
+ * value) to forward to S3 for seek/large-file support. Callers pipe `body`
+ * straight to the Express response — never buffer the whole file.
+ */
+export async function getObject(params: {
+  key: string;
+  range?: string;
+}): Promise<GetObjectResult> {
+  const hasRange = typeof params.range === "string" && params.range.length > 0;
+  const command = new GetObjectCommand({
+    Bucket: bucket,
+    Key: params.key,
+    ...(hasRange ? { Range: params.range } : {}),
+  });
+
+  const output = await s3Client.send(command);
+  const body = output.Body as Readable;
+
+  return {
+    body,
+    contentType: output.ContentType,
+    contentLength: output.ContentLength,
+    etag: output.ETag,
+    lastModified: output.LastModified,
+    statusCode: hasRange ? 206 : 200,
+    contentRange: output.ContentRange,
+  };
 }

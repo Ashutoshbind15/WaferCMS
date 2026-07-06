@@ -101,13 +101,21 @@ export type ApiKeyScope = "read" | "write" | "read_write";
 
 export type LibraryFileRecord = {
   id: number;
-  objectKey: string;
-  publicUrl: string;
   originalFilename: string;
   contentType: string | null;
   byteLength: number;
+  isPublic: boolean;
   createdAt: string;
+  /** Present only when isPublic is true. */
+  url?: string;
 };
+
+/**
+ * Build the asset bytes URL for a file. Always constructed client-side so admin
+ * thumbnails work for private files too (session cookie rides the same-origin
+ * Vite proxy in dev / same-origin in prod).
+ */
+export const fileAssetUrl = (id: number): string => `${base}/files/${id}`;
 
 const getErrorMessage = async (res: Response) => {
   const raw = await res.text();
@@ -289,6 +297,17 @@ export async function fetchLibraryFiles(
   return requestJson<PaginatedResult<LibraryFileRecord>>(url);
 }
 
+export async function patchLibraryFile(
+  id: number,
+  input: { isPublic: boolean },
+): Promise<LibraryFileRecord> {
+  return requestJson<LibraryFileRecord>(`${base}/files/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+}
+
 export type UploadProgressCallback = (event: {
   loaded: number;
   total: number;
@@ -298,6 +317,7 @@ export type UploadProgressCallback = (event: {
 export function uploadLibraryFile(
   file: File,
   onProgress?: UploadProgressCallback,
+  options?: { isPublic?: boolean },
 ): Promise<LibraryFileRecord> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -340,6 +360,9 @@ export function uploadLibraryFile(
 
     const body = new FormData();
     body.append("file", file);
+    if (options && typeof options.isPublic === "boolean") {
+      body.append("isPublic", String(options.isPublic));
+    }
     xhr.send(body);
   });
 }

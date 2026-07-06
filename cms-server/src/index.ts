@@ -35,7 +35,7 @@ app.use("/auth", authRouter);
 app.use("/users", sessionAuthMiddleware, usersRouter);
 app.use("/content", contentAuthMiddleware, contentRouter);
 app.use("/diagrams", contentAuthMiddleware, diagramsRouter);
-app.use("/files", contentAuthMiddleware, filesRouter);
+app.use("/files", filesRouter);
 app.use("/collections", contentAuthMiddleware, collectionsRouter);
 app.use("/api-keys", sessionAuthMiddleware, apiKeysRouter);
 

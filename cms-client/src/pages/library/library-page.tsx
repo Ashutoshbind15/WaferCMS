@@ -139,7 +139,15 @@ export default function LibraryPage() {
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
             {files.map((file) => (
-              <FileCard key={file.id} file={file} />
+              <FileCard
+                key={file.id}
+                file={file}
+                onUpdated={(updated) =>
+                  setFiles((prev) =>
+                    prev.map((f) => (f.id === updated.id ? updated : f)),
+                  )
+                }
+              />
             ))}
           </div>
         )}
