@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { CollectionItemFieldEditors } from "@/components/collections/collection-item-field-editors";
+import {
+  CollectionItemFieldEditors,
+  emptyValueForField,
+} from "@/components/collections/collection-item-field-editors";
 import { Header } from "@/components/layout/header";
 import { PageContainer } from "@/components/layout/page-container";
 import { Button } from "@/components/ui/button";
@@ -20,7 +23,7 @@ const valuesSnapshot = (values: Record<string, unknown>) =>
   JSON.stringify(values);
 
 const emptyValues = (fields: CollectionFieldRecord[]): Record<string, unknown> =>
-  Object.fromEntries(fields.map((field) => [field.key, null]));
+  Object.fromEntries(fields.map((field) => [field.key, emptyValueForField(field)]));
 
 export default function CollectionItemEditorPage() {
   const navigate = useNavigate();
@@ -57,9 +60,18 @@ export default function CollectionItemEditorPage() {
 
       if (isEditing && itemId) {
         const item = await fetchCollectionItem(collectionId, Number(itemId));
-        const nextValues = { ...emptyValues(nextFields), ...item.values };
-        setValues(nextValues);
-        setSavedSnapshot(valuesSnapshot(nextValues));
+        const base = emptyValues(nextFields);
+        const merged = { ...base, ...item.values };
+        // Normalize stored nulls back to field defaults so that uncontrolled
+        // editor components (DiagramCanvas, RichTextEditor) don't diverge from
+        // savedSnapshot on mount and incorrectly mark the form dirty.
+        for (const field of nextFields) {
+          if (merged[field.key] == null) {
+            merged[field.key] = base[field.key];
+          }
+        }
+        setValues(merged);
+        setSavedSnapshot(valuesSnapshot(merged));
       } else {
         const nextValues = emptyValues(nextFields);
         setValues(nextValues);
@@ -95,7 +107,11 @@ export default function CollectionItemEditorPage() {
           Number(itemId),
           { values },
         );
-        const nextValues = { ...emptyValues(fields), ...updated.values };
+        const base = emptyValues(fields);
+        const nextValues = { ...base, ...updated.values };
+        for (const field of fields) {
+          if (nextValues[field.key] == null) nextValues[field.key] = base[field.key];
+        }
         setValues(nextValues);
         setSavedSnapshot(valuesSnapshot(nextValues));
         toast.success("Item saved.");

@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useCallback, useRef } from "react";
 import {
   EMPTY_EDITOR_DOC,
   type RichTextContent,
@@ -33,6 +33,23 @@ const asDiagram = (value: unknown): DiagramDocument =>
     ? (value as DiagramDocument)
     : EMPTY_DOCUMENT;
 
+/**
+ * Returns the appropriate empty/default value for a field type. Used to
+ * initialise new items and normalise null values from the DB so that
+ * uncontrolled editor components (DiagramCanvas, RichTextEditor) don't
+ * immediately mark the form as dirty on mount.
+ */
+export const emptyValueForField = (field: CollectionFieldRecord): unknown => {
+  switch (field.fieldType) {
+    case "diagrams":
+      return EMPTY_DOCUMENT;
+    case "richtext":
+      return EMPTY_EDITOR_DOC;
+    default:
+      return null;
+  }
+};
+
 type FieldInputProps = {
   field: CollectionFieldRecord;
   value: unknown;
@@ -40,6 +57,18 @@ type FieldInputProps = {
 };
 
 function FieldInput({ field, value, onChange }: FieldInputProps) {
+  // Keep a ref to the latest onChange so the stable callbacks below never
+  // need to be recreated. DiagramCanvas and RichTextEditor both have a
+  // useEffect([..., onChange]) that re-fires whenever the callback reference
+  // changes, which would cause an infinite re-render loop if we passed an
+  // inline arrow function.
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
+  const stableOnChange = useCallback((v: unknown) => {
+    onChangeRef.current(v);
+  }, []);
+
   switch (field.fieldType) {
     case "text":
       return (
@@ -62,7 +91,7 @@ function FieldInput({ field, value, onChange }: FieldInputProps) {
             <RichTextEditor
               initialContent={asRichText(value)}
               isEditable
-              onChange={(content) => onChange(content)}
+              onChange={stableOnChange as (content: RichTextContent) => void}
             />
           </Suspense>
         </div>
@@ -72,7 +101,7 @@ function FieldInput({ field, value, onChange }: FieldInputProps) {
         <div className="h-[28rem] overflow-hidden rounded-lg border border-border">
           <DiagramCanvas
             initialDocument={asDiagram(value)}
-            onChange={(doc) => onChange(doc)}
+            onChange={stableOnChange as (doc: DiagramDocument) => void}
           />
         </div>
       );
