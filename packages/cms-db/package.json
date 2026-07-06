@@ -6,6 +6,7 @@
   "exports": {
     "./access": "./access.ts",
     "./collections": "./collections.ts",
+    "./collection-data": "./collection-data.ts",
     "./api-keys": "./api-keys.ts",
     "./db": "./db.ts",
     "./pagination": "./pagination.ts",

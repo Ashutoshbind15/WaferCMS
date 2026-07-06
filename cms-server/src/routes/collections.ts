@@ -9,6 +9,7 @@ import {
 import { parseListQuery } from "../lib/pagination";
 import { parseIdParam, sendRouteError } from "../lib/http";
 import collectionFieldsRouter from "./collection-fields";
+import collectionItemsRouter from "./collection-items";
 
 const router: Router = Router({ mergeParams: true });
 
@@ -70,5 +71,6 @@ router.delete("/:id", async (req, res) => {
 });
 
 router.use("/:collectionId/fields", collectionFieldsRouter);
+router.use("/:collectionId/items", collectionItemsRouter);
 
 export default router;

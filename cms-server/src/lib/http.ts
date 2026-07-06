@@ -18,9 +18,12 @@ export const sendRouteError = (res: Response, error: unknown) => {
     message === "Slug is required." ||
     message === "Field key is required." ||
     message === "Field label is required." ||
+    message === "values object is required." ||
     message.startsWith("Slug must start with a letter") ||
     message.startsWith("Field key must start with a letter") ||
-    message.startsWith("Field type must be one of:")
+    message.startsWith("Field type must be one of:") ||
+    message.startsWith("Item value for field") ||
+    message.startsWith("Unknown field key")
   ) {
     res.status(400).json({ error: message });
     return;

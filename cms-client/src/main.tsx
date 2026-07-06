@@ -24,6 +24,8 @@ import UsersPage from "./pages/users/users-page";
 import CollectionsListPage from "./pages/collections/collections-list";
 import CollectionCreatePage from "./pages/collections/collection-create";
 import CollectionDetailPage from "./pages/collections/collection-detail";
+import CollectionItemsPage from "./pages/collections/collection-items";
+import CollectionItemEditorPage from "./pages/collections/collection-item-editor";
 
 function RootLayout() {
   return (
@@ -67,6 +69,18 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 <Route
                   path="collections/:id"
                   element={<CollectionDetailPage />}
+                />
+                <Route
+                  path="collections/:id/items"
+                  element={<CollectionItemsPage />}
+                />
+                <Route
+                  path="collections/:id/items/new"
+                  element={<CollectionItemEditorPage />}
+                />
+                <Route
+                  path="collections/:id/items/:itemId"
+                  element={<CollectionItemEditorPage />}
                 />
 
                 <Route path="api-keys" element={<ApiKeysPage />} />

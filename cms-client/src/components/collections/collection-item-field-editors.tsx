@@ -1,0 +1,126 @@
+import { lazy, Suspense } from "react";
+import {
+  EMPTY_EDITOR_DOC,
+  type RichTextContent,
+} from "@/components/editor/rich-text-document";
+import { loadRichTextEditor } from "@/components/editor/rich-text-editor-loader";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
+import { DiagramCanvas } from "@scribblesvg/react-utils/editor";
+import { EMPTY_DOCUMENT, type DiagramDocument } from "@scribblesvg/core";
+import type { CollectionFieldRecord } from "@/lib/cms-api";
+
+const RichTextEditor = lazy(loadRichTextEditor);
+
+function RichTextEditorFallback() {
+  return (
+    <div className="space-y-3 rounded-lg border border-border p-4">
+      <Skeleton className="h-8 w-40" />
+      <Skeleton className="h-64 w-full" />
+    </div>
+  );
+}
+
+const asRichText = (value: unknown): RichTextContent =>
+  value && typeof value === "object" && !Array.isArray(value)
+    ? (value as RichTextContent)
+    : EMPTY_EDITOR_DOC;
+
+const asDiagram = (value: unknown): DiagramDocument =>
+  value && typeof value === "object" && !Array.isArray(value)
+    ? (value as DiagramDocument)
+    : EMPTY_DOCUMENT;
+
+type FieldInputProps = {
+  field: CollectionFieldRecord;
+  value: unknown;
+  onChange: (value: unknown) => void;
+};
+
+function FieldInput({ field, value, onChange }: FieldInputProps) {
+  switch (field.fieldType) {
+    case "text":
+      return (
+        <Input
+          value={typeof value === "string" ? value : ""}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      );
+    case "long-text":
+      return (
+        <Textarea
+          value={typeof value === "string" ? value : ""}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      );
+    case "richtext":
+      return (
+        <div className="rounded-lg border border-border bg-card">
+          <Suspense fallback={<RichTextEditorFallback />}>
+            <RichTextEditor
+              initialContent={asRichText(value)}
+              isEditable
+              onChange={(content) => onChange(content)}
+            />
+          </Suspense>
+        </div>
+      );
+    case "diagrams":
+      return (
+        <div className="h-[28rem] overflow-hidden rounded-lg border border-border">
+          <DiagramCanvas
+            initialDocument={asDiagram(value)}
+            onChange={(doc) => onChange(doc)}
+          />
+        </div>
+      );
+  }
+}
+
+type CollectionItemFieldEditorsProps = {
+  fields: CollectionFieldRecord[];
+  values: Record<string, unknown>;
+  /** Changes when the edited item changes, so uncontrolled editors remount. */
+  itemKey: string | number;
+  onChange: (key: string, value: unknown) => void;
+};
+
+export function CollectionItemFieldEditors({
+  fields,
+  values,
+  itemKey,
+  onChange,
+}: CollectionItemFieldEditorsProps) {
+  if (fields.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed border-border py-12 text-center">
+        <p className="text-sm text-muted-foreground">
+          This collection has no fields defined. Add fields before creating
+          items.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {fields.map((field) => (
+        <div key={`${itemKey}-${field.id}`} className="space-y-2">
+          <Label>
+            {field.label}
+            {field.required ? (
+              <span className="ml-1 text-destructive">*</span>
+            ) : null}
+          </Label>
+          <FieldInput
+            field={field}
+            value={values[field.key]}
+            onChange={(v) => onChange(field.key, v)}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}

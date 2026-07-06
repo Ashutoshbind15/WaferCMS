@@ -15,7 +15,7 @@ import {
   type CollectionFieldRecord,
   type CollectionRecord,
 } from "@/lib/cms-api";
-import { ArrowLeft, Settings2 } from "lucide-react";
+import { ArrowLeft, List, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function CollectionDetailPage() {
@@ -169,6 +169,15 @@ export default function CollectionDetailPage() {
             >
               <ArrowLeft className="mr-1 h-4 w-4" />
               Back
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={loading || !record}
+              onClick={() => navigate(`/collections/${collectionId}/items`)}
+            >
+              <List className="mr-1 h-4 w-4" />
+              Items
             </Button>
             <Button
               variant="outline"

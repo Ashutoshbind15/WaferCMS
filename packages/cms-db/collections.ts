@@ -13,7 +13,7 @@ import {
 } from "./schema";
 
 type CollectionRow = typeof collection.$inferSelect;
-type CollectionFieldRow = typeof collectionField.$inferSelect;
+export type CollectionFieldRow = typeof collectionField.$inferSelect;
 
 const isNonEmptyString = (value: unknown): value is string =>
   typeof value === "string" && value.trim().length > 0;

@@ -89,6 +89,14 @@ export type CollectionFieldRecord = {
   updatedAt: string;
 };
 
+export type CollectionItemRecord = {
+  id: number;
+  collectionId: number;
+  values: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type ApiKeyScope = "read" | "write" | "read_write";
 
 export type LibraryFileRecord = {
@@ -469,4 +477,62 @@ export async function deleteCollectionField(
     `${base}/collections/${collectionId}/fields/${fieldId}`,
     { method: "DELETE" },
   );
+}
+
+export async function fetchCollectionItems(
+  collectionId: number,
+  query: ListQuery = { count: true },
+): Promise<PaginatedResult<CollectionItemRecord>> {
+  const qs = buildListQuery(query);
+  const url = qs
+    ? `${base}/collections/${collectionId}/items?${qs}`
+    : `${base}/collections/${collectionId}/items`;
+  return requestJson<PaginatedResult<CollectionItemRecord>>(url);
+}
+
+export async function fetchCollectionItem(
+  collectionId: number,
+  itemId: number,
+): Promise<CollectionItemRecord> {
+  return requestJson<CollectionItemRecord>(
+    `${base}/collections/${collectionId}/items/${itemId}`,
+  );
+}
+
+export async function createCollectionItem(
+  collectionId: number,
+  input: { values: Record<string, unknown> },
+): Promise<CollectionItemRecord> {
+  return requestJson<CollectionItemRecord>(
+    `${base}/collections/${collectionId}/items`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+}
+
+export async function updateCollectionItem(
+  collectionId: number,
+  itemId: number,
+  input: { values: Record<string, unknown> },
+): Promise<CollectionItemRecord> {
+  return requestJson<CollectionItemRecord>(
+    `${base}/collections/${collectionId}/items/${itemId}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+}
+
+export async function deleteCollectionItem(
+  collectionId: number,
+  itemId: number,
+) {
+  return deleteJson(`${base}/collections/${collectionId}/items/${itemId}`, {
+    method: "DELETE",
+  });
 }
