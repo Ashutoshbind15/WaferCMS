@@ -8,22 +8,19 @@ import {
 } from "@packages/cms-db/access";
 import { type ListPageQuery } from "@packages/cms-db/pagination";
 import { parseListQuery } from "../lib/pagination";
-import { parseTitle } from "../lib/validation";
 import { parseIdParam, sendRouteError } from "../lib/http";
+import type { DiagramBody } from "../lib/validation";
 
 const listDiagramsData = async (query: ListPageQuery) =>
   listDiagramRecords(query);
 
 const getDiagramData = async (id: number) => getDiagramRecord(id);
 
-const createDiagramData = async (title: unknown, payload: unknown) =>
-  addDiagramRecord(parseTitle(title), payload);
+const createDiagramData = async (input: DiagramBody) =>
+  addDiagramRecord(input.title, input.payload);
 
-const updateDiagramData = async (
-  id: number,
-  title: unknown,
-  payload: unknown,
-) => updateDiagramRecord(id, parseTitle(title), payload);
+const updateDiagramData = async (id: number, input: DiagramBody) =>
+  updateDiagramRecord(id, input.title, input.payload);
 
 const deleteDiagramData = async (id: number) => deleteDiagramRecord(id);
 
@@ -51,8 +48,7 @@ export const getDiagram = async (req: Request, res: Response) => {
 
 export const createDiagram = async (req: Request, res: Response) => {
   try {
-    const { title, payload } = req.body;
-    const result = await createDiagramData(title, payload);
+    const result = await createDiagramData(req.body as DiagramBody);
     res.status(201).json(result);
   } catch (error) {
     sendRouteError(res, error);
@@ -61,11 +57,9 @@ export const createDiagram = async (req: Request, res: Response) => {
 
 export const updateDiagram = async (req: Request, res: Response) => {
   try {
-    const { title, payload } = req.body;
     const result = await updateDiagramData(
       parseIdParam(String(req.params.id)),
-      title,
-      payload,
+      req.body as DiagramBody,
     );
     res.json(result);
   } catch (error) {

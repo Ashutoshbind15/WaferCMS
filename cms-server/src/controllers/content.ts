@@ -8,22 +8,19 @@ import {
 } from "@packages/cms-db/access";
 import { type ListPageQuery } from "@packages/cms-db/pagination";
 import { parseListQuery } from "../lib/pagination";
-import { parseTitle } from "../lib/validation";
 import { parseIdParam, sendRouteError } from "../lib/http";
+import type { ContentBody } from "../lib/validation";
 
 const listContentData = async (query: ListPageQuery) =>
   listContentRecords(query);
 
 const getContentData = async (id: number) => getContentRecord(id);
 
-const createContentData = async (title: unknown, payload: unknown) =>
-  addContentRecord(parseTitle(title), payload);
+const createContentData = async (input: ContentBody) =>
+  addContentRecord(input.title, input.payload);
 
-const updateContentData = async (
-  id: number,
-  title: unknown,
-  payload: unknown,
-) => updateContentRecord(id, parseTitle(title), payload);
+const updateContentData = async (id: number, input: ContentBody) =>
+  updateContentRecord(id, input.title, input.payload);
 
 const deleteContentData = async (id: number) => deleteContentRecord(id);
 
@@ -51,8 +48,7 @@ export const getContent = async (req: Request, res: Response) => {
 
 export const createContent = async (req: Request, res: Response) => {
   try {
-    const { title, payload } = req.body;
-    const result = await createContentData(title, payload);
+    const result = await createContentData(req.body as ContentBody);
     res.status(201).json(result);
   } catch (error) {
     sendRouteError(res, error);
@@ -61,11 +57,9 @@ export const createContent = async (req: Request, res: Response) => {
 
 export const updateContent = async (req: Request, res: Response) => {
   try {
-    const { title, payload } = req.body;
     const result = await updateContentData(
       parseIdParam(String(req.params.id)),
-      title,
-      payload,
+      req.body as ContentBody,
     );
     res.json(result);
   } catch (error) {

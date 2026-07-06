@@ -5,13 +5,9 @@ import {
 } from "@packages/cms-db/users";
 import { clearSessionCookie, setSessionCookie } from "../lib/cookies";
 import { signSession } from "../lib/session";
+import type { LoginBody } from "../lib/validation";
 
-type LoginInput = {
-  username: string;
-  password: string;
-};
-
-const loginData = async (input: LoginInput) => {
+const loginData = async (input: LoginBody) => {
   const user = await verifyUserPassword(input.username, input.password);
   if (!user) {
     return null;
@@ -35,22 +31,7 @@ const loginData = async (input: LoginInput) => {
 
 export const login = async (req: Request, res: Response) => {
   try {
-    const { username, password } = req.body as {
-      username?: unknown;
-      password?: unknown;
-    };
-
-    if (typeof username !== "string" || !username.trim()) {
-      res.status(400).json({ error: "Username is required." });
-      return;
-    }
-
-    if (typeof password !== "string" || !password) {
-      res.status(400).json({ error: "Password is required." });
-      return;
-    }
-
-    const result = await loginData({ username, password });
+    const result = await loginData(req.body as LoginBody);
     if (!result) {
       res.status(401).json({ error: "Invalid username or password." });
       return;

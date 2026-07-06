@@ -26,6 +26,7 @@ import {
 } from "@packages/cms-db/pagination";
 import { parseListQuery } from "../lib/pagination";
 import { parseIdParam, sendRouteError } from "../lib/http";
+import type { CollectionItemBody } from "../lib/validation";
 
 export type CollectionItem = {
   id: number;
@@ -315,11 +316,7 @@ export const getItem = async (req: Request, res: Response) => {
 export const createItem = async (req: Request, res: Response) => {
   try {
     const collectionId = parseCollectionId(req);
-    const { values } = req.body as { values?: Record<string, unknown> };
-    if (!values || typeof values !== "object" || Array.isArray(values)) {
-      res.status(400).json({ error: "values object is required." });
-      return;
-    }
+    const { values } = req.body as CollectionItemBody;
     const result = await createItemData(collectionId, { values });
     res.status(201).json(result);
   } catch (error) {
@@ -331,11 +328,7 @@ export const updateItem = async (req: Request, res: Response) => {
   try {
     const collectionId = parseCollectionId(req);
     const itemId = parseIdParam(String(req.params.itemId));
-    const { values } = req.body as { values?: Record<string, unknown> };
-    if (!values || typeof values !== "object" || Array.isArray(values)) {
-      res.status(400).json({ error: "values object is required." });
-      return;
-    }
+    const { values } = req.body as CollectionItemBody;
     const result = await updateItemData(collectionId, itemId, { values });
     res.json(result);
   } catch (error) {

@@ -7,25 +7,20 @@ import {
   updateCollectionRecord,
 } from "@packages/cms-db/collections";
 import { type ListPageQuery } from "@packages/cms-db/pagination";
-import { parseCollectionInput } from "../lib/collections";
 import { parseListQuery } from "../lib/pagination";
 import { parseIdParam, sendRouteError } from "../lib/http";
+import type { CollectionBody } from "../lib/validation";
 
 const listCollectionsData = async (query: ListPageQuery) =>
   listCollectionRecords(query);
 
 const getCollectionData = async (id: number) => getCollectionRecord(id);
 
-const createCollectionData = async (input: {
-  slug: unknown;
-  title: unknown;
-  description?: unknown;
-}) => addCollectionRecord(parseCollectionInput(input));
+const createCollectionData = async (input: CollectionBody) =>
+  addCollectionRecord(input);
 
-const updateCollectionData = async (
-  id: number,
-  input: { slug: unknown; title: unknown; description?: unknown },
-) => updateCollectionRecord(id, parseCollectionInput(input));
+const updateCollectionData = async (id: number, input: CollectionBody) =>
+  updateCollectionRecord(id, input);
 
 const deleteCollectionData = async (id: number) => deleteCollectionRecord(id);
 
@@ -55,8 +50,7 @@ export const getCollection = async (req: Request, res: Response) => {
 
 export const createCollection = async (req: Request, res: Response) => {
   try {
-    const { slug, title, description } = req.body;
-    const result = await createCollectionData({ slug, title, description });
+    const result = await createCollectionData(req.body as CollectionBody);
     res.status(201).json(result);
   } catch (error) {
     sendRouteError(res, error);
@@ -65,12 +59,10 @@ export const createCollection = async (req: Request, res: Response) => {
 
 export const updateCollection = async (req: Request, res: Response) => {
   try {
-    const { slug, title, description } = req.body;
-    const result = await updateCollectionData(parseIdParam(String(req.params.id)), {
-      slug,
-      title,
-      description,
-    });
+    const result = await updateCollectionData(
+      parseIdParam(String(req.params.id)),
+      req.body as CollectionBody,
+    );
     res.json(result);
   } catch (error) {
     sendRouteError(res, error);

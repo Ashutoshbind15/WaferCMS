@@ -1,13 +1,9 @@
 import { randomBytes } from "node:crypto";
 import type { Request, Response } from "express";
 import { insertApiKey, listApiKeys, revokeApiKey } from "@packages/cms-db/api-keys";
-import {
-  hashApiKey,
-  isApiKeyScope,
-  type ApiKeyScope,
-} from "../lib/api-keys";
-import { isNonEmptyString } from "../lib/validation";
+import { hashApiKey } from "../lib/api-keys";
 import { parseIdParam, sendRouteError } from "../lib/http";
+import type { CreateApiKeyBody } from "../lib/validation";
 
 const getPepper = (): string => {
   const pepper = process.env.CMS_API_KEY_PEPPER?.trim();
@@ -22,15 +18,10 @@ const generateRawApiKey = (): string =>
 
 const listApiKeysData = async () => listApiKeys();
 
-const createApiKeyData = async (input: { label: string; scope: ApiKeyScope }) => {
-  const label = input.label.trim();
-  if (!label) {
-    throw new Error("Label is required.");
-  }
-
+const createApiKeyData = async (input: CreateApiKeyBody) => {
   const rawKey = generateRawApiKey();
   const record = await insertApiKey({
-    label,
+    label: input.label,
     keyPrefix: rawKey.slice(0, 8),
     keyHash: hashApiKey(rawKey, getPepper()),
     scope: input.scope,
@@ -51,22 +42,7 @@ export const listApiKeysHandler = async (_req: Request, res: Response) => {
 
 export const createApiKeyHandler = async (req: Request, res: Response) => {
   try {
-    const { label, scope } = req.body as {
-      label?: unknown;
-      scope?: unknown;
-    };
-
-    if (!isNonEmptyString(label)) {
-      res.status(400).json({ error: "Label is required." });
-      return;
-    }
-
-    if (!isApiKeyScope(scope)) {
-      res.status(400).json({ error: "Invalid scope." });
-      return;
-    }
-
-    const record = await createApiKeyData({ label, scope });
+    const record = await createApiKeyData(req.body as CreateApiKeyBody);
     res.status(201).json(record);
   } catch (error) {
     sendRouteError(res, error);
@@ -75,13 +51,6 @@ export const createApiKeyHandler = async (req: Request, res: Response) => {
 
 export const revokeApiKeyHandler = async (req: Request, res: Response) => {
   try {
-    const { enabled } = req.body as { enabled?: unknown };
-
-    if (enabled !== false) {
-      res.status(400).json({ error: "Only revocation is supported." });
-      return;
-    }
-
     const record = await revokeApiKeyData(parseIdParam(String(req.params.id)));
     res.json(record);
   } catch (error) {

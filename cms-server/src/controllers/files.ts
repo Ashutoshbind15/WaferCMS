@@ -13,25 +13,12 @@ import { type ListPageQuery, type PaginatedRows } from "@packages/cms-db/paginat
 import { parseListQuery } from "../lib/pagination";
 import { cmsPublicBaseUrl } from "../lib/asset-url";
 import { toFileResponse, type FileResponse } from "../lib/files";
-
 import { parseIdParam, sendRouteError } from "../lib/http";
+import type { PatchFileBody, UploadFileBody } from "../lib/validation";
 
 const safeBasename = (name: string): string => {
   const base = path.basename(name).replace(/[^\w.\-]+/g, "_");
   return base.length > 0 ? base : "file";
-};
-
-/** Parse an `isPublic` value coming from JSON or multipart (stringy) bodies. */
-export const parseIsPublic = (value: unknown): boolean | null => {
-  if (typeof value === "boolean") {
-    return value;
-  }
-  if (typeof value === "string") {
-    const v = value.trim().toLowerCase();
-    if (v === "true" || v === "1") return true;
-    if (v === "false" || v === "0") return false;
-  }
-  return null;
 };
 
 const listFilesData = async (
@@ -99,11 +86,12 @@ export const uploadFile = async (req: Request, res: Response) => {
   }
 
   try {
+    const { isPublic } = req.body as UploadFileBody;
     const result = await uploadFileData({
       buffer: file.buffer,
       originalname: file.originalname,
       mimetype: file.mimetype,
-      isPublic: parseIsPublic(req.body.isPublic) ?? true,
+      isPublic,
     });
     res.status(201).json(result);
   } catch (error) {
@@ -113,12 +101,7 @@ export const uploadFile = async (req: Request, res: Response) => {
 
 export const patchFile = async (req: Request, res: Response) => {
   try {
-    const isPublic = parseIsPublic(req.body?.isPublic);
-    if (isPublic === null) {
-      res.status(400).json({ error: "isPublic must be a boolean." });
-      return;
-    }
-
+    const { isPublic } = req.body as PatchFileBody;
     const result = await patchFileData(parseIdParam(String(req.params.id)), isPublic);
     res.status(200).json(result);
   } catch (error) {
