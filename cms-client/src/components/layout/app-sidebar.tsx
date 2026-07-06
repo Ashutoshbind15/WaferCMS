@@ -6,10 +6,9 @@ import {
   Plus,
   KeyRound,
   Users,
-  LogOut,
   Database,
 } from "lucide-react";
-import { useAuth } from "@/context/auth-context";
+import { SidebarUserMenu } from "@/components/layout/sidebar-user-menu";
 import {
   Sidebar,
   SidebarContent,
@@ -25,7 +24,6 @@ import {
 } from "@/components/ui/sidebar";
 
 export function AppSidebar() {
-  const { user, logout } = useAuth();
   const contentList = useMatch({ path: "/content", end: true });
   const contentNew = useMatch("/content/new");
 
@@ -203,24 +201,7 @@ export function AppSidebar() {
 
       <SidebarFooter>
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="sm" className="text-sidebar-foreground/70">
-              <span className="truncate text-xs">
-                {user ? user.username : "Portfolio CMS"}
-              </span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              size="sm"
-              className="text-sidebar-foreground/70"
-              onClick={() => void logout()}
-              tooltip="Sign out"
-            >
-              <LogOut />
-              <span>Sign out</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          <SidebarUserMenu />
         </SidebarMenu>
       </SidebarFooter>
 

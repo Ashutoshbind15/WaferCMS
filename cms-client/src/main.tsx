@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router";
 import "./style.css";
 import "@scribblesvg/react-utils/editor.css";
 
+import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/context/auth-context";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -37,8 +38,9 @@ function RootLayout() {
 }
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <BrowserRouter>
-    <AuthProvider>
+  <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+    <BrowserRouter>
+      <AuthProvider>
       <TooltipProvider>
         <SidebarProvider>
           <Routes>
@@ -74,6 +76,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           </Routes>
         </SidebarProvider>
       </TooltipProvider>
-    </AuthProvider>
-  </BrowserRouter>,
+      </AuthProvider>
+    </BrowserRouter>
+  </ThemeProvider>,
 );
