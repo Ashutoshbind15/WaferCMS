@@ -62,6 +62,35 @@ const buildListQuery = (query: ListQuery = {}) => {
 export type ContentRecord = EntityRecord;
 export type DiagramRecord = EntityRecord;
 
+export type CollectionFieldType =
+  | "text"
+  | "long-text"
+  | "richtext"
+  | "diagrams";
+
+export type CollectionRecord = {
+  id: number;
+  slug: string;
+  title: string;
+  description: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CollectionFieldRecord = {
+  id: number;
+  collectionId: number;
+  key: string;
+  label: string;
+  fieldType: CollectionFieldType;
+  position: number;
+  required: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ApiKeyScope = "read" | "write" | "read_write";
+
 export type LibraryFileRecord = {
   id: number;
   objectKey: string;
@@ -307,8 +336,6 @@ export function uploadLibraryFile(
   });
 }
 
-export type ApiKeyScope = "read" | "write" | "read_write";
-
 export type ApiKeyRecord = {
   id: number;
   label: string;
@@ -345,4 +372,101 @@ export async function revokeApiKey(id: number): Promise<ApiKeyRecord> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ enabled: false }),
   });
+}
+
+export async function fetchCollectionList(
+  query: ListQuery = { count: true },
+): Promise<PaginatedResult<CollectionRecord>> {
+  const qs = buildListQuery(query);
+  const url = qs ? `${base}/collections?${qs}` : `${base}/collections`;
+  return requestJson<PaginatedResult<CollectionRecord>>(url);
+}
+
+export async function fetchCollection(id: number): Promise<CollectionRecord> {
+  return requestJson<CollectionRecord>(`${base}/collections/${id}`);
+}
+
+export async function createCollection(input: {
+  slug: string;
+  title: string;
+  description?: string | null;
+}): Promise<CollectionRecord> {
+  return requestJson<CollectionRecord>(`${base}/collections`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function updateCollection(
+  id: number,
+  input: { slug: string; title: string; description?: string | null },
+): Promise<CollectionRecord> {
+  return requestJson<CollectionRecord>(`${base}/collections/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function deleteCollection(id: number) {
+  return deleteJson(`${base}/collections/${id}`, { method: "DELETE" });
+}
+
+export async function fetchCollectionFields(
+  collectionId: number,
+): Promise<CollectionFieldRecord[]> {
+  const result = await requestJson<{ data: CollectionFieldRecord[] }>(
+    `${base}/collections/${collectionId}/fields`,
+  );
+  return result.data;
+}
+
+export async function createCollectionField(
+  collectionId: number,
+  input: {
+    key: string;
+    label: string;
+    fieldType: CollectionFieldType;
+    required?: boolean;
+  },
+): Promise<CollectionFieldRecord> {
+  return requestJson<CollectionFieldRecord>(
+    `${base}/collections/${collectionId}/fields`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+}
+
+export async function updateCollectionField(
+  collectionId: number,
+  fieldId: number,
+  input: {
+    key: string;
+    label: string;
+    fieldType: CollectionFieldType;
+    required?: boolean;
+  },
+): Promise<CollectionFieldRecord> {
+  return requestJson<CollectionFieldRecord>(
+    `${base}/collections/${collectionId}/fields/${fieldId}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+}
+
+export async function deleteCollectionField(
+  collectionId: number,
+  fieldId: number,
+) {
+  return deleteJson(
+    `${base}/collections/${collectionId}/fields/${fieldId}`,
+    { method: "DELETE" },
+  );
 }

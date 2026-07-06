@@ -1,0 +1,297 @@
+import { useId, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { slugify } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  type CollectionFieldRecord,
+  type CollectionFieldType,
+} from "@/lib/cms-api";
+
+export const COLLECTION_FIELD_TYPE_OPTIONS: {
+  value: CollectionFieldType;
+  label: string;
+}[] = [
+  { value: "text", label: "Text" },
+  { value: "long-text", label: "Long text" },
+  { value: "richtext", label: "Rich text" },
+  { value: "diagrams", label: "Diagrams" },
+];
+
+const fieldTypeLabel = (fieldType: CollectionFieldType) =>
+  COLLECTION_FIELD_TYPE_OPTIONS.find((option) => option.value === fieldType)
+    ?.label ?? fieldType;
+
+type FieldDraft = {
+  key: string;
+  label: string;
+  fieldType: CollectionFieldType;
+  required: boolean;
+};
+
+const emptyDraft = (): FieldDraft => ({
+  key: "",
+  label: "",
+  fieldType: "text",
+  required: false,
+});
+
+type CollectionFieldsPanelProps = {
+  fields: CollectionFieldRecord[];
+  savingFieldId: number | "new" | null;
+  deletingFieldId: number | null;
+  error: string | null;
+  onCreate: (input: FieldDraft) => Promise<void>;
+  onUpdate: (fieldId: number, input: FieldDraft) => Promise<void>;
+  onDelete: (fieldId: number) => Promise<void>;
+};
+
+function FieldEditor({
+  draft,
+  submitLabel,
+  disabled,
+  autoKeyFromLabel,
+  onChange,
+  onSubmit,
+  onCancel,
+}: {
+  draft: FieldDraft;
+  submitLabel: string;
+  disabled: boolean;
+  autoKeyFromLabel: boolean;
+  onChange: (draft: FieldDraft) => void;
+  onSubmit: () => void;
+  onCancel?: () => void;
+}) {
+  const id = useId();
+  const [keyTouched, setKeyTouched] = useState(!autoKeyFromLabel);
+
+  return (
+    <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor={`${id}-label`}>Label</Label>
+          <Input
+            id={`${id}-label`}
+            placeholder="Title"
+            value={draft.label}
+            onChange={(e) => {
+              const label = e.target.value;
+              const next = { ...draft, label };
+              if (autoKeyFromLabel && !keyTouched) {
+                next.key = slugify(label);
+              }
+              onChange(next);
+            }}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor={`${id}-key`}>Key</Label>
+          <Input
+            id={`${id}-key`}
+            placeholder="title"
+            value={draft.key}
+            onChange={(e) => {
+              setKeyTouched(true);
+              onChange({ ...draft, key: e.target.value });
+            }}
+          />
+          <p className="text-xs text-muted-foreground">
+            {autoKeyFromLabel
+              ? "Auto-generated from label. Mostly for API clients."
+              : "Mostly for API clients."}
+          </p>
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor={`${id}-type`}>Type</Label>
+          <Select
+            value={draft.fieldType}
+            onValueChange={(value) =>
+              onChange({ ...draft, fieldType: value as CollectionFieldType })
+            }
+          >
+            <SelectTrigger id={`${id}-type`} className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {COLLECTION_FIELD_TYPE_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center gap-2 self-end pb-2">
+          <Checkbox
+            id={`${id}-required`}
+            checked={draft.required}
+            disabled={disabled}
+            onCheckedChange={(checked) =>
+              onChange({ ...draft, required: checked === true })
+            }
+          />
+          <Label htmlFor={`${id}-required`} className="font-normal">
+            Required
+          </Label>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Button size="sm" disabled={disabled} onClick={onSubmit}>
+          {submitLabel}
+        </Button>
+        {onCancel ? (
+          <Button size="sm" variant="ghost" disabled={disabled} onClick={onCancel}>
+            Cancel
+          </Button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+export function CollectionFieldsPanel({
+  fields,
+  savingFieldId,
+  deletingFieldId,
+  error,
+  onCreate,
+  onUpdate,
+  onDelete,
+}: CollectionFieldsPanelProps) {
+  const [showCreate, setShowCreate] = useState(false);
+  const [createDraft, setCreateDraft] = useState<FieldDraft>(emptyDraft);
+  const [editingFieldId, setEditingFieldId] = useState<number | null>(null);
+  const [editDraft, setEditDraft] = useState<FieldDraft>(emptyDraft);
+
+  const startEdit = (field: CollectionFieldRecord) => {
+    setEditingFieldId(field.id);
+    setEditDraft({
+      key: field.key,
+      label: field.label,
+      fieldType: field.fieldType,
+      required: field.required,
+    });
+    setShowCreate(false);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-sm text-muted-foreground">
+          {fields.length === 0
+            ? "Add fields to define this collection's schema."
+            : `${fields.length} field${fields.length === 1 ? "" : "s"}`}
+        </p>
+        {!showCreate ? (
+          <Button
+            size="sm"
+            onClick={() => {
+              setShowCreate(true);
+              setEditingFieldId(null);
+              setCreateDraft(emptyDraft());
+            }}
+          >
+            Add field
+          </Button>
+        ) : null}
+      </div>
+
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
+      {showCreate ? (
+        <FieldEditor
+          draft={createDraft}
+          submitLabel={savingFieldId === "new" ? "Adding…" : "Add field"}
+          disabled={savingFieldId === "new"}
+          autoKeyFromLabel
+          onChange={setCreateDraft}
+          onSubmit={() => {
+            void onCreate(createDraft).then(() => {
+              setShowCreate(false);
+              setCreateDraft(emptyDraft());
+            });
+          }}
+          onCancel={() => {
+            setShowCreate(false);
+            setCreateDraft(emptyDraft());
+          }}
+        />
+      ) : null}
+
+      {fields.length === 0 && !showCreate ? (
+        <div className="rounded-lg border border-dashed border-border py-12 text-center">
+          <p className="text-sm text-muted-foreground">No fields yet</p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {fields.map((field) =>
+            editingFieldId === field.id ? (
+              <FieldEditor
+                key={field.id}
+                draft={editDraft}
+                submitLabel={
+                  savingFieldId === field.id ? "Saving…" : "Save field"
+                }
+                disabled={savingFieldId === field.id}
+                autoKeyFromLabel={false}
+                onChange={setEditDraft}
+                onSubmit={() => {
+                  void onUpdate(field.id, editDraft).then(() => {
+                    setEditingFieldId(null);
+                  });
+                }}
+                onCancel={() => setEditingFieldId(null)}
+              />
+            ) : (
+              <div
+                key={field.id}
+                className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card p-4"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">{field.label}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    <span className="font-mono">{field.key}</span>
+                    {" · "}
+                    {fieldTypeLabel(field.fieldType)}
+                    {field.required ? " · required" : ""}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={deletingFieldId === field.id}
+                    onClick={() => startEdit(field)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={deletingFieldId === field.id}
+                    onClick={() => void onDelete(field.id)}
+                  >
+                    {deletingFieldId === field.id ? "Deleting…" : "Delete"}
+                  </Button>
+                </div>
+              </div>
+            ),
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

@@ -11,7 +11,17 @@ export const parseIdParam = (value: string): number => {
 export const sendRouteError = (res: Response, error: unknown) => {
   const message = error instanceof Error ? error.message : "Unexpected error";
 
-  if (message === "Invalid id." || message === "Title is required." || message === "Label is required.") {
+  if (
+    message === "Invalid id." ||
+    message === "Title is required." ||
+    message === "Label is required." ||
+    message === "Slug is required." ||
+    message === "Field key is required." ||
+    message === "Field label is required." ||
+    message.startsWith("Slug must start with a letter") ||
+    message.startsWith("Field key must start with a letter") ||
+    message.startsWith("Field type must be one of:")
+  ) {
     res.status(400).json({ error: message });
     return;
   }

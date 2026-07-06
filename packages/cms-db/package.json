@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     "./access": "./access.ts",
+    "./collections": "./collections.ts",
     "./api-keys": "./api-keys.ts",
     "./db": "./db.ts",
     "./pagination": "./pagination.ts",

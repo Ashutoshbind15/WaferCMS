@@ -7,6 +7,7 @@ import {
   KeyRound,
   Users,
   LogOut,
+  Database,
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import {
@@ -32,10 +33,16 @@ export function AppSidebar() {
   const diagramById = useMatch("/diagrams/:id");
 
   const library = useMatch({ path: "/library", end: true });
+  const collectionsList = useMatch({ path: "/collections", end: true });
+  const collectionNew = useMatch("/collections/new");
+  const collectionById = useMatch("/collections/:id");
   const apiKeys = useMatch({ path: "/api-keys", end: true });
   const users = useMatch({ path: "/users", end: true });
 
   const diagramsActive = Boolean(diagramsList || diagramById);
+  const collectionsActive = Boolean(
+    collectionsList || collectionNew || collectionById,
+  );
 
   return (
     <Sidebar collapsible="icon">
@@ -122,6 +129,38 @@ export function AppSidebar() {
                   <NavLink to="/library">
                     <ImageIcon />
                     <span>Library</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Collections</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={collectionsActive}
+                  tooltip="Collections"
+                >
+                  <NavLink to="/collections">
+                    <Database />
+                    <span>All collections</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={Boolean(collectionNew)}
+                  tooltip="New collection"
+                >
+                  <NavLink to="/collections/new">
+                    <Plus />
+                    <span>New collection</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
