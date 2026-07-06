@@ -21,6 +21,21 @@ export const sendRouteError = (res: Response, error: unknown) => {
     return;
   }
 
+  if (message.startsWith("User ") && message.endsWith(" not found.")) {
+    res.status(404).json({ error: message });
+    return;
+  }
+
+  if (
+    message === "Username is required." ||
+    message === "Password is required." ||
+    message === "Users already exist." ||
+    message === "Username already exists."
+  ) {
+    res.status(400).json({ error: message });
+    return;
+  }
+
   if (message === "Invalid page." || message === "Invalid limit.") {
     res.status(400).json({ error: message });
     return;

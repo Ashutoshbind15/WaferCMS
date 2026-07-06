@@ -1,28 +1,41 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import contentRouter from "./routes/content";
 import diagramsRouter from "./routes/diagrams";
 import filesRouter from "./routes/files";
 import apiKeysRouter from "./routes/api-keys";
-import { apiKeyAuthMiddleware } from "./middleware/api-key-auth";
+import authRouter from "./routes/auth";
+import usersRouter from "./routes/users";
+import { contentAuthMiddleware } from "./middleware/content-auth";
+import { sessionAuthMiddleware } from "./middleware/session-auth";
 
 const app = express();
 
+const corsOrigin = process.env.CORS_ORIGIN?.trim();
+
 app.set("trust proxy", 1);
 app.use(express.json());
-app.use(cors());
+app.use(
+  cors(
+    corsOrigin
+      ? { origin: corsOrigin, credentials: true }
+      : undefined,
+  ),
+);
+app.use(cookieParser());
 
 app.get("/ok", (req, res) => {
   res.send("CMS Server is running");
 });
 
-app.use(apiKeyAuthMiddleware);
-
-app.use("/content", contentRouter);
-app.use("/diagrams", diagramsRouter);
-app.use("/files", filesRouter);
-app.use("/api-keys", apiKeysRouter);
+app.use("/auth", authRouter);
+app.use("/users", sessionAuthMiddleware, usersRouter);
+app.use("/content", contentAuthMiddleware, contentRouter);
+app.use("/diagrams", contentAuthMiddleware, diagramsRouter);
+app.use("/files", contentAuthMiddleware, filesRouter);
+app.use("/api-keys", sessionAuthMiddleware, apiKeysRouter);
 
 app.listen(3001, () => {
   console.log("Server is running on port 3001");

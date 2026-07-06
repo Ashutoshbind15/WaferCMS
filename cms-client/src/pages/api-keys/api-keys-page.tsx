@@ -3,6 +3,16 @@ import { Copy, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { Header } from "@/components/layout/header";
 import { PageContainer } from "@/components/layout/page-container";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -49,6 +59,10 @@ export default function ApiKeysPage() {
   const [scope, setScope] = useState<ApiKeyScope>("read");
   const [creating, setCreating] = useState(false);
   const [revokingId, setRevokingId] = useState<number | null>(null);
+  const [revokeTarget, setRevokeTarget] = useState<{
+    id: number;
+    label: string;
+  } | null>(null);
   const [createdKey, setCreatedKey] = useState<CreatedApiKeyRecord | null>(
     null,
   );
@@ -92,18 +106,18 @@ export default function ApiKeysPage() {
     }
   };
 
-  const onRevoke = async (id: number, keyLabel: string) => {
-    if (
-      !window.confirm(`Revoke API key "${keyLabel}"? This cannot be undone.`)
-    ) {
+  const confirmRevoke = async () => {
+    if (!revokeTarget) {
       return;
     }
 
+    const { id } = revokeTarget;
     setRevokingId(id);
     setError(null);
     try {
       await revokeApiKey(id);
       toast.success("API key revoked");
+      setRevokeTarget(null);
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to revoke API key");
@@ -255,7 +269,9 @@ export default function ApiKeysPage() {
                                 variant="outline"
                                 size="sm"
                                 disabled={revokingId === key.id}
-                                onClick={() => void onRevoke(key.id, key.label)}
+                                onClick={() =>
+                                  setRevokeTarget({ id: key.id, label: key.label })
+                                }
                               >
                                 {revokingId === key.id ? "Revoking..." : "Revoke"}
                               </Button>
@@ -271,6 +287,37 @@ export default function ApiKeysPage() {
           </Card>
         </div>
       </PageContainer>
+
+      <AlertDialog
+        open={revokeTarget !== null}
+        onOpenChange={(open) => {
+          if (!open && revokingId === null) {
+            setRevokeTarget(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Revoke API key?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Revoke API key &ldquo;{revokeTarget?.label}&rdquo;? This cannot be
+              undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={revokingId !== null}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={revokingId !== null}
+              onClick={() => void confirmRevoke()}
+            >
+              {revokingId !== null ? "Revoking..." : "Revoke"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

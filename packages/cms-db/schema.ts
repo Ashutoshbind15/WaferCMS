@@ -47,3 +47,13 @@ export const apiKey = pgTable("api_key", {
   createdAt: timestamp().notNull().defaultNow(),
   lastUsedAt: timestamp(),
 });
+
+export const user = pgTable("user", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  username: text().notNull().unique(),
+  passwordHash: text().notNull(),
+  enabled: boolean().notNull().default(true),
+  createdAt: timestamp().notNull().defaultNow(),
+  updatedAt: timestamp().notNull().defaultNow(),
+  lastLoginAt: timestamp(),
+});

@@ -1,5 +1,14 @@
 import { NavLink, useMatch } from "react-router";
-import { FileText, PenTool, ImageIcon, Plus, KeyRound } from "lucide-react";
+import {
+  FileText,
+  PenTool,
+  ImageIcon,
+  Plus,
+  KeyRound,
+  Users,
+  LogOut,
+} from "lucide-react";
+import { useAuth } from "@/context/auth-context";
 import {
   Sidebar,
   SidebarContent,
@@ -15,6 +24,7 @@ import {
 } from "@/components/ui/sidebar";
 
 export function AppSidebar() {
+  const { user, logout } = useAuth();
   const contentList = useMatch({ path: "/content", end: true });
   const contentNew = useMatch("/content/new");
 
@@ -23,6 +33,7 @@ export function AppSidebar() {
 
   const library = useMatch({ path: "/library", end: true });
   const apiKeys = useMatch({ path: "/api-keys", end: true });
+  const users = useMatch({ path: "/users", end: true });
 
   const diagramsActive = Boolean(diagramsList || diagramById);
 
@@ -134,6 +145,18 @@ export function AppSidebar() {
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={Boolean(users)}
+                  tooltip="Users"
+                >
+                  <NavLink to="/users">
+                    <Users />
+                    <span>Users</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -143,7 +166,20 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="sm" className="text-sidebar-foreground/70">
-              <span className="truncate text-xs">Portfolio CMS</span>
+              <span className="truncate text-xs">
+                {user ? user.username : "Portfolio CMS"}
+              </span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              size="sm"
+              className="text-sidebar-foreground/70"
+              onClick={() => void logout()}
+              tooltip="Sign out"
+            >
+              <LogOut />
+              <span>Sign out</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

@@ -1,6 +1,6 @@
 const base =
   import.meta.env.VITE_CMS_API_BASE?.replace(/\/$/, "") ??
-  "http://localhost:3001";
+  (import.meta.env.DEV ? "" : "http://localhost:3001");
 
 type EntityRecord = {
   id: number;
@@ -29,6 +29,20 @@ export type ListQuery = {
   page?: number;
   limit?: number;
   count?: boolean;
+};
+
+export type SessionUser = {
+  id: number;
+  username: string;
+};
+
+export type UserRecord = {
+  id: number;
+  username: string;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+  lastLoginAt: string | null;
 };
 
 const buildListQuery = (query: ListQuery = {}) => {
@@ -69,11 +83,22 @@ const getErrorMessage = async (res: Response) => {
   }
 };
 
+async function apiFetch(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+): Promise<Response> {
+  return fetch(input, {
+    credentials: "include",
+    ...init,
+    headers: init?.headers,
+  });
+}
+
 async function requestJson<T>(
   input: RequestInfo | URL,
   init?: RequestInit,
 ): Promise<T> {
-  const res = await fetch(input, init);
+  const res = await apiFetch(input, init);
   if (!res.ok) {
     throw new Error(await getErrorMessage(res));
   }
@@ -84,11 +109,63 @@ async function deleteJson(
   input: RequestInfo | URL,
   init?: RequestInit,
 ): Promise<{ deleted: true }> {
-  const res = await fetch(input, init);
+  const res = await apiFetch(input, init);
   if (!res.ok) {
     throw new Error(await getErrorMessage(res));
   }
   return res.json() as Promise<{ deleted: true }>;
+}
+
+export async function fetchSession(): Promise<SessionUser | null> {
+  const res = await apiFetch(`${base}/auth/me`);
+  if (res.status === 401) {
+    return null;
+  }
+  if (!res.ok) {
+    throw new Error(await getErrorMessage(res));
+  }
+  const data = (await res.json()) as { user: SessionUser };
+  return data.user;
+}
+
+export async function login(input: {
+  username: string;
+  password: string;
+}): Promise<SessionUser> {
+  const data = await requestJson<{ user: SessionUser }>(`${base}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return data.user;
+}
+
+export async function logout(): Promise<void> {
+  await requestJson(`${base}/auth/logout`, { method: "POST" });
+}
+
+export async function fetchUsers(): Promise<UserRecord[]> {
+  const result = await requestJson<{ data: UserRecord[] }>(`${base}/users`);
+  return result.data;
+}
+
+export async function createUser(input: {
+  username: string;
+  password: string;
+}): Promise<UserRecord> {
+  return requestJson<UserRecord>(`${base}/users`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function disableUser(id: number): Promise<UserRecord> {
+  return requestJson<UserRecord>(`${base}/users/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ enabled: false }),
+  });
 }
 
 export async function fetchContentList(
@@ -188,6 +265,7 @@ export function uploadLibraryFile(
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `${base}/files`);
+    xhr.withCredentials = true;
 
     if (onProgress) {
       xhr.upload.addEventListener("progress", (e) => {
