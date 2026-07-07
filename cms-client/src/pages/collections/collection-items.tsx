@@ -1,18 +1,18 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { ListPagination } from "@/components/layout/list-pagination";
 import { Header } from "@/components/layout/header";
 import { PageContainer } from "@/components/layout/page-container";
 import { Button } from "@/components/ui/button";
 import {
-  deleteCollectionItem,
-  fetchCollection,
-  fetchCollectionFields,
-  fetchCollectionItems,
+  useCollection,
+  useCollectionFields,
+  useCollectionItems,
+  useDeleteCollectionItem,
+} from "@/lib/queries";
+import {
   type CollectionFieldRecord,
   type CollectionItemRecord,
-  type CollectionRecord,
-  type PagePagination,
 } from "@/lib/cms-api";
 import { ArrowLeft, Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -35,49 +35,34 @@ export default function CollectionItemsPage() {
   const navigate = useNavigate();
   const { id } = useParams();
   const collectionId = Number(id);
-
-  const [record, setRecord] = useState<CollectionRecord | null>(null);
-  const [fields, setFields] = useState<CollectionFieldRecord[]>([]);
-  const [items, setItems] = useState<CollectionItemRecord[]>([]);
-  const [pagination, setPagination] = useState<PagePagination | null>(null);
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(
-    async (targetPage: number) => {
-      if (!Number.isInteger(collectionId) || collectionId <= 0) {
-        setError("Invalid collection id.");
-        setLoading(false);
-        return;
-      }
+  const collectionQuery = useCollection(collectionId);
+  const fieldsQuery = useCollectionFields(collectionId);
+  const itemsQuery = useCollectionItems(collectionId, page);
+  const deleteItem = useDeleteCollectionItem(collectionId);
 
-      setLoading(true);
-      setError(null);
-      try {
-        const [collection, nextFields, result] = await Promise.all([
-          fetchCollection(collectionId),
-          fetchCollectionFields(collectionId),
-          fetchCollectionItems(collectionId, { page: targetPage, count: true }),
-        ]);
-        setRecord(collection);
-        setFields(nextFields);
-        setItems(result.data);
-        setPagination(result.pagination);
-        setPage(result.pagination.page);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to load items");
-      } finally {
-        setLoading(false);
-      }
-    },
-    [collectionId],
-  );
+  const record = collectionQuery.data ?? null;
+  const fields = fieldsQuery.data ?? [];
+  const items = itemsQuery.data?.data ?? [];
+  const pagination = itemsQuery.data?.pagination ?? null;
+  const loading =
+    collectionQuery.isPending || fieldsQuery.isPending || itemsQuery.isPending;
 
-  useEffect(() => {
-    void load(page);
-  }, [load, page]);
+  const queryError =
+    !Number.isInteger(collectionId) || collectionId <= 0
+      ? "Invalid collection id."
+      : collectionQuery.error instanceof Error
+        ? collectionQuery.error.message
+        : fieldsQuery.error instanceof Error
+          ? fieldsQuery.error.message
+          : itemsQuery.error instanceof Error
+            ? itemsQuery.error.message
+            : collectionQuery.error || fieldsQuery.error || itemsQuery.error
+              ? "Failed to load items"
+              : null;
 
   const handleDelete = async (
     event: React.MouseEvent<HTMLButtonElement>,
@@ -87,13 +72,11 @@ export default function CollectionItemsPage() {
     setDeletingId(itemId);
     setError(null);
     try {
-      await deleteCollectionItem(collectionId, itemId);
+      await deleteItem.mutateAsync(itemId);
       const nextPage =
         items.length === 1 && pagination?.hasPrev ? page - 1 : page;
       if (nextPage !== page) {
         setPage(nextPage);
-      } else {
-        await load(page);
       }
       toast.success("Item deleted.");
     } catch (e) {
@@ -131,8 +114,8 @@ export default function CollectionItemsPage() {
         }
       />
       <PageContainer>
-        {error ? (
-          <p className="mb-4 text-sm text-destructive">{error}</p>
+        {error || queryError ? (
+          <p className="mb-4 text-sm text-destructive">{error ?? queryError}</p>
         ) : null}
 
         {loading ? (

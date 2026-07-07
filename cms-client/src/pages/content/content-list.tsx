@@ -1,43 +1,29 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import { ListPagination } from "@/components/layout/list-pagination";
 import { Header } from "@/components/layout/header";
 import { PageContainer } from "@/components/layout/page-container";
 import { Button } from "@/components/ui/button";
-import {
-  deleteContent,
-  fetchContentList,
-  type ContentRecord,
-  type PagePagination,
-} from "@/lib/cms-api";
+import { useContentList, useDeleteContent } from "@/lib/queries";
 
 export default function ContentListPage() {
   const navigate = useNavigate();
-  const [items, setItems] = useState<ContentRecord[]>([]);
-  const [pagination, setPagination] = useState<PagePagination | null>(null);
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async (targetPage: number) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await fetchContentList({ page: targetPage, count: true });
-      setItems(result.data);
-      setPagination(result.pagination);
-      setPage(result.pagination.page);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load content");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const contentQuery = useContentList(page);
+  const deleteContent = useDeleteContent();
 
-  useEffect(() => {
-    void load(page);
-  }, [load, page]);
+  const items = contentQuery.data?.data ?? [];
+  const pagination = contentQuery.data?.pagination ?? null;
+  const loading = contentQuery.isPending;
+  const queryError =
+    contentQuery.error instanceof Error
+      ? contentQuery.error.message
+      : contentQuery.error
+        ? "Failed to load content"
+        : null;
 
   const handleDelete = async (
     event: React.MouseEvent<HTMLButtonElement>,
@@ -47,13 +33,11 @@ export default function ContentListPage() {
     setDeletingId(id);
     setError(null);
     try {
-      await deleteContent(id);
+      await deleteContent.mutateAsync(id);
       const nextPage =
         items.length === 1 && pagination?.hasPrev ? page - 1 : page;
       if (nextPage !== page) {
         setPage(nextPage);
-      } else {
-        await load(page);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to delete content");
@@ -71,8 +55,8 @@ export default function ContentListPage() {
         }
       />
       <PageContainer>
-        {error ? (
-          <p className="mb-4 text-sm text-destructive">{error}</p>
+        {error || queryError ? (
+          <p className="mb-4 text-sm text-destructive">{error ?? queryError}</p>
         ) : null}
 
         {loading ? (

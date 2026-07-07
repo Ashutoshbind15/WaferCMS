@@ -37,7 +37,7 @@ export const countUsers = async (): Promise<number> => {
 export const insertUser = async (input: {
   username: string;
   passwordHash: string;
-}): Promise<UserRecord> => {
+}): Promise<{ id: number; username: string }> => {
   const [created] = await db
     .insert(user)
     .values({
@@ -47,17 +47,13 @@ export const insertUser = async (input: {
     .returning({
       id: user.id,
       username: user.username,
-      enabled: user.enabled,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-      lastLoginAt: user.lastLoginAt,
     });
 
   if (!created) {
     throw new Error("Failed to create user.");
   }
 
-  return toUserRecord(created);
+  return created;
 };
 
 export const listUsers = async (): Promise<UserRecord[]> => {
@@ -114,25 +110,16 @@ export const findUserById = async (id: number): Promise<UserRecord | null> => {
   return toUserRecord(row);
 };
 
-export const disableUser = async (id: number): Promise<UserRecord> => {
+export const disableUser = async (id: number): Promise<void> => {
   const [updated] = await db
     .update(user)
     .set({ enabled: false, updatedAt: new Date() })
     .where(eq(user.id, id))
-    .returning({
-      id: user.id,
-      username: user.username,
-      enabled: user.enabled,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-      lastLoginAt: user.lastLoginAt,
-    });
+    .returning({ id: user.id });
 
   if (!updated) {
     throw new Error(`User ${id} not found.`);
   }
-
-  return toUserRecord(updated);
 };
 
 export const touchUserLastLogin = async (id: number): Promise<void> => {

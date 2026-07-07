@@ -59,7 +59,7 @@ export const addCollectionRecord = async (input: {
   slug: string;
   title: string;
   description?: string | null;
-}): Promise<CollectionRow> => {
+}): Promise<{ id: number }> => {
   const [created] = await db
     .insert(collection)
     .values({
@@ -68,7 +68,7 @@ export const addCollectionRecord = async (input: {
       description: input.description ?? null,
       updatedAt: new Date(),
     })
-    .returning();
+    .returning({ id: collection.id });
 
   if (!created) {
     throw new Error("Failed to create collection.");
@@ -84,7 +84,7 @@ export const updateCollectionRecord = async (
     title: string;
     description?: string | null;
   },
-): Promise<CollectionRow> => {
+): Promise<void> => {
   const [updated] = await db
     .update(collection)
     .set({
@@ -94,16 +94,14 @@ export const updateCollectionRecord = async (
       updatedAt: new Date(),
     })
     .where(eq(collection.id, id))
-    .returning();
+    .returning({ id: collection.id });
 
   if (!updated) {
     throw new Error(`Collection ${id} not found.`);
   }
-
-  return updated;
 };
 
-export const deleteCollectionRecord = async (id: number) => {
+export const deleteCollectionRecord = async (id: number): Promise<void> => {
   const [deleted] = await db
     .delete(collection)
     .where(eq(collection.id, id))
@@ -111,7 +109,6 @@ export const deleteCollectionRecord = async (id: number) => {
   if (!deleted) {
     throw new Error(`Collection ${id} not found.`);
   }
-  return { deleted: true as const };
 };
 
 export const listCollectionFieldRecords = async (
@@ -159,7 +156,7 @@ export const addCollectionFieldRecord = async (
     position: number;
     required?: boolean;
   },
-): Promise<CollectionFieldRow> => {
+): Promise<void> => {
   const [created] = await db
     .insert(collectionField)
     .values({
@@ -171,13 +168,11 @@ export const addCollectionFieldRecord = async (
       required: input.required ?? false,
       updatedAt: new Date(),
     })
-    .returning();
+    .returning({ id: collectionField.id });
 
   if (!created) {
     throw new Error("Failed to create collection field.");
   }
-
-  return created;
 };
 
 export const updateCollectionFieldRecord = async (
@@ -189,7 +184,7 @@ export const updateCollectionFieldRecord = async (
     fieldType: CollectionFieldType;
     required?: boolean;
   },
-): Promise<CollectionFieldRow> => {
+): Promise<void> => {
   const [updated] = await db
     .update(collectionField)
     .set({
@@ -205,19 +200,17 @@ export const updateCollectionFieldRecord = async (
         eq(collectionField.collectionId, collectionId),
       ),
     )
-    .returning();
+    .returning({ id: collectionField.id });
 
   if (!updated) {
     throw new Error(`Collection field ${fieldId} not found.`);
   }
-
-  return updated;
 };
 
 export const deleteCollectionFieldRecord = async (
   collectionId: number,
   fieldId: number,
-) => {
+): Promise<void> => {
   const [deleted] = await db
     .delete(collectionField)
     .where(
@@ -230,5 +223,4 @@ export const deleteCollectionFieldRecord = async (
   if (!deleted) {
     throw new Error(`Collection field ${fieldId} not found.`);
   }
-  return { deleted: true as const };
 };

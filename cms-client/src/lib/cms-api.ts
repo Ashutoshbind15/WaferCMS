@@ -150,15 +150,32 @@ async function requestJson<T>(
   return res.json() as Promise<T>;
 }
 
-async function deleteJson(
+async function mutateJson(
   input: RequestInfo | URL,
   init?: RequestInit,
-): Promise<{ deleted: true }> {
+): Promise<void> {
   const res = await apiFetch(input, init);
   if (!res.ok) {
     throw new Error(await getErrorMessage(res));
   }
-  return res.json() as Promise<{ deleted: true }>;
+}
+
+async function requestCreatedId(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+): Promise<{ id: number }> {
+  const res = await apiFetch(input, init);
+  if (!res.ok) {
+    throw new Error(await getErrorMessage(res));
+  }
+  return res.json() as Promise<{ id: number }>;
+}
+
+async function deleteJson(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+): Promise<void> {
+  return mutateJson(input, init);
 }
 
 export async function fetchSession(): Promise<SessionUser | null> {
@@ -197,16 +214,16 @@ export async function fetchUsers(): Promise<UserRecord[]> {
 export async function createUser(input: {
   username: string;
   password: string;
-}): Promise<UserRecord> {
-  return requestJson<UserRecord>(`${base}/users`, {
+}): Promise<void> {
+  return mutateJson(`${base}/users`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
 }
 
-export async function disableUser(id: number): Promise<UserRecord> {
-  return requestJson<UserRecord>(`${base}/users/${id}`, {
+export async function disableUser(id: number): Promise<void> {
+  return mutateJson(`${base}/users/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ enabled: false }),
@@ -228,8 +245,8 @@ export async function fetchContent(id: number): Promise<ContentRecord> {
 export async function createContent(input: {
   title: string;
   payload: unknown;
-}): Promise<ContentRecord> {
-  return requestJson<ContentRecord>(`${base}/content`, {
+}): Promise<{ id: number }> {
+  return requestCreatedId(`${base}/content`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -239,8 +256,8 @@ export async function createContent(input: {
 export async function updateContent(
   id: number,
   input: { title: string; payload: unknown },
-): Promise<ContentRecord> {
-  return requestJson<ContentRecord>(`${base}/content/${id}`, {
+): Promise<void> {
+  return mutateJson(`${base}/content/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -266,8 +283,8 @@ export async function fetchDiagram(id: number): Promise<DiagramRecord> {
 export async function createDiagram(input: {
   title: string;
   payload: unknown;
-}): Promise<DiagramRecord> {
-  return requestJson<DiagramRecord>(`${base}/diagrams`, {
+}): Promise<{ id: number }> {
+  return requestCreatedId(`${base}/diagrams`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -277,8 +294,8 @@ export async function createDiagram(input: {
 export async function updateDiagram(
   id: number,
   input: { title: string; payload: unknown },
-): Promise<DiagramRecord> {
-  return requestJson<DiagramRecord>(`${base}/diagrams/${id}`, {
+): Promise<void> {
+  return mutateJson(`${base}/diagrams/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -300,8 +317,8 @@ export async function fetchLibraryFiles(
 export async function patchLibraryFile(
   id: number,
   input: { isPublic: boolean },
-): Promise<LibraryFileRecord> {
-  return requestJson<LibraryFileRecord>(`${base}/files/${id}`, {
+): Promise<void> {
+  return mutateJson(`${base}/files/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -318,7 +335,7 @@ export function uploadLibraryFile(
   file: File,
   onProgress?: UploadProgressCallback,
   options?: { isPublic?: boolean },
-): Promise<LibraryFileRecord> {
+): Promise<void> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `${base}/files`);
@@ -338,11 +355,7 @@ export function uploadLibraryFile(
 
     xhr.addEventListener("load", () => {
       if (xhr.status >= 200 && xhr.status < 300) {
-        try {
-          resolve(JSON.parse(xhr.responseText) as LibraryFileRecord);
-        } catch {
-          reject(new Error("Invalid JSON response"));
-        }
+        resolve();
       } else {
         try {
           const parsed = JSON.parse(xhr.responseText) as { error?: string };
@@ -397,8 +410,8 @@ export async function createApiKey(input: {
   });
 }
 
-export async function revokeApiKey(id: number): Promise<ApiKeyRecord> {
-  return requestJson<ApiKeyRecord>(`${base}/api-keys/${id}`, {
+export async function revokeApiKey(id: number): Promise<void> {
+  return mutateJson(`${base}/api-keys/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ enabled: false }),
@@ -421,8 +434,8 @@ export async function createCollection(input: {
   slug: string;
   title: string;
   description?: string | null;
-}): Promise<CollectionRecord> {
-  return requestJson<CollectionRecord>(`${base}/collections`, {
+}): Promise<{ id: number }> {
+  return requestCreatedId(`${base}/collections`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -432,8 +445,8 @@ export async function createCollection(input: {
 export async function updateCollection(
   id: number,
   input: { slug: string; title: string; description?: string | null },
-): Promise<CollectionRecord> {
-  return requestJson<CollectionRecord>(`${base}/collections/${id}`, {
+): Promise<void> {
+  return mutateJson(`${base}/collections/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -461,15 +474,12 @@ export async function createCollectionField(
     fieldType: CollectionFieldType;
     required?: boolean;
   },
-): Promise<CollectionFieldRecord> {
-  return requestJson<CollectionFieldRecord>(
-    `${base}/collections/${collectionId}/fields`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input),
-    },
-  );
+): Promise<void> {
+  return mutateJson(`${base}/collections/${collectionId}/fields`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
 }
 
 export async function updateCollectionField(
@@ -481,8 +491,8 @@ export async function updateCollectionField(
     fieldType: CollectionFieldType;
     required?: boolean;
   },
-): Promise<CollectionFieldRecord> {
-  return requestJson<CollectionFieldRecord>(
+): Promise<void> {
+  return mutateJson(
     `${base}/collections/${collectionId}/fields/${fieldId}`,
     {
       method: "PUT",
@@ -525,8 +535,8 @@ export async function fetchCollectionItem(
 export async function createCollectionItem(
   collectionId: number,
   input: { values: Record<string, unknown> },
-): Promise<CollectionItemRecord> {
-  return requestJson<CollectionItemRecord>(
+): Promise<{ id: number }> {
+  return requestCreatedId(
     `${base}/collections/${collectionId}/items`,
     {
       method: "POST",
@@ -540,8 +550,8 @@ export async function updateCollectionItem(
   collectionId: number,
   itemId: number,
   input: { values: Record<string, unknown> },
-): Promise<CollectionItemRecord> {
-  return requestJson<CollectionItemRecord>(
+): Promise<void> {
+  return mutateJson(
     `${base}/collections/${collectionId}/items/${itemId}`,
     {
       method: "PUT",

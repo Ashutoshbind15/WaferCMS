@@ -8,7 +8,7 @@ import {
   listCollectionFieldRecords,
   updateCollectionFieldRecord,
 } from "@packages/cms-db/collections";
-import { parseIdParam } from "../lib/http";
+import { parseIdParam, sendNoContent } from "../lib/http";
 import type { CollectionFieldBody } from "../lib/validation";
 
 const parseCollectionId = (req: Request) =>
@@ -73,11 +73,11 @@ export const createField = async (req: Request, res: Response) => {
 
   const position = await countCollectionFieldRecords(collectionId);
   try {
-    const result = await addCollectionFieldRecord(collectionId, {
+    await addCollectionFieldRecord(collectionId, {
       ...(req.body as CollectionFieldBody),
       position,
     });
-    res.status(201).json(result);
+    sendNoContent(res);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unexpected error";
@@ -99,12 +99,12 @@ export const updateField = async (req: Request, res: Response) => {
   }
 
   try {
-    const result = await updateCollectionFieldRecord(
+    await updateCollectionFieldRecord(
       collectionId,
       fieldId,
       req.body as CollectionFieldBody,
     );
-    res.json(result);
+    sendNoContent(res);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unexpected error";
@@ -130,8 +130,8 @@ export const deleteField = async (req: Request, res: Response) => {
   }
 
   try {
-    const result = await deleteCollectionFieldRecord(collectionId, fieldId);
-    res.json(result);
+    await deleteCollectionFieldRecord(collectionId, fieldId);
+    sendNoContent(res);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unexpected error";

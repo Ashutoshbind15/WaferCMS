@@ -5,7 +5,7 @@ import {
   insertUser,
   listUsers,
 } from "@packages/cms-db/users";
-import { parseIdParam } from "../lib/http";
+import { parseIdParam, sendNoContent } from "../lib/http";
 import { hashPassword } from "../lib/password";
 import type { CreateUserBody } from "../lib/validation";
 
@@ -32,8 +32,8 @@ export const createUserHandler = async (req: Request, res: Response) => {
 
   try {
     const passwordHash = await hashPassword(password);
-    const user = await insertUser({ username: trimmedUsername, passwordHash });
-    res.status(201).json(user);
+    await insertUser({ username: trimmedUsername, passwordHash });
+    sendNoContent(res);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unexpected error";
@@ -49,8 +49,8 @@ export const disableUserHandler = async (req: Request, res: Response) => {
   }
 
   try {
-    const user = await disableUser(id);
-    res.json(user);
+    await disableUser(id);
+    sendNoContent(res);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unexpected error";

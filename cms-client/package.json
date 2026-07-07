@@ -20,12 +20,13 @@
     "vite": "8.0.16"
   },
   "dependencies": {
+    "@catppuccin/highlightjs": "1.0.1",
+    "@fontsource-variable/inter": "5.2.8",
     "@packages/rich-text": "workspace:*",
     "@scribblesvg/core": "0.1.0",
     "@scribblesvg/react-utils": "0.1.0",
-    "@catppuccin/highlightjs": "1.0.1",
-    "@fontsource-variable/inter": "5.2.8",
     "@tailwindcss/vite": "4.2.2",
+    "@tanstack/react-query": "5.101.2",
     "@tiptap/extension-code-block-lowlight": "3.21.0",
     "@tiptap/extension-drag-handle": "3.21.0",
     "@tiptap/extension-drag-handle-react": "3.21.0",

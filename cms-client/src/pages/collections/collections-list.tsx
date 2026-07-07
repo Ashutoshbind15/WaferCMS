@@ -1,46 +1,29 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import { ListPagination } from "@/components/layout/list-pagination";
 import { Header } from "@/components/layout/header";
 import { PageContainer } from "@/components/layout/page-container";
 import { Button } from "@/components/ui/button";
-import {
-  deleteCollection,
-  fetchCollectionList,
-  type CollectionRecord,
-  type PagePagination,
-} from "@/lib/cms-api";
+import { useCollectionList, useDeleteCollection } from "@/lib/queries";
 
 export default function CollectionsListPage() {
   const navigate = useNavigate();
-  const [items, setItems] = useState<CollectionRecord[]>([]);
-  const [pagination, setPagination] = useState<PagePagination | null>(null);
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async (targetPage: number) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await fetchCollectionList({
-        page: targetPage,
-        count: true,
-      });
-      setItems(result.data);
-      setPagination(result.pagination);
-      setPage(result.pagination.page);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load collections");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const collectionsQuery = useCollectionList(page);
+  const deleteCollection = useDeleteCollection();
 
-  useEffect(() => {
-    void load(page);
-  }, [load, page]);
+  const items = collectionsQuery.data?.data ?? [];
+  const pagination = collectionsQuery.data?.pagination ?? null;
+  const loading = collectionsQuery.isPending;
+  const queryError =
+    collectionsQuery.error instanceof Error
+      ? collectionsQuery.error.message
+      : collectionsQuery.error
+        ? "Failed to load collections"
+        : null;
 
   const handleDelete = async (
     event: React.MouseEvent<HTMLButtonElement>,
@@ -50,13 +33,11 @@ export default function CollectionsListPage() {
     setDeletingId(id);
     setError(null);
     try {
-      await deleteCollection(id);
+      await deleteCollection.mutateAsync(id);
       const nextPage =
         items.length === 1 && pagination?.hasPrev ? page - 1 : page;
       if (nextPage !== page) {
         setPage(nextPage);
-      } else {
-        await load(page);
       }
     } catch (e) {
       setError(
@@ -78,8 +59,8 @@ export default function CollectionsListPage() {
         }
       />
       <PageContainer>
-        {error ? (
-          <p className="mb-4 text-sm text-destructive">{error}</p>
+        {error || queryError ? (
+          <p className="mb-4 text-sm text-destructive">{error ?? queryError}</p>
         ) : null}
 
         {loading ? (

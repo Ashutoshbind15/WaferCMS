@@ -1,16 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { ListPagination } from "@/components/layout/list-pagination";
 import { Header } from "@/components/layout/header";
 import { PageContainer } from "@/components/layout/page-container";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { FileCard } from "@/components/library/file-card";
-import {
-  fetchLibraryFiles,
-  uploadLibraryFile,
-  type LibraryFileRecord,
-  type PagePagination,
-} from "@/lib/cms-api";
+import { useLibraryFiles } from "@/lib/queries";
+import { uploadLibraryFile } from "@/lib/cms-api";
 import { formatBytes } from "@/lib/format-bytes";
 import { Upload } from "lucide-react";
 
@@ -21,34 +18,24 @@ interface UploadEntry {
 }
 
 export default function LibraryPage() {
+  const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [files, setFiles] = useState<LibraryFileRecord[]>([]);
-  const [pagination, setPagination] = useState<PagePagination | null>(null);
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
   const [uploads, setUploads] = useState<UploadEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  const filesQuery = useLibraryFiles(page);
+  const files = filesQuery.data?.data ?? [];
+  const pagination = filesQuery.data?.pagination ?? null;
+  const loading = filesQuery.isPending;
   const uploading = uploads.length > 0;
 
-  const load = useCallback(async (targetPage: number) => {
-    setError(null);
-    setLoading(true);
-    try {
-      const result = await fetchLibraryFiles({ page: targetPage, count: true });
-      setFiles(result.data);
-      setPagination(result.pagination);
-      setPage(result.pagination.page);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load files");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void load(page);
-  }, [load, page]);
+  const queryError =
+    filesQuery.error instanceof Error
+      ? filesQuery.error.message
+      : filesQuery.error
+        ? "Failed to load files"
+        : null;
 
   const onPickFiles = () => inputRef.current?.click();
 
@@ -73,7 +60,7 @@ export default function LibraryPage() {
         });
       }
       setPage(1);
-      await load(1);
+      void queryClient.invalidateQueries({ queryKey: ["cms", "files"] });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {
@@ -107,7 +94,9 @@ export default function LibraryPage() {
         }
       />
       <PageContainer>
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        {error || queryError ? (
+          <p className="text-sm text-destructive">{error ?? queryError}</p>
+        ) : null}
 
         {uploads.length > 0 && (
           <div className="mb-4 space-y-3">
@@ -139,15 +128,7 @@ export default function LibraryPage() {
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
             {files.map((file) => (
-              <FileCard
-                key={file.id}
-                file={file}
-                onUpdated={(updated) =>
-                  setFiles((prev) =>
-                    prev.map((f) => (f.id === updated.id ? updated : f)),
-                  )
-                }
-              />
+              <FileCard key={file.id} file={file} />
             ))}
           </div>
         )}

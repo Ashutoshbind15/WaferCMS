@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import type { Request, Response } from "express";
 import { insertApiKey, listApiKeys, revokeApiKey } from "@packages/cms-db/api-keys";
 import { hashApiKey } from "../lib/api-keys";
-import { parseIdParam } from "../lib/http";
+import { parseIdParam, sendNoContent } from "../lib/http";
 import type { CreateApiKeyBody } from "../lib/validation";
 
 const getPepper = (): string | null => {
@@ -57,8 +57,8 @@ export const revokeApiKeyHandler = async (req: Request, res: Response) => {
   }
 
   try {
-    const record = await revokeApiKey(id);
-    res.json(record);
+    await revokeApiKey(id);
+    sendNoContent(res);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unexpected error";

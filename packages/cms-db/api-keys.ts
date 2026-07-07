@@ -43,13 +43,21 @@ export const insertApiKey = async (input: {
       keyHash: input.keyHash,
       scope: input.scope,
     })
-    .returning();
+    .returning({
+      id: apiKey.id,
+      label: apiKey.label,
+      keyPrefix: apiKey.keyPrefix,
+      scope: apiKey.scope,
+      enabled: apiKey.enabled,
+      createdAt: apiKey.createdAt,
+      lastUsedAt: apiKey.lastUsedAt,
+    });
 
   if (!created) {
     throw new Error("Failed to create API key.");
   }
 
-  return toApiKeyRecord(created);
+  return created;
 };
 
 export const listApiKeys = async (): Promise<ApiKeyRecord[]> => {
@@ -87,18 +95,16 @@ export const findEnabledApiKeyByHash = async (
   };
 };
 
-export const revokeApiKey = async (id: number): Promise<ApiKeyRecord> => {
+export const revokeApiKey = async (id: number): Promise<void> => {
   const [updated] = await db
     .update(apiKey)
     .set({ enabled: false })
     .where(eq(apiKey.id, id))
-    .returning();
+    .returning({ id: apiKey.id });
 
   if (!updated) {
     throw new Error(`API key ${id} not found.`);
   }
-
-  return toApiKeyRecord(updated);
 };
 
 export const touchApiKeyLastUsed = async (id: number): Promise<void> => {

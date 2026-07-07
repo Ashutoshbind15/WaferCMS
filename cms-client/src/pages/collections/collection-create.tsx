@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { CollectionForm } from "@/components/forms/collection-form";
-import { createCollection } from "@/lib/cms-api";
+import { useCreateCollection } from "@/lib/queries";
 import { slugify } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -19,11 +19,12 @@ const EMPTY_SNAPSHOT = collectionSnapshot({
 
 export default function CollectionCreatePage() {
   const navigate = useNavigate();
+  const createCollection = useCreateCollection();
+
   const [slug, setSlug] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const dirty =
@@ -37,11 +38,10 @@ export default function CollectionCreatePage() {
   };
 
   const handleSave = async () => {
-    setSaving(true);
     setError(null);
 
     try {
-      const created = await createCollection({
+      const created = await createCollection.mutateAsync({
         slug,
         title,
         description: description || null,
@@ -53,8 +53,6 @@ export default function CollectionCreatePage() {
         e instanceof Error ? e.message : "Failed to create collection";
       setError(message);
       toast.error(message);
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -65,7 +63,7 @@ export default function CollectionCreatePage() {
       title={title}
       description={description}
       loading={false}
-      saving={saving}
+      saving={createCollection.isPending}
       dirty={dirty}
       error={error}
       onBack={() => navigate("/collections")}

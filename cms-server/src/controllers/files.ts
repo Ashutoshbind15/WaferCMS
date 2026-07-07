@@ -13,7 +13,7 @@ import { type ListPageQuery, type PaginatedRows } from "@packages/cms-db/paginat
 import { parseListQuery } from "../lib/pagination";
 import { cmsPublicBaseUrl } from "../lib/asset-url";
 import { toFileResponse, type FileResponse } from "../lib/files";
-import { parseIdParam } from "../lib/http";
+import { parseIdParam, sendNoContent } from "../lib/http";
 import type { PatchFileBody, UploadFileBody } from "../lib/validation";
 
 const safeBasename = (name: string): string => {
@@ -39,7 +39,7 @@ type UploadInput = {
   isPublic: boolean;
 };
 
-const uploadFileData = async (input: UploadInput): Promise<FileResponse> => {
+const uploadFileData = async (input: UploadInput): Promise<void> => {
   const originalFilename = safeBasename(input.originalname);
   const objectKey = `${randomUUID()}-${originalFilename}`;
   const contentType = input.mimetype || null;
@@ -50,23 +50,20 @@ const uploadFileData = async (input: UploadInput): Promise<FileResponse> => {
     contentType: contentType ?? undefined,
   });
 
-  const row = await insertFileMetadata({
+  await insertFileMetadata({
     objectKey,
     originalFilename,
     contentType,
     byteLength: input.buffer.length,
     isPublic: input.isPublic,
   });
-
-  return toFileResponse(row, cmsPublicBaseUrl());
 };
 
 const patchFileData = async (
   id: number,
   isPublic: boolean,
-): Promise<FileResponse> => {
-  const row = await updateFileMetadata(id, { isPublic });
-  return toFileResponse(row, cmsPublicBaseUrl());
+): Promise<void> => {
+  await updateFileMetadata(id, { isPublic });
 };
 
 export const listFiles = async (req: Request, res: Response) => {
@@ -99,13 +96,13 @@ export const uploadFile = async (req: Request, res: Response) => {
 
   try {
     const { isPublic } = req.body as UploadFileBody;
-    const result = await uploadFileData({
+    await uploadFileData({
       buffer: file.buffer,
       originalname: file.originalname,
       mimetype: file.mimetype,
       isPublic,
     });
-    res.status(201).json(result);
+    sendNoContent(res);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unexpected error";
@@ -122,8 +119,8 @@ export const patchFile = async (req: Request, res: Response) => {
 
   const { isPublic } = req.body as PatchFileBody;
   try {
-    const result = await patchFileData(id, isPublic);
-    res.status(200).json(result);
+    await patchFileData(id, isPublic);
+    sendNoContent(res);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unexpected error";

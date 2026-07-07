@@ -1,43 +1,29 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import { ListPagination } from "@/components/layout/list-pagination";
 import { Header } from "@/components/layout/header";
 import { PageContainer } from "@/components/layout/page-container";
 import { Button } from "@/components/ui/button";
-import {
-  deleteDiagram,
-  fetchDiagramList,
-  type DiagramRecord,
-  type PagePagination,
-} from "@/lib/cms-api";
+import { useDiagramList, useDeleteDiagram } from "@/lib/queries";
 
 export default function DiagramsListPage() {
   const navigate = useNavigate();
-  const [items, setItems] = useState<DiagramRecord[]>([]);
-  const [pagination, setPagination] = useState<PagePagination | null>(null);
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async (targetPage: number) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await fetchDiagramList({ page: targetPage, count: true });
-      setItems(result.data);
-      setPagination(result.pagination);
-      setPage(result.pagination.page);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load diagrams");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const diagramsQuery = useDiagramList(page);
+  const deleteDiagram = useDeleteDiagram();
 
-  useEffect(() => {
-    void load(page);
-  }, [load, page]);
+  const items = diagramsQuery.data?.data ?? [];
+  const pagination = diagramsQuery.data?.pagination ?? null;
+  const loading = diagramsQuery.isPending;
+  const queryError =
+    diagramsQuery.error instanceof Error
+      ? diagramsQuery.error.message
+      : diagramsQuery.error
+        ? "Failed to load diagrams"
+        : null;
 
   const handleDelete = async (
     event: React.MouseEvent<HTMLButtonElement>,
@@ -47,13 +33,11 @@ export default function DiagramsListPage() {
     setDeletingId(id);
     setError(null);
     try {
-      await deleteDiagram(id);
+      await deleteDiagram.mutateAsync(id);
       const nextPage =
         items.length === 1 && pagination?.hasPrev ? page - 1 : page;
       if (nextPage !== page) {
         setPage(nextPage);
-      } else {
-        await load(page);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to delete diagram");
@@ -71,8 +55,8 @@ export default function DiagramsListPage() {
         }
       />
       <PageContainer>
-        {error ? (
-          <p className="mb-4 text-sm text-destructive">{error}</p>
+        {error || queryError ? (
+          <p className="mb-4 text-sm text-destructive">{error ?? queryError}</p>
         ) : null}
 
         {loading ? (

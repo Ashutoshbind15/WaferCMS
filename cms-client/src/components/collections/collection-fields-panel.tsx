@@ -1,9 +1,17 @@
 import { useId, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { slugify } from "@/lib/utils";
+import {
+  useCollectionFields,
+  useCreateCollectionField,
+  useDeleteCollectionField,
+  useUpdateCollectionField,
+  type CollectionFieldInput,
+} from "@/lib/queries";
 import {
   Select,
   SelectContent,
@@ -30,12 +38,7 @@ const fieldTypeLabel = (fieldType: CollectionFieldType) =>
   COLLECTION_FIELD_TYPE_OPTIONS.find((option) => option.value === fieldType)
     ?.label ?? fieldType;
 
-type FieldDraft = {
-  key: string;
-  label: string;
-  fieldType: CollectionFieldType;
-  required: boolean;
-};
+type FieldDraft = CollectionFieldInput;
 
 const emptyDraft = (): FieldDraft => ({
   key: "",
@@ -45,13 +48,7 @@ const emptyDraft = (): FieldDraft => ({
 });
 
 type CollectionFieldsPanelProps = {
-  fields: CollectionFieldRecord[];
-  savingFieldId: number | "new" | null;
-  deletingFieldId: number | null;
-  error: string | null;
-  onCreate: (input: FieldDraft) => Promise<void>;
-  onUpdate: (fieldId: number, input: FieldDraft) => Promise<void>;
-  onDelete: (fieldId: number) => Promise<void>;
+  collectionId: number;
 };
 
 function FieldEditor({
@@ -163,18 +160,21 @@ function FieldEditor({
 }
 
 export function CollectionFieldsPanel({
-  fields,
-  savingFieldId,
-  deletingFieldId,
-  error,
-  onCreate,
-  onUpdate,
-  onDelete,
+  collectionId,
 }: CollectionFieldsPanelProps) {
+  const fieldsQuery = useCollectionFields(collectionId);
+  const createField = useCreateCollectionField(collectionId);
+  const updateField = useUpdateCollectionField(collectionId);
+  const deleteField = useDeleteCollectionField(collectionId);
+
   const [showCreate, setShowCreate] = useState(false);
   const [createDraft, setCreateDraft] = useState<FieldDraft>(emptyDraft);
   const [editingFieldId, setEditingFieldId] = useState<number | null>(null);
   const [editDraft, setEditDraft] = useState<FieldDraft>(emptyDraft);
+  const [error, setError] = useState<string | null>(null);
+
+  const fields = fieldsQuery.data ?? [];
+  const loading = fieldsQuery.isPending;
 
   const startEdit = (field: CollectionFieldRecord) => {
     setEditingFieldId(field.id);
@@ -187,17 +187,68 @@ export function CollectionFieldsPanel({
     setShowCreate(false);
   };
 
+  const handleCreate = async () => {
+    setError(null);
+    try {
+      await createField.mutateAsync(createDraft);
+      setShowCreate(false);
+      setCreateDraft(emptyDraft());
+      toast.success("Field added.");
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Failed to add field";
+      setError(message);
+      toast.error(message);
+      throw e;
+    }
+  };
+
+  const handleUpdate = async (fieldId: number) => {
+    setError(null);
+    try {
+      await updateField.mutateAsync({ fieldId, ...editDraft });
+      setEditingFieldId(null);
+      toast.success("Field saved.");
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Failed to save field";
+      setError(message);
+      toast.error(message);
+      throw e;
+    }
+  };
+
+  const handleDelete = async (fieldId: number) => {
+    setError(null);
+    try {
+      await deleteField.mutateAsync(fieldId);
+      toast.success("Field deleted.");
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Failed to delete field";
+      setError(message);
+      toast.error(message);
+    }
+  };
+
+  const queryError =
+    fieldsQuery.error instanceof Error
+      ? fieldsQuery.error.message
+      : fieldsQuery.error
+        ? "Failed to load fields"
+        : null;
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-4">
         <p className="text-sm text-muted-foreground">
-          {fields.length === 0
-            ? "Add fields to define this collection's schema."
-            : `${fields.length} field${fields.length === 1 ? "" : "s"}`}
+          {loading
+            ? "Loading fields…"
+            : fields.length === 0
+              ? "Add fields to define this collection's schema."
+              : `${fields.length} field${fields.length === 1 ? "" : "s"}`}
         </p>
         {!showCreate ? (
           <Button
             size="sm"
+            disabled={loading}
             onClick={() => {
               setShowCreate(true);
               setEditingFieldId(null);
@@ -209,20 +260,19 @@ export function CollectionFieldsPanel({
         ) : null}
       </div>
 
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error || queryError ? (
+        <p className="text-sm text-destructive">{error ?? queryError}</p>
+      ) : null}
 
       {showCreate ? (
         <FieldEditor
           draft={createDraft}
-          submitLabel={savingFieldId === "new" ? "Adding…" : "Add field"}
-          disabled={savingFieldId === "new"}
+          submitLabel={createField.isPending ? "Adding…" : "Add field"}
+          disabled={createField.isPending}
           autoKeyFromLabel
           onChange={setCreateDraft}
           onSubmit={() => {
-            void onCreate(createDraft).then(() => {
-              setShowCreate(false);
-              setCreateDraft(emptyDraft());
-            });
+            void handleCreate();
           }}
           onCancel={() => {
             setShowCreate(false);
@@ -231,7 +281,7 @@ export function CollectionFieldsPanel({
         />
       ) : null}
 
-      {fields.length === 0 && !showCreate ? (
+      {!loading && fields.length === 0 && !showCreate ? (
         <div className="rounded-lg border border-dashed border-border py-12 text-center">
           <p className="text-sm text-muted-foreground">No fields yet</p>
         </div>
@@ -243,15 +293,19 @@ export function CollectionFieldsPanel({
                 key={field.id}
                 draft={editDraft}
                 submitLabel={
-                  savingFieldId === field.id ? "Saving…" : "Save field"
+                  updateField.isPending &&
+                  updateField.variables?.fieldId === field.id
+                    ? "Saving…"
+                    : "Save field"
                 }
-                disabled={savingFieldId === field.id}
+                disabled={
+                  updateField.isPending &&
+                  updateField.variables?.fieldId === field.id
+                }
                 autoKeyFromLabel={false}
                 onChange={setEditDraft}
                 onSubmit={() => {
-                  void onUpdate(field.id, editDraft).then(() => {
-                    setEditingFieldId(null);
-                  });
+                  void handleUpdate(field.id);
                 }}
                 onCancel={() => setEditingFieldId(null)}
               />
@@ -273,7 +327,10 @@ export function CollectionFieldsPanel({
                   <Button
                     variant="ghost"
                     size="sm"
-                    disabled={deletingFieldId === field.id}
+                    disabled={
+                      deleteField.isPending &&
+                      deleteField.variables === field.id
+                    }
                     onClick={() => startEdit(field)}
                   >
                     Edit
@@ -281,10 +338,16 @@ export function CollectionFieldsPanel({
                   <Button
                     variant="ghost"
                     size="sm"
-                    disabled={deletingFieldId === field.id}
-                    onClick={() => void onDelete(field.id)}
+                    disabled={
+                      deleteField.isPending &&
+                      deleteField.variables === field.id
+                    }
+                    onClick={() => void handleDelete(field.id)}
                   >
-                    {deletingFieldId === field.id ? "Deleting…" : "Delete"}
+                    {deleteField.isPending &&
+                    deleteField.variables === field.id
+                      ? "Deleting…"
+                      : "Delete"}
                   </Button>
                 </div>
               </div>

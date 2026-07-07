@@ -8,7 +8,7 @@ import {
 } from "@packages/cms-db/collections";
 import { type ListPageQuery } from "@packages/cms-db/pagination";
 import { parseListQuery } from "../lib/pagination";
-import { parseIdParam } from "../lib/http";
+import { parseIdParam, sendCreatedId, sendNoContent } from "../lib/http";
 import type { CollectionBody } from "../lib/validation";
 
 export const listCollections = async (req: Request, res: Response) => {
@@ -50,7 +50,7 @@ export const getCollection = async (req: Request, res: Response) => {
 export const createCollection = async (req: Request, res: Response) => {
   try {
     const result = await addCollectionRecord(req.body as CollectionBody);
-    res.status(201).json(result);
+    sendCreatedId(res, result.id);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unexpected error";
@@ -66,8 +66,8 @@ export const updateCollection = async (req: Request, res: Response) => {
   }
 
   try {
-    const result = await updateCollectionRecord(id, req.body as CollectionBody);
-    res.json(result);
+    await updateCollectionRecord(id, req.body as CollectionBody);
+    sendNoContent(res);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unexpected error";
@@ -87,8 +87,8 @@ export const deleteCollection = async (req: Request, res: Response) => {
   }
 
   try {
-    const result = await deleteCollectionRecord(id);
-    res.json(result);
+    await deleteCollectionRecord(id);
+    sendNoContent(res);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unexpected error";

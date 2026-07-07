@@ -1,37 +1,32 @@
-import { useState } from "react";
 import { Eye, EyeOff, ImageIcon, Lock, Unlock } from "lucide-react";
 import { toast } from "sonner";
 import {
   fileAssetUrl,
-  patchLibraryFile,
   type LibraryFileRecord,
 } from "@/lib/cms-api";
+import { usePatchLibraryFile } from "@/lib/queries";
 import { formatBytes } from "@/lib/format-bytes";
 import { Button } from "@/components/ui/button";
 
 interface FileCardProps {
   file: LibraryFileRecord;
-  /** Optional callback after a successful isPublic toggle. */
-  onUpdated?: (file: LibraryFileRecord) => void;
 }
 
-export function FileCard({ file, onUpdated }: FileCardProps) {
+export function FileCard({ file }: FileCardProps) {
+  const patchFile = usePatchLibraryFile();
   const isImage = file.contentType?.startsWith("image/") ?? false;
   const src = isImage ? fileAssetUrl(file.id) : null;
-  const [toggling, setToggling] = useState(false);
 
   const togglePublic = async () => {
-    setToggling(true);
+    const nextIsPublic = !file.isPublic;
     try {
-      const updated = await patchLibraryFile(file.id, {
-        isPublic: !file.isPublic,
+      await patchFile.mutateAsync({
+        id: file.id,
+        isPublic: nextIsPublic,
       });
-      onUpdated?.(updated);
-      toast.success(updated.isPublic ? "Marked public" : "Marked private");
+      toast.success(nextIsPublic ? "Marked public" : "Marked private");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to update file");
-    } finally {
-      setToggling(false);
     }
   };
 
@@ -78,7 +73,7 @@ export function FileCard({ file, onUpdated }: FileCardProps) {
           variant="outline"
           size="xs"
           className="mt-1 w-full"
-          disabled={toggling}
+          disabled={patchFile.isPending}
           onClick={() => void togglePublic()}
         >
           {file.isPublic ? (

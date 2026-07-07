@@ -43,7 +43,7 @@ export const getContentRecord = async (
 export const addContentRecord = async (
   title: string,
   payload: unknown,
-): Promise<ContentRow> => {
+): Promise<{ id: number }> => {
   const [created] = await db
     .insert(blogContent)
     .values({
@@ -51,7 +51,7 @@ export const addContentRecord = async (
       payload,
       updatedAt: new Date(),
     })
-    .returning();
+    .returning({ id: blogContent.id });
 
   if (!created) {
     throw new Error("Failed to create content.");
@@ -64,7 +64,7 @@ export const updateContentRecord = async (
   id: number,
   title: string,
   payload: unknown,
-): Promise<ContentRow> => {
+): Promise<void> => {
   const [updated] = await db
     .update(blogContent)
     .set({
@@ -73,16 +73,14 @@ export const updateContentRecord = async (
       updatedAt: new Date(),
     })
     .where(eq(blogContent.id, id))
-    .returning();
+    .returning({ id: blogContent.id });
 
   if (!updated) {
     throw new Error(`Content ${id} not found.`);
   }
-
-  return updated;
 };
 
-export const deleteContentRecord = async (id: number) => {
+export const deleteContentRecord = async (id: number): Promise<void> => {
   const [deleted] = await db
     .delete(blogContent)
     .where(eq(blogContent.id, id))
@@ -90,7 +88,6 @@ export const deleteContentRecord = async (id: number) => {
   if (!deleted) {
     throw new Error(`Content ${id} not found.`);
   }
-  return { deleted: true };
 };
 
 export const listDiagramRecords = async (
@@ -125,7 +122,7 @@ export const getDiagramRecord = async (
 export const addDiagramRecord = async (
   title: string,
   payload: unknown,
-): Promise<DiagramRow> => {
+): Promise<{ id: number }> => {
   const [created] = await db
     .insert(blogDiagram)
     .values({
@@ -133,7 +130,7 @@ export const addDiagramRecord = async (
       payload,
       updatedAt: new Date(),
     })
-    .returning();
+    .returning({ id: blogDiagram.id });
 
   if (!created) {
     throw new Error("Failed to create diagram.");
@@ -146,7 +143,7 @@ export const updateDiagramRecord = async (
   id: number,
   title: string,
   payload: unknown,
-): Promise<DiagramRow> => {
+): Promise<void> => {
   const [updated] = await db
     .update(blogDiagram)
     .set({
@@ -155,16 +152,14 @@ export const updateDiagramRecord = async (
       updatedAt: new Date(),
     })
     .where(eq(blogDiagram.id, id))
-    .returning();
+    .returning({ id: blogDiagram.id });
 
   if (!updated) {
     throw new Error(`Diagram ${id} not found.`);
   }
-
-  return updated;
 };
 
-export const deleteDiagramRecord = async (id: number) => {
+export const deleteDiagramRecord = async (id: number): Promise<void> => {
   const [deleted] = await db
     .delete(blogDiagram)
     .where(eq(blogDiagram.id, id))
@@ -172,7 +167,6 @@ export const deleteDiagramRecord = async (id: number) => {
   if (!deleted) {
     throw new Error(`Diagram ${id} not found.`);
   }
-  return { deleted: true };
 };
 
 export const insertFileMetadata = async (row: {
@@ -181,23 +175,14 @@ export const insertFileMetadata = async (row: {
   contentType: string | null;
   byteLength: number;
   isPublic?: boolean;
-}): Promise<FileMetadataRow> => {
-  const [rowOut] = await db
-    .insert(fileMetadata)
-    .values({
-      objectKey: row.objectKey,
-      originalFilename: row.originalFilename,
-      contentType: row.contentType,
-      byteLength: row.byteLength,
-      isPublic: row.isPublic ?? true,
-    })
-    .returning();
-
-  if (!rowOut) {
-    throw new Error("Failed to create file metadata.");
-  }
-
-  return rowOut;
+}): Promise<void> => {
+  await db.insert(fileMetadata).values({
+    objectKey: row.objectKey,
+    originalFilename: row.originalFilename,
+    contentType: row.contentType,
+    byteLength: row.byteLength,
+    isPublic: row.isPublic ?? true,
+  });
 };
 
 export const getFileMetadataById = async (
@@ -213,18 +198,16 @@ export const getFileMetadataById = async (
 export const updateFileMetadata = async (
   id: number,
   patch: { isPublic: boolean },
-): Promise<FileMetadataRow> => {
+): Promise<void> => {
   const [updated] = await db
     .update(fileMetadata)
     .set({ isPublic: patch.isPublic })
     .where(eq(fileMetadata.id, id))
-    .returning();
+    .returning({ id: fileMetadata.id });
 
   if (!updated) {
     throw new Error(`File ${id} not found.`);
   }
-
-  return updated;
 };
 
 export const listFileMetadata = async (

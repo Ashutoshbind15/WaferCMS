@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { createDiagram } from "@/lib/cms-api";
+import { useCreateDiagram } from "@/lib/queries";
 import { toast } from "sonner";
 import { DiagramForm } from "../../components/forms/diagram-form";
 import type { DiagramDocument } from "@scribblesvg/core";
@@ -11,10 +11,10 @@ const EMPTY_SNAPSHOT = diagramSnapshot("", EMPTY_DOCUMENT);
 
 export default function DiagramCreatePage() {
   const navigate = useNavigate();
+  const createDiagram = useCreateDiagram();
 
   const [title, setTitle] = useState("");
   const [document, setDocument] = useState<DiagramDocument>(EMPTY_DOCUMENT);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const dirty = diagramSnapshot(title, document) !== EMPTY_SNAPSHOT;
@@ -26,19 +26,19 @@ export default function DiagramCreatePage() {
   };
 
   const handleSave = async () => {
-    setSaving(true);
     setError(null);
 
     try {
-      const created = await createDiagram({ title, payload: document });
+      const created = await createDiagram.mutateAsync({
+        title,
+        payload: document,
+      });
       toast.success("Diagram created.");
       navigate(`/diagrams/${created.id}`);
     } catch (e) {
       const message = e instanceof Error ? e.message : "Failed to save diagram";
       setError(message);
       toast.error(message);
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -48,7 +48,7 @@ export default function DiagramCreatePage() {
       title={title}
       document={document}
       loading={false}
-      saving={saving}
+      saving={createDiagram.isPending}
       dirty={dirty}
       canClear={canClear}
       clearActionLabel="Clear canvas"

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { Users } from "lucide-react";
 import { toast } from "sonner";
 import { Header } from "@/components/layout/header";
@@ -22,12 +22,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  createUser,
-  disableUser,
-  fetchUsers,
-  type UserRecord,
-} from "@/lib/cms-api";
+import { useCreateUser, useDisableUser, useUsers } from "@/lib/queries";
 
 const formatDate = (value: string | null) => {
   if (!value) {
@@ -37,53 +32,43 @@ const formatDate = (value: string | null) => {
 };
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<UserRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const usersQuery = useUsers();
+  const createUser = useCreateUser();
+  const disableUser = useDisableUser();
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [creating, setCreating] = useState(false);
-  const [disablingId, setDisablingId] = useState<number | null>(null);
   const [disableTarget, setDisableTarget] = useState<{
     id: number;
     username: string;
   } | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      setUsers(await fetchUsers());
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load users");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const users = usersQuery.data ?? [];
+  const loading = usersQuery.isPending;
+  const error =
+    formError ??
+    (usersQuery.error instanceof Error
+      ? usersQuery.error.message
+      : usersQuery.error
+        ? "Failed to load users"
+        : null);
 
   const onCreate = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!username.trim() || !password) {
-      setError("Username and password are required.");
+      setFormError("Username and password are required.");
       return;
     }
 
-    setCreating(true);
-    setError(null);
+    setFormError(null);
     try {
-      await createUser({ username: username.trim(), password });
+      await createUser.mutateAsync({ username: username.trim(), password });
       setUsername("");
       setPassword("");
       toast.success("User created");
-      await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to create user");
-    } finally {
-      setCreating(false);
+      setFormError(e instanceof Error ? e.message : "Failed to create user");
     }
   };
 
@@ -92,18 +77,13 @@ export default function UsersPage() {
       return;
     }
 
-    const { id } = disableTarget;
-    setDisablingId(id);
-    setError(null);
+    setFormError(null);
     try {
-      await disableUser(id);
+      await disableUser.mutateAsync(disableTarget.id);
       toast.success("User disabled");
       setDisableTarget(null);
-      await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to disable user");
-    } finally {
-      setDisablingId(null);
+      setFormError(e instanceof Error ? e.message : "Failed to disable user");
     }
   };
 
@@ -137,8 +117,8 @@ export default function UsersPage() {
                   placeholder="password"
                   aria-label="Password"
                 />
-                <Button type="submit" disabled={creating}>
-                  {creating ? "Creating..." : "Create user"}
+                <Button type="submit" disabled={createUser.isPending}>
+                  {createUser.isPending ? "Creating..." : "Create user"}
                 </Button>
               </form>
             </CardContent>
@@ -193,7 +173,10 @@ export default function UsersPage() {
                                 type="button"
                                 variant="outline"
                                 size="sm"
-                                disabled={disablingId === user.id}
+                                disabled={
+                                  disableUser.isPending &&
+                                  disableUser.variables === user.id
+                                }
                                 onClick={() =>
                                   setDisableTarget({
                                     id: user.id,
@@ -201,7 +184,8 @@ export default function UsersPage() {
                                   })
                                 }
                               >
-                                {disablingId === user.id
+                                {disableUser.isPending &&
+                                disableUser.variables === user.id
                                   ? "Disabling..."
                                   : "Disable"}
                               </Button>
@@ -221,7 +205,7 @@ export default function UsersPage() {
       <AlertDialog
         open={disableTarget !== null}
         onOpenChange={(open) => {
-          if (!open && disablingId === null) {
+          if (!open && !disableUser.isPending) {
             setDisableTarget(null);
           }
         }}
@@ -235,15 +219,15 @@ export default function UsersPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={disablingId !== null}>
+            <AlertDialogCancel disabled={disableUser.isPending}>
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
-              disabled={disablingId !== null}
+              disabled={disableUser.isPending}
               onClick={() => void confirmDisable()}
             >
-              {disablingId !== null ? "Disabling..." : "Disable"}
+              {disableUser.isPending ? "Disabling..." : "Disable"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

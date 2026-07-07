@@ -4,6 +4,7 @@ import "./style.css";
 import "@scribblesvg/react-utils/editor.css";
 
 import { ThemeProvider } from "@/components/theme-provider";
+import { QueryProvider } from "@/components/providers/query-provider";
 import { AuthProvider } from "@/context/auth-context";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -41,6 +42,7 @@ function RootLayout() {
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+    <QueryProvider>
     <BrowserRouter>
       <AuthProvider>
       <TooltipProvider>
@@ -92,5 +94,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       </TooltipProvider>
       </AuthProvider>
     </BrowserRouter>
+    </QueryProvider>
   </ThemeProvider>,
 );

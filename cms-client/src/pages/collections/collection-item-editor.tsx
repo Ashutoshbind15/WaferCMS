@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import {
   CollectionItemFieldEditors,
@@ -8,14 +8,13 @@ import { Header } from "@/components/layout/header";
 import { PageContainer } from "@/components/layout/page-container";
 import { Button } from "@/components/ui/button";
 import {
-  createCollectionItem,
-  fetchCollection,
-  fetchCollectionFields,
-  fetchCollectionItem,
-  updateCollectionItem,
-  type CollectionFieldRecord,
-  type CollectionRecord,
-} from "@/lib/cms-api";
+  useCollection,
+  useCollectionFields,
+  useCollectionItem,
+  useCreateCollectionItem,
+  useUpdateCollectionItem,
+} from "@/lib/queries";
+import { type CollectionFieldRecord } from "@/lib/cms-api";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
@@ -30,67 +29,56 @@ export default function CollectionItemEditorPage() {
   const { id, itemId } = useParams();
   const collectionId = Number(id);
   const isEditing = Boolean(itemId);
+  const numericItemId = Number(itemId);
 
-  const [record, setRecord] = useState<CollectionRecord | null>(null);
-  const [fields, setFields] = useState<CollectionFieldRecord[]>([]);
+  const collectionQuery = useCollection(collectionId);
+  const fieldsQuery = useCollectionFields(collectionId);
+  const itemQuery = useCollectionItem(collectionId, numericItemId);
+  const createItem = useCreateCollectionItem(collectionId);
+  const updateItem = useUpdateCollectionItem(collectionId, numericItemId);
+
   const [values, setValues] = useState<Record<string, unknown>>({});
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [savedSnapshot, setSavedSnapshot] = useState<string>(
-    valuesSnapshot({}),
-  );
+  const [savedSnapshot, setSavedSnapshot] = useState<string>(valuesSnapshot({}));
+  const [hydrated, setHydrated] = useState(false);
 
-  const load = useCallback(async () => {
-    if (!Number.isInteger(collectionId) || collectionId <= 0) {
-      setError("Invalid collection id.");
-      setLoading(false);
+  const record = collectionQuery.data ?? null;
+  const fields = fieldsQuery.data ?? [];
+  const loading =
+    collectionQuery.isPending ||
+    fieldsQuery.isPending ||
+    (isEditing && itemQuery.isPending);
+
+  useEffect(() => {
+    if (loading || fields.length === 0) {
       return;
     }
 
-    setLoading(true);
-    setError(null);
-    try {
-      const [collection, nextFields] = await Promise.all([
-        fetchCollection(collectionId),
-        fetchCollectionFields(collectionId),
-      ]);
-      setRecord(collection);
-      setFields(nextFields);
-
-      if (isEditing && itemId) {
-        const item = await fetchCollectionItem(collectionId, Number(itemId));
-        const base = emptyValues(nextFields);
-        const merged = { ...base, ...item.values };
-        // Normalize stored nulls back to field defaults so that uncontrolled
-        // editor components (DiagramCanvas, RichTextEditor) don't diverge from
-        // savedSnapshot on mount and incorrectly mark the form dirty.
-        for (const field of nextFields) {
-          if (merged[field.key] == null) {
-            merged[field.key] = base[field.key];
-          }
+    if (isEditing && itemQuery.data) {
+      const base = emptyValues(fields);
+      const merged = { ...base, ...itemQuery.data.values };
+      for (const field of fields) {
+        if (merged[field.key] == null) {
+          merged[field.key] = base[field.key];
         }
-        setValues(merged);
-        setSavedSnapshot(valuesSnapshot(merged));
-      } else {
-        const nextValues = emptyValues(nextFields);
-        setValues(nextValues);
-        setSavedSnapshot(valuesSnapshot(nextValues));
       }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load item");
-    } finally {
-      setLoading(false);
+      setValues(merged);
+      setSavedSnapshot(valuesSnapshot(merged));
+      setHydrated(true);
+      return;
     }
-  }, [collectionId, isEditing, itemId]);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+    if (!isEditing) {
+      const nextValues = emptyValues(fields);
+      setValues(nextValues);
+      setSavedSnapshot(valuesSnapshot(nextValues));
+      setHydrated(true);
+    }
+  }, [loading, fields, isEditing, itemQuery.data]);
 
   const dirty = useMemo(
-    () => !loading && valuesSnapshot(values) !== savedSnapshot,
-    [loading, values, savedSnapshot],
+    () => hydrated && valuesSnapshot(values) !== savedSnapshot,
+    [hydrated, values, savedSnapshot],
   );
 
   const handleChange = (key: string, value: unknown) => {
@@ -98,25 +86,14 @@ export default function CollectionItemEditorPage() {
   };
 
   const handleSave = async () => {
-    setSaving(true);
     setError(null);
     try {
       if (isEditing && itemId) {
-        const updated = await updateCollectionItem(
-          collectionId,
-          Number(itemId),
-          { values },
-        );
-        const base = emptyValues(fields);
-        const nextValues = { ...base, ...updated.values };
-        for (const field of fields) {
-          if (nextValues[field.key] == null) nextValues[field.key] = base[field.key];
-        }
-        setValues(nextValues);
-        setSavedSnapshot(valuesSnapshot(nextValues));
+        await updateItem.mutateAsync({ values });
+        setSavedSnapshot(valuesSnapshot(values));
         toast.success("Item saved.");
       } else {
-        const created = await createCollectionItem(collectionId, { values });
+        const created = await createItem.mutateAsync({ values });
         toast.success("Item created.");
         navigate(
           `/collections/${collectionId}/items/${created.id}`,
@@ -127,13 +104,27 @@ export default function CollectionItemEditorPage() {
       const message = e instanceof Error ? e.message : "Failed to save item";
       setError(message);
       toast.error(message);
-    } finally {
-      setSaving(false);
     }
   };
 
+  const queryError =
+    !Number.isInteger(collectionId) || collectionId <= 0
+      ? "Invalid collection id."
+      : collectionQuery.error instanceof Error
+        ? collectionQuery.error.message
+        : fieldsQuery.error instanceof Error
+          ? fieldsQuery.error.message
+          : itemQuery.error instanceof Error
+            ? itemQuery.error.message
+            : collectionQuery.error ||
+                fieldsQuery.error ||
+                (isEditing && itemQuery.error)
+              ? "Failed to load item"
+              : null;
+
   const pageTitle = isEditing ? "Edit item" : "New item";
   const itemKey = isEditing ? `item-${itemId}` : "new";
+  const saving = createItem.isPending || updateItem.isPending;
 
   return (
     <>
@@ -174,8 +165,8 @@ export default function CollectionItemEditorPage() {
         }
       />
       <PageContainer>
-        {error ? (
-          <p className="mb-4 text-sm text-destructive">{error}</p>
+        {error || queryError ? (
+          <p className="mb-4 text-sm text-destructive">{error ?? queryError}</p>
         ) : null}
 
         {loading ? (

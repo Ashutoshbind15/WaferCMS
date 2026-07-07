@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { Copy, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { Header } from "@/components/layout/header";
@@ -30,13 +30,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  createApiKey,
-  fetchApiKeys,
-  revokeApiKey,
-  type ApiKeyRecord,
-  type ApiKeyScope,
-  type CreatedApiKeyRecord,
-} from "@/lib/cms-api";
+  useApiKeys,
+  useCreateApiKey,
+  useRevokeApiKey,
+} from "@/lib/queries";
+import { type ApiKeyScope, type CreatedApiKeyRecord } from "@/lib/cms-api";
 
 const scopeLabels: Record<ApiKeyScope, string> = {
   read: "Read",
@@ -52,13 +50,12 @@ const formatDate = (value: string | null) => {
 };
 
 export default function ApiKeysPage() {
-  const [keys, setKeys] = useState<ApiKeyRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const keysQuery = useApiKeys();
+  const createKey = useCreateApiKey();
+  const revokeKey = useRevokeApiKey();
+
   const [label, setLabel] = useState("");
   const [scope, setScope] = useState<ApiKeyScope>("read");
-  const [creating, setCreating] = useState(false);
-  const [revokingId, setRevokingId] = useState<number | null>(null);
   const [revokeTarget, setRevokeTarget] = useState<{
     id: number;
     label: string;
@@ -66,43 +63,39 @@ export default function ApiKeysPage() {
   const [createdKey, setCreatedKey] = useState<CreatedApiKeyRecord | null>(
     null,
   );
+  const [formError, setFormError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      setKeys(await fetchApiKeys());
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load API keys");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const keys = keysQuery.data ?? [];
+  const loading = keysQuery.isPending;
+  const error =
+    formError ??
+    (keysQuery.error instanceof Error
+      ? keysQuery.error.message
+      : keysQuery.error
+        ? "Failed to load API keys"
+        : null);
 
   const onCreate = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!label.trim()) {
-      setError("Label is required.");
+      setFormError("Label is required.");
       return;
     }
 
-    setCreating(true);
-    setError(null);
+    setFormError(null);
     try {
-      const result = await createApiKey({ label: label.trim(), scope });
+      const result = await createKey.mutateAsync({
+        label: label.trim(),
+        scope,
+      });
       setCreatedKey(result);
       setLabel("");
       setScope("read");
       toast.success("API key created");
-      await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to create API key");
-    } finally {
-      setCreating(false);
+      setFormError(
+        e instanceof Error ? e.message : "Failed to create API key",
+      );
     }
   };
 
@@ -111,18 +104,15 @@ export default function ApiKeysPage() {
       return;
     }
 
-    const { id } = revokeTarget;
-    setRevokingId(id);
-    setError(null);
+    setFormError(null);
     try {
-      await revokeApiKey(id);
+      await revokeKey.mutateAsync(revokeTarget.id);
       toast.success("API key revoked");
       setRevokeTarget(null);
-      await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to revoke API key");
-    } finally {
-      setRevokingId(null);
+      setFormError(
+        e instanceof Error ? e.message : "Failed to revoke API key",
+      );
     }
   };
 
@@ -176,8 +166,8 @@ export default function ApiKeysPage() {
                     <SelectItem value="read_write">Read + write</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button type="submit" disabled={creating}>
-                  {creating ? "Creating..." : "Create key"}
+                <Button type="submit" disabled={createKey.isPending}>
+                  {createKey.isPending ? "Creating..." : "Create key"}
                 </Button>
               </form>
             </CardContent>
@@ -268,12 +258,18 @@ export default function ApiKeysPage() {
                                 type="button"
                                 variant="outline"
                                 size="sm"
-                                disabled={revokingId === key.id}
+                                disabled={
+                                  revokeKey.isPending &&
+                                  revokeKey.variables === key.id
+                                }
                                 onClick={() =>
                                   setRevokeTarget({ id: key.id, label: key.label })
                                 }
                               >
-                                {revokingId === key.id ? "Revoking..." : "Revoke"}
+                                {revokeKey.isPending &&
+                                revokeKey.variables === key.id
+                                  ? "Revoking..."
+                                  : "Revoke"}
                               </Button>
                             )}
                           </td>
@@ -291,7 +287,7 @@ export default function ApiKeysPage() {
       <AlertDialog
         open={revokeTarget !== null}
         onOpenChange={(open) => {
-          if (!open && revokingId === null) {
+          if (!open && !revokeKey.isPending) {
             setRevokeTarget(null);
           }
         }}
@@ -305,15 +301,15 @@ export default function ApiKeysPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={revokingId !== null}>
+            <AlertDialogCancel disabled={revokeKey.isPending}>
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
-              disabled={revokingId !== null}
+              disabled={revokeKey.isPending}
               onClick={() => void confirmRevoke()}
             >
-              {revokingId !== null ? "Revoking..." : "Revoke"}
+              {revokeKey.isPending ? "Revoking..." : "Revoke"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

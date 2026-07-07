@@ -25,7 +25,7 @@ import {
   paginateRows,
 } from "@packages/cms-db/pagination";
 import { parseListQuery } from "../lib/pagination";
-import { parseIdParam } from "../lib/http";
+import { parseIdParam, sendCreatedId, sendNoContent } from "../lib/http";
 import type { CollectionItemBody } from "../lib/validation";
 
 export type CollectionItem = {
@@ -139,23 +139,6 @@ const assembleItem = (
   };
 };
 
-const assembleFromValidated = (
-  row: CollectionDataRow,
-  validated: ValidatedValue[],
-): CollectionItem => {
-  const values: Record<string, unknown> = {};
-  for (const v of validated) {
-    values[v.key] = v.value;
-  }
-  return {
-    id: row.id,
-    collectionId: row.collectionId,
-    values,
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
-  };
-};
-
 const isItemValidationError = (message: string): boolean =>
   message.startsWith("Item value for field") ||
   message.startsWith("Unknown field key");
@@ -223,7 +206,7 @@ const getItemData = async (
 const createItemData = async (
   collectionId: number,
   input: { values: Record<string, unknown> },
-): Promise<CollectionItem> => {
+): Promise<{ id: number }> => {
   const fields = await listCollectionFieldRecords(collectionId);
   const validated = validateItemValues(fields, input);
 
@@ -237,7 +220,7 @@ const createItemData = async (
     if (valueRows.length > 0) {
       await insertCollectionDataValues(valueRows, tx);
     }
-    return assembleFromValidated(data, validated);
+    return { id: data.id };
   });
 };
 
@@ -245,7 +228,7 @@ const updateItemData = async (
   collectionId: number,
   dataId: number,
   input: { values: Record<string, unknown> },
-): Promise<CollectionItem> => {
+): Promise<void> => {
   const existing = await selectCollectionDataById(collectionId, dataId);
   if (!existing) {
     throw new Error(`Collection item ${dataId} not found.`);
@@ -265,23 +248,13 @@ const updateItemData = async (
       await upsertCollectionDataValues(valueRows, tx);
     }
   });
-
-  const refreshed = await selectCollectionDataById(collectionId, dataId);
-  if (!refreshed) {
-    throw new Error(`Collection item ${dataId} not found.`);
-  }
-  return assembleFromValidated(refreshed, validated);
 };
 
 const deleteItemData = async (
   collectionId: number,
   dataId: number,
-): Promise<{ deleted: true }> => {
-  const deleted = await deleteCollectionData(collectionId, dataId);
-  if (!deleted) {
-    throw new Error(`Collection item ${dataId} not found.`);
-  }
-  return { deleted: true };
+): Promise<void> => {
+  await deleteCollectionData(collectionId, dataId);
 };
 
 export const listItems = async (req: Request, res: Response) => {
@@ -368,7 +341,7 @@ export const createItem = async (req: Request, res: Response) => {
   const { values } = req.body as CollectionItemBody;
   try {
     const result = await createItemData(collectionId, { values });
-    res.status(201).json(result);
+    sendCreatedId(res, result.id);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unexpected error";
@@ -403,8 +376,8 @@ export const updateItem = async (req: Request, res: Response) => {
 
   const { values } = req.body as CollectionItemBody;
   try {
-    const result = await updateItemData(collectionId, itemId, { values });
-    res.json(result);
+    await updateItemData(collectionId, itemId, { values });
+    sendNoContent(res);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unexpected error";
@@ -442,8 +415,8 @@ export const deleteItem = async (req: Request, res: Response) => {
   }
 
   try {
-    const result = await deleteItemData(collectionId, itemId);
-    res.json(result);
+    await deleteItemData(collectionId, itemId);
+    sendNoContent(res);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unexpected error";

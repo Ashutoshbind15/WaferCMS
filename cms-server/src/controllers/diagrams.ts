@@ -8,7 +8,7 @@ import {
 } from "@packages/cms-db/access";
 import { type ListPageQuery } from "@packages/cms-db/pagination";
 import { parseListQuery } from "../lib/pagination";
-import { parseIdParam } from "../lib/http";
+import { parseIdParam, sendCreatedId, sendNoContent } from "../lib/http";
 import type { DiagramBody } from "../lib/validation";
 
 export const listDiagrams = async (req: Request, res: Response) => {
@@ -53,7 +53,7 @@ export const createDiagram = async (req: Request, res: Response) => {
       req.body.title,
       req.body.payload,
     );
-    res.status(201).json(result);
+    sendCreatedId(res, result.id);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unexpected error";
@@ -70,8 +70,8 @@ export const updateDiagram = async (req: Request, res: Response) => {
 
   const body = req.body as DiagramBody;
   try {
-    const result = await updateDiagramRecord(id, body.title, body.payload);
-    res.json(result);
+    await updateDiagramRecord(id, body.title, body.payload);
+    sendNoContent(res);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unexpected error";
@@ -91,8 +91,8 @@ export const deleteDiagram = async (req: Request, res: Response) => {
   }
 
   try {
-    const result = await deleteDiagramRecord(id);
-    res.json(result);
+    await deleteDiagramRecord(id);
+    sendNoContent(res);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unexpected error";

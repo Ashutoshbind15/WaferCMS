@@ -83,11 +83,11 @@ export const selectCollectionDataValuesForIds = async (
 export const insertCollectionData = async (
   collectionId: number,
   client?: DbClient,
-): Promise<CollectionDataRow> => {
+): Promise<{ id: number }> => {
   const [created] = await withClient(client)
     .insert(collectionData)
     .values({ collectionId, updatedAt: new Date() })
-    .returning();
+    .returning({ id: collectionData.id });
   if (!created) {
     throw new Error("Failed to create collection item.");
   }
@@ -146,7 +146,7 @@ export const touchCollectionData = async (
 export const deleteCollectionData = async (
   collectionId: number,
   dataId: number,
-): Promise<boolean> => {
+): Promise<void> => {
   const [deleted] = await db
     .delete(collectionData)
     .where(
@@ -156,5 +156,7 @@ export const deleteCollectionData = async (
       ),
     )
     .returning({ id: collectionData.id });
-  return Boolean(deleted);
+  if (!deleted) {
+    throw new Error(`Collection item ${dataId} not found.`);
+  }
 };
