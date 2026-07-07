@@ -1,6 +1,6 @@
 const base =
   import.meta.env.VITE_CMS_API_BASE?.replace(/\/$/, "") ??
-  (import.meta.env.DEV ? "" : "http://localhost:3001");
+  "http://localhost:3001";
 
 export type PagePagination = {
   mode: "page";
@@ -99,11 +99,7 @@ export type LibraryFileRecord = {
   url?: string;
 };
 
-/**
- * Build the asset bytes URL for a file. Always constructed client-side so admin
- * thumbnails work for private files too (session cookie rides the same-origin
- * Vite proxy in dev / same-origin in prod).
- */
+/** Build the asset bytes URL for a file. */
 export const fileAssetUrl = (id: number): string => `${base}/files/${id}`;
 
 const getErrorMessage = async (res: Response) => {
