@@ -1,63 +1,16 @@
-import { useState } from "react";
 import { useNavigate } from "react-router";
-import { useCreateDiagram } from "@/lib/queries";
-import { toast } from "sonner";
-import { DiagramForm } from "../../components/forms/diagram-form";
-import type { DiagramDocument } from "@scribblesvg/core";
+import { DiagramEditor } from "../../components/forms/diagram-form";
 import { EMPTY_DOCUMENT } from "@scribblesvg/core";
-import { diagramSnapshot } from "./diagram-utils";
-
-const EMPTY_SNAPSHOT = diagramSnapshot("", EMPTY_DOCUMENT);
 
 export default function DiagramCreatePage() {
   const navigate = useNavigate();
-  const createDiagram = useCreateDiagram();
-
-  const [title, setTitle] = useState("");
-  const [document, setDocument] = useState<DiagramDocument>(EMPTY_DOCUMENT);
-  const [error, setError] = useState<string | null>(null);
-
-  const dirty = diagramSnapshot(title, document) !== EMPTY_SNAPSHOT;
-  const canClear = document.elements.length > 0;
-
-  const handleClear = () => {
-    setError(null);
-    setDocument(EMPTY_DOCUMENT);
-  };
-
-  const handleSave = async () => {
-    setError(null);
-
-    try {
-      const created = await createDiagram.mutateAsync({
-        title,
-        payload: document,
-      });
-      toast.success("Diagram created.");
-      navigate(`/diagrams/${created.id}`);
-    } catch (e) {
-      const message = e instanceof Error ? e.message : "Failed to save diagram";
-      setError(message);
-      toast.error(message);
-    }
-  };
 
   return (
-    <DiagramForm
+    <DiagramEditor
       pageTitle="New Diagram"
-      title={title}
-      document={document}
-      loading={false}
-      saving={createDiagram.isPending}
-      dirty={dirty}
-      canClear={canClear}
-      clearActionLabel="Clear canvas"
-      error={error}
+      initialTitle=""
+      initialDocument={EMPTY_DOCUMENT}
       onBack={() => navigate("/diagrams")}
-      onClear={handleClear}
-      onSave={handleSave}
-      onTitleChange={setTitle}
-      onDocumentChange={setDocument}
     />
   );
 }

@@ -111,32 +111,18 @@ function FieldInput({ field, value, onChange }: FieldInputProps) {
 type CollectionItemFieldEditorsProps = {
   fields: CollectionFieldRecord[];
   values: Record<string, unknown>;
-  /** Changes when the edited item changes, so uncontrolled editors remount. */
-  itemKey: string | number;
   onChange: (key: string, value: unknown) => void;
 };
 
 export function CollectionItemFieldEditors({
   fields,
   values,
-  itemKey,
   onChange,
 }: CollectionItemFieldEditorsProps) {
-  if (fields.length === 0) {
-    return (
-      <div className="rounded-lg border border-dashed border-border py-12 text-center">
-        <p className="text-sm text-muted-foreground">
-          This collection has no fields defined. Add fields before creating
-          items.
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       {fields.map((field) => (
-        <div key={`${itemKey}-${field.id}`} className="space-y-2">
+        <div key={field.id} className="space-y-2">
           <Label>
             {field.label}
             {field.required ? (
