@@ -8,70 +8,98 @@ import {
 } from "@packages/cms-db/access";
 import { type ListPageQuery } from "@packages/cms-db/pagination";
 import { parseListQuery } from "../lib/pagination";
-import { parseIdParam, sendRouteError } from "../lib/http";
+import { parseIdParam } from "../lib/http";
 import type { ContentBody } from "../lib/validation";
 
-const listContentData = async (query: ListPageQuery) =>
-  listContentRecords(query);
-
-const getContentData = async (id: number) => getContentRecord(id);
-
-const createContentData = async (input: ContentBody) =>
-  addContentRecord(input.title, input.payload);
-
-const updateContentData = async (id: number, input: ContentBody) =>
-  updateContentRecord(id, input.title, input.payload);
-
-const deleteContentData = async (id: number) => deleteContentRecord(id);
-
 export const listContent = async (req: Request, res: Response) => {
+  let query: ListPageQuery;
   try {
-    const result = await listContentData(parseListQuery(req.query));
+    query = parseListQuery(req.query);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unexpected error";
+    res.status(400).json({ error: message });
+    return;
+  }
+
+  try {
+    const result = await listContentRecords(query);
     res.json(result);
   } catch (error) {
-    sendRouteError(res, error);
+    const message =
+      error instanceof Error ? error.message : "Unexpected error";
+    res.status(500).json({ error: message });
   }
 };
 
 export const getContent = async (req: Request, res: Response) => {
-  try {
-    const result = await getContentData(parseIdParam(String(req.params.id)));
-    if (!result) {
-      res.status(404).json({ error: `Content ${req.params.id} not found.` });
-      return;
-    }
-    res.json(result);
-  } catch (error) {
-    sendRouteError(res, error);
+  const id = parseIdParam(String(req.params.id));
+  if (id === null) {
+    res.status(400).json({ error: "Invalid id." });
+    return;
   }
+
+  const result = await getContentRecord(id);
+  if (!result) {
+    res.status(404).json({ error: `Content ${req.params.id} not found.` });
+    return;
+  }
+  res.json(result);
 };
 
 export const createContent = async (req: Request, res: Response) => {
   try {
-    const result = await createContentData(req.body as ContentBody);
+    const result = await addContentRecord(
+      req.body.title,
+      req.body.payload,
+    );
     res.status(201).json(result);
   } catch (error) {
-    sendRouteError(res, error);
+    const message =
+      error instanceof Error ? error.message : "Unexpected error";
+    res.status(500).json({ error: message });
   }
 };
 
 export const updateContent = async (req: Request, res: Response) => {
+  const id = parseIdParam(String(req.params.id));
+  if (id === null) {
+    res.status(400).json({ error: "Invalid id." });
+    return;
+  }
+
+  const body = req.body as ContentBody;
   try {
-    const result = await updateContentData(
-      parseIdParam(String(req.params.id)),
-      req.body as ContentBody,
-    );
+    const result = await updateContentRecord(id, body.title, body.payload);
     res.json(result);
   } catch (error) {
-    sendRouteError(res, error);
+    const message =
+      error instanceof Error ? error.message : "Unexpected error";
+    if (message.endsWith("not found.")) {
+      res.status(404).json({ error: message });
+      return;
+    }
+    res.status(500).json({ error: message });
   }
 };
 
 export const deleteContent = async (req: Request, res: Response) => {
+  const id = parseIdParam(String(req.params.id));
+  if (id === null) {
+    res.status(400).json({ error: "Invalid id." });
+    return;
+  }
+
   try {
-    const result = await deleteContentData(parseIdParam(String(req.params.id)));
+    const result = await deleteContentRecord(id);
     res.json(result);
   } catch (error) {
-    sendRouteError(res, error);
+    const message =
+      error instanceof Error ? error.message : "Unexpected error";
+    if (message.endsWith("not found.")) {
+      res.status(404).json({ error: message });
+      return;
+    }
+    res.status(500).json({ error: message });
   }
 };

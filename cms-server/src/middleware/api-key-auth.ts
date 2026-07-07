@@ -72,11 +72,6 @@ export const apiKeyAuthMiddleware = async (
   res: Response,
   next: NextFunction,
 ) => {
-  if (req.method === "OPTIONS") {
-    next();
-    return;
-  }
-
   if (!authRequired()) {
     next();
     return;

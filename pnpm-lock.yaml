@@ -145,6 +145,9 @@ importers:
       '@packages/storage':
         specifier: workspace:*
         version: link:../packages/storage
+      bcryptjs:
+        specifier: 3.0.2
+        version: 3.0.2
       cookie-parser:
         specifier: 1.4.7
         version: 1.4.7
@@ -167,6 +170,9 @@ importers:
         specifier: 4.3.6
         version: 4.3.6
     devDependencies:
+      '@types/bcryptjs':
+        specifier: 2.4.6
+        version: 2.4.6
       '@types/cookie-parser':
         specifier: 1.4.9
         version: 1.4.9(@types/express@5.0.6)
@@ -188,9 +194,6 @@ importers:
 
   packages/cms-db:
     dependencies:
-      bcryptjs:
-        specifier: 3.0.2
-        version: 3.0.2
       dotenv:
         specifier: 17.3.1
         version: 17.3.1
@@ -201,9 +204,6 @@ importers:
         specifier: 8.20.0
         version: 8.20.0
     devDependencies:
-      '@types/bcryptjs':
-        specifier: 2.4.6
-        version: 2.4.6
       '@types/node':
         specifier: 25.5.0
         version: 25.5.0

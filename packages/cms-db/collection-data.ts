@@ -66,9 +66,6 @@ export const selectCollectionDataById = async (
 export const selectCollectionDataValuesForIds = async (
   dataIds: number[],
 ): Promise<CollectionDataValueRow[]> => {
-  if (dataIds.length === 0) {
-    return [];
-  }
   return db
     .select({
       dataId: collectionDataValue.dataId,
@@ -101,9 +98,6 @@ export const insertCollectionDataValues = async (
   rows: CollectionDataValueInput[],
   client?: DbClient,
 ): Promise<void> => {
-  if (rows.length === 0) {
-    return;
-  }
   await withClient(client)
     .insert(collectionDataValue)
     .values(
@@ -120,9 +114,6 @@ export const upsertCollectionDataValues = async (
   rows: CollectionDataValueInput[],
   client?: DbClient,
 ): Promise<void> => {
-  if (rows.length === 0) {
-    return;
-  }
   await withClient(client)
     .insert(collectionDataValue)
     .values(

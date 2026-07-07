@@ -21,11 +21,6 @@ export const sessionAuthMiddleware = async (
   res: Response,
   next: NextFunction,
 ) => {
-  if (req.method === "OPTIONS") {
-    next();
-    return;
-  }
-
   const token = req.cookies?.[getSessionCookieName()] as string | undefined;
   const payload = await verifySession(token);
 

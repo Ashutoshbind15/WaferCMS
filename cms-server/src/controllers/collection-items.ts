@@ -25,7 +25,7 @@ import {
   paginateRows,
 } from "@packages/cms-db/pagination";
 import { parseListQuery } from "../lib/pagination";
-import { parseIdParam, sendRouteError } from "../lib/http";
+import { parseIdParam } from "../lib/http";
 import type { CollectionItemBody } from "../lib/validation";
 
 export type CollectionItem = {
@@ -156,12 +156,9 @@ const assembleFromValidated = (
   };
 };
 
-const assertCollectionExists = async (collectionId: number) => {
-  const existing = await getCollectionRecord(collectionId);
-  if (!existing) {
-    throw new Error(`Collection ${collectionId} not found.`);
-  }
-};
+const isItemValidationError = (message: string): boolean =>
+  message.startsWith("Item value for field") ||
+  message.startsWith("Unknown field key");
 
 const parseCollectionId = (req: Request) =>
   parseIdParam(String(req.params.collectionId));
@@ -170,8 +167,6 @@ const listItemsData = async (
   collectionId: number,
   query: ListPageQuery,
 ): Promise<PaginatedRows<CollectionItem>> => {
-  await assertCollectionExists(collectionId);
-
   const page = await paginateRows({
     query,
     fetchPage: (limit, offset) =>
@@ -212,8 +207,6 @@ const getItemData = async (
   collectionId: number,
   dataId: number,
 ): Promise<CollectionItem | null> => {
-  await assertCollectionExists(collectionId);
-
   const row = await selectCollectionDataById(collectionId, dataId);
   if (!row) {
     return null;
@@ -231,16 +224,19 @@ const createItemData = async (
   collectionId: number,
   input: { values: Record<string, unknown> },
 ): Promise<CollectionItem> => {
-  await assertCollectionExists(collectionId);
   const fields = await listCollectionFieldRecords(collectionId);
   const validated = validateItemValues(fields, input);
 
   return db.transaction(async (tx) => {
     const data = await insertCollectionData(collectionId, tx);
-    await insertCollectionDataValues(
-      validated.map((v) => ({ dataId: data.id, fieldId: v.fieldId, value: v.value })),
-      tx,
-    );
+    const valueRows = validated.map((v) => ({
+      dataId: data.id,
+      fieldId: v.fieldId,
+      value: v.value,
+    }));
+    if (valueRows.length > 0) {
+      await insertCollectionDataValues(valueRows, tx);
+    }
     return assembleFromValidated(data, validated);
   });
 };
@@ -250,8 +246,6 @@ const updateItemData = async (
   dataId: number,
   input: { values: Record<string, unknown> },
 ): Promise<CollectionItem> => {
-  await assertCollectionExists(collectionId);
-
   const existing = await selectCollectionDataById(collectionId, dataId);
   if (!existing) {
     throw new Error(`Collection item ${dataId} not found.`);
@@ -262,10 +256,14 @@ const updateItemData = async (
 
   await db.transaction(async (tx) => {
     await touchCollectionData(dataId, tx);
-    await upsertCollectionDataValues(
-      validated.map((v) => ({ dataId, fieldId: v.fieldId, value: v.value })),
-      tx,
-    );
+    const valueRows = validated.map((v) => ({
+      dataId,
+      fieldId: v.fieldId,
+      value: v.value,
+    }));
+    if (valueRows.length > 0) {
+      await upsertCollectionDataValues(valueRows, tx);
+    }
   });
 
   const refreshed = await selectCollectionDataById(collectionId, dataId);
@@ -287,62 +285,172 @@ const deleteItemData = async (
 };
 
 export const listItems = async (req: Request, res: Response) => {
+  const collectionId = parseCollectionId(req);
+  if (collectionId === null) {
+    res.status(400).json({ error: "Invalid id." });
+    return;
+  }
+
+  const collection = await getCollectionRecord(collectionId);
+  if (!collection) {
+    res
+      .status(404)
+      .json({ error: `Collection ${req.params.collectionId} not found.` });
+    return;
+  }
+
+  let query: ListPageQuery;
   try {
-    const collectionId = parseCollectionId(req);
-    const result = await listItemsData(collectionId, parseListQuery(req.query));
+    query = parseListQuery(req.query);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unexpected error";
+    res.status(400).json({ error: message });
+    return;
+  }
+
+  try {
+    const result = await listItemsData(collectionId, query);
     res.json(result);
   } catch (error) {
-    sendRouteError(res, error);
+    const message =
+      error instanceof Error ? error.message : "Unexpected error";
+    res.status(500).json({ error: message });
   }
 };
 
 export const getItem = async (req: Request, res: Response) => {
-  try {
-    const collectionId = parseCollectionId(req);
-    const itemId = parseIdParam(String(req.params.itemId));
-    const result = await getItemData(collectionId, itemId);
-    if (!result) {
-      res
-        .status(404)
-        .json({ error: `Collection item ${req.params.itemId} not found.` });
-      return;
-    }
-    res.json(result);
-  } catch (error) {
-    sendRouteError(res, error);
+  const collectionId = parseCollectionId(req);
+  if (collectionId === null) {
+    res.status(400).json({ error: "Invalid id." });
+    return;
   }
+
+  const itemId = parseIdParam(String(req.params.itemId));
+  if (itemId === null) {
+    res.status(400).json({ error: "Invalid id." });
+    return;
+  }
+
+  const collection = await getCollectionRecord(collectionId);
+  if (!collection) {
+    res
+      .status(404)
+      .json({ error: `Collection ${req.params.collectionId} not found.` });
+    return;
+  }
+
+  const result = await getItemData(collectionId, itemId);
+  if (!result) {
+    res
+      .status(404)
+      .json({ error: `Collection item ${req.params.itemId} not found.` });
+    return;
+  }
+  res.json(result);
 };
 
 export const createItem = async (req: Request, res: Response) => {
+  const collectionId = parseCollectionId(req);
+  if (collectionId === null) {
+    res.status(400).json({ error: "Invalid id." });
+    return;
+  }
+
+  const collection = await getCollectionRecord(collectionId);
+  if (!collection) {
+    res
+      .status(404)
+      .json({ error: `Collection ${req.params.collectionId} not found.` });
+    return;
+  }
+
+  const { values } = req.body as CollectionItemBody;
   try {
-    const collectionId = parseCollectionId(req);
-    const { values } = req.body as CollectionItemBody;
     const result = await createItemData(collectionId, { values });
     res.status(201).json(result);
   } catch (error) {
-    sendRouteError(res, error);
+    const message =
+      error instanceof Error ? error.message : "Unexpected error";
+    if (isItemValidationError(message)) {
+      res.status(400).json({ error: message });
+      return;
+    }
+    res.status(500).json({ error: message });
   }
 };
 
 export const updateItem = async (req: Request, res: Response) => {
+  const collectionId = parseCollectionId(req);
+  if (collectionId === null) {
+    res.status(400).json({ error: "Invalid id." });
+    return;
+  }
+
+  const itemId = parseIdParam(String(req.params.itemId));
+  if (itemId === null) {
+    res.status(400).json({ error: "Invalid id." });
+    return;
+  }
+
+  const collection = await getCollectionRecord(collectionId);
+  if (!collection) {
+    res
+      .status(404)
+      .json({ error: `Collection ${req.params.collectionId} not found.` });
+    return;
+  }
+
+  const { values } = req.body as CollectionItemBody;
   try {
-    const collectionId = parseCollectionId(req);
-    const itemId = parseIdParam(String(req.params.itemId));
-    const { values } = req.body as CollectionItemBody;
     const result = await updateItemData(collectionId, itemId, { values });
     res.json(result);
   } catch (error) {
-    sendRouteError(res, error);
+    const message =
+      error instanceof Error ? error.message : "Unexpected error";
+    if (isItemValidationError(message)) {
+      res.status(400).json({ error: message });
+      return;
+    }
+    if (message.endsWith("not found.")) {
+      res.status(404).json({ error: message });
+      return;
+    }
+    res.status(500).json({ error: message });
   }
 };
 
 export const deleteItem = async (req: Request, res: Response) => {
+  const collectionId = parseCollectionId(req);
+  if (collectionId === null) {
+    res.status(400).json({ error: "Invalid id." });
+    return;
+  }
+
+  const itemId = parseIdParam(String(req.params.itemId));
+  if (itemId === null) {
+    res.status(400).json({ error: "Invalid id." });
+    return;
+  }
+
+  const collection = await getCollectionRecord(collectionId);
+  if (!collection) {
+    res
+      .status(404)
+      .json({ error: `Collection ${req.params.collectionId} not found.` });
+    return;
+  }
+
   try {
-    const collectionId = parseCollectionId(req);
-    const itemId = parseIdParam(String(req.params.itemId));
     const result = await deleteItemData(collectionId, itemId);
     res.json(result);
   } catch (error) {
-    sendRouteError(res, error);
+    const message =
+      error instanceof Error ? error.message : "Unexpected error";
+    if (message.endsWith("not found.")) {
+      res.status(404).json({ error: message });
+      return;
+    }
+    res.status(500).json({ error: message });
   }
 };

@@ -7,11 +7,6 @@ export const contentAuthMiddleware = async (
   res: Response,
   next: NextFunction,
 ) => {
-  if (req.method === "OPTIONS") {
-    next();
-    return;
-  }
-
   const session = await trySessionAuth(req);
   if (session) {
     req.sessionAuth = session;

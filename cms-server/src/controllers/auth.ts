@@ -1,30 +1,33 @@
 import type { Request, Response } from "express";
-import {
-  touchUserLastLogin,
-  verifyUserPassword,
-} from "@packages/cms-db/users";
+import { findUserByUsername, touchUserLastLogin } from "@packages/cms-db/users";
 import { clearSessionCookie, setSessionCookie } from "../lib/cookies";
+import { verifyPassword } from "../lib/password";
 import { signSession } from "../lib/session";
 import type { LoginBody } from "../lib/validation";
 
 const loginData = async (input: LoginBody) => {
-  const user = await verifyUserPassword(input.username, input.password);
-  if (!user) {
+  const record = await findUserByUsername(input.username);
+  if (!record || !record.enabled) {
+    return null;
+  }
+
+  const matches = await verifyPassword(input.password, record.passwordHash);
+  if (!matches) {
     return null;
   }
 
   const token = await signSession({
-    userId: user.id,
-    username: user.username,
+    userId: record.id,
+    username: record.username,
   });
 
-  void touchUserLastLogin(user.id).catch(() => {});
+  void touchUserLastLogin(record.id).catch(() => {});
 
   return {
     token,
     user: {
-      id: user.id,
-      username: user.username,
+      id: record.id,
+      username: record.username,
     },
   };
 };

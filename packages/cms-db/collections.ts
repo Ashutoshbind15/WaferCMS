@@ -140,21 +140,26 @@ export const getCollectionFieldRecord = async (
   return row ?? null;
 };
 
+export const countCollectionFieldRecords = async (
+  collectionId: number,
+): Promise<number> => {
+  const [row] = await db
+    .select({ value: count() })
+    .from(collectionField)
+    .where(eq(collectionField.collectionId, collectionId));
+  return row?.value ?? 0;
+};
+
 export const addCollectionFieldRecord = async (
   collectionId: number,
   input: {
     key: string;
     label: string;
     fieldType: CollectionFieldType;
+    position: number;
     required?: boolean;
   },
 ): Promise<CollectionFieldRow> => {
-  const existing = await db
-    .select({ value: count() })
-    .from(collectionField)
-    .where(eq(collectionField.collectionId, collectionId));
-  const position = existing[0]?.value ?? 0;
-
   const [created] = await db
     .insert(collectionField)
     .values({
@@ -162,7 +167,7 @@ export const addCollectionFieldRecord = async (
       key: input.key,
       label: input.label,
       fieldType: input.fieldType,
-      position,
+      position: input.position,
       required: input.required ?? false,
       updatedAt: new Date(),
     })

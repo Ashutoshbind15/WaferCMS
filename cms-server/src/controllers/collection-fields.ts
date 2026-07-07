@@ -1,112 +1,144 @@
 import type { Request, Response } from "express";
 import {
   addCollectionFieldRecord,
+  countCollectionFieldRecords,
   deleteCollectionFieldRecord,
   getCollectionFieldRecord,
   getCollectionRecord,
   listCollectionFieldRecords,
   updateCollectionFieldRecord,
 } from "@packages/cms-db/collections";
-import { parseIdParam, sendRouteError } from "../lib/http";
+import { parseIdParam } from "../lib/http";
 import type { CollectionFieldBody } from "../lib/validation";
 
 const parseCollectionId = (req: Request) =>
   parseIdParam(String(req.params.collectionId));
 
-const assertCollectionExists = async (collectionId: number) => {
-  const existing = await getCollectionRecord(collectionId);
-  if (!existing) {
-    throw new Error(`Collection ${collectionId} not found.`);
-  }
-};
-
-const listFieldsData = async (collectionId: number) => {
-  await assertCollectionExists(collectionId);
-  return listCollectionFieldRecords(collectionId);
-};
-
-const getFieldData = async (collectionId: number, fieldId: number) =>
-  getCollectionFieldRecord(collectionId, fieldId);
-
-const createFieldData = async (
-  collectionId: number,
-  input: CollectionFieldBody,
-) => {
-  await assertCollectionExists(collectionId);
-  return addCollectionFieldRecord(collectionId, input);
-};
-
-const updateFieldData = async (
-  collectionId: number,
-  fieldId: number,
-  input: CollectionFieldBody,
-) => updateCollectionFieldRecord(collectionId, fieldId, input);
-
-const deleteFieldData = async (collectionId: number, fieldId: number) =>
-  deleteCollectionFieldRecord(collectionId, fieldId);
-
 export const listFields = async (req: Request, res: Response) => {
-  try {
-    const collectionId = parseCollectionId(req);
-    const result = await listFieldsData(collectionId);
-    res.json({ data: result });
-  } catch (error) {
-    sendRouteError(res, error);
+  const collectionId = parseCollectionId(req);
+  if (collectionId === null) {
+    res.status(400).json({ error: "Invalid id." });
+    return;
   }
+
+  const collection = await getCollectionRecord(collectionId);
+  if (!collection) {
+    res
+      .status(404)
+      .json({ error: `Collection ${req.params.collectionId} not found.` });
+    return;
+  }
+
+  const result = await listCollectionFieldRecords(collectionId);
+  res.json({ data: result });
 };
 
 export const getField = async (req: Request, res: Response) => {
-  try {
-    const collectionId = parseCollectionId(req);
-    const fieldId = parseIdParam(String(req.params.fieldId));
-    const result = await getFieldData(collectionId, fieldId);
-    if (!result) {
-      res.status(404).json({
-        error: `Collection field ${req.params.fieldId} not found.`,
-      });
-      return;
-    }
-    res.json(result);
-  } catch (error) {
-    sendRouteError(res, error);
+  const collectionId = parseCollectionId(req);
+  if (collectionId === null) {
+    res.status(400).json({ error: "Invalid id." });
+    return;
   }
+
+  const fieldId = parseIdParam(String(req.params.fieldId));
+  if (fieldId === null) {
+    res.status(400).json({ error: "Invalid id." });
+    return;
+  }
+
+  const result = await getCollectionFieldRecord(collectionId, fieldId);
+  if (!result) {
+    res.status(404).json({
+      error: `Collection field ${req.params.fieldId} not found.`,
+    });
+    return;
+  }
+  res.json(result);
 };
 
 export const createField = async (req: Request, res: Response) => {
+  const collectionId = parseCollectionId(req);
+  if (collectionId === null) {
+    res.status(400).json({ error: "Invalid id." });
+    return;
+  }
+
+  const collection = await getCollectionRecord(collectionId);
+  if (!collection) {
+    res
+      .status(404)
+      .json({ error: `Collection ${req.params.collectionId} not found.` });
+    return;
+  }
+
+  const position = await countCollectionFieldRecords(collectionId);
   try {
-    const collectionId = parseCollectionId(req);
-    const result = await createFieldData(
-      collectionId,
-      req.body as CollectionFieldBody,
-    );
+    const result = await addCollectionFieldRecord(collectionId, {
+      ...(req.body as CollectionFieldBody),
+      position,
+    });
     res.status(201).json(result);
   } catch (error) {
-    sendRouteError(res, error);
+    const message =
+      error instanceof Error ? error.message : "Unexpected error";
+    res.status(500).json({ error: message });
   }
 };
 
 export const updateField = async (req: Request, res: Response) => {
+  const collectionId = parseCollectionId(req);
+  if (collectionId === null) {
+    res.status(400).json({ error: "Invalid id." });
+    return;
+  }
+
+  const fieldId = parseIdParam(String(req.params.fieldId));
+  if (fieldId === null) {
+    res.status(400).json({ error: "Invalid id." });
+    return;
+  }
+
   try {
-    const collectionId = parseCollectionId(req);
-    const fieldId = parseIdParam(String(req.params.fieldId));
-    const result = await updateFieldData(
+    const result = await updateCollectionFieldRecord(
       collectionId,
       fieldId,
       req.body as CollectionFieldBody,
     );
     res.json(result);
   } catch (error) {
-    sendRouteError(res, error);
+    const message =
+      error instanceof Error ? error.message : "Unexpected error";
+    if (message.endsWith("not found.")) {
+      res.status(404).json({ error: message });
+      return;
+    }
+    res.status(500).json({ error: message });
   }
 };
 
 export const deleteField = async (req: Request, res: Response) => {
+  const collectionId = parseCollectionId(req);
+  if (collectionId === null) {
+    res.status(400).json({ error: "Invalid id." });
+    return;
+  }
+
+  const fieldId = parseIdParam(String(req.params.fieldId));
+  if (fieldId === null) {
+    res.status(400).json({ error: "Invalid id." });
+    return;
+  }
+
   try {
-    const collectionId = parseCollectionId(req);
-    const fieldId = parseIdParam(String(req.params.fieldId));
-    const result = await deleteFieldData(collectionId, fieldId);
+    const result = await deleteCollectionFieldRecord(collectionId, fieldId);
     res.json(result);
   } catch (error) {
-    sendRouteError(res, error);
+    const message =
+      error instanceof Error ? error.message : "Unexpected error";
+    if (message.endsWith("not found.")) {
+      res.status(404).json({ error: message });
+      return;
+    }
+    res.status(500).json({ error: message });
   }
 };

@@ -13,7 +13,7 @@ import { type ListPageQuery, type PaginatedRows } from "@packages/cms-db/paginat
 import { parseListQuery } from "../lib/pagination";
 import { cmsPublicBaseUrl } from "../lib/asset-url";
 import { toFileResponse, type FileResponse } from "../lib/files";
-import { parseIdParam, sendRouteError } from "../lib/http";
+import { parseIdParam } from "../lib/http";
 import type { PatchFileBody, UploadFileBody } from "../lib/validation";
 
 const safeBasename = (name: string): string => {
@@ -70,11 +70,23 @@ const patchFileData = async (
 };
 
 export const listFiles = async (req: Request, res: Response) => {
+  let query: ListPageQuery;
   try {
-    const result = await listFilesData(parseListQuery(req.query));
+    query = parseListQuery(req.query);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unexpected error";
+    res.status(400).json({ error: message });
+    return;
+  }
+
+  try {
+    const result = await listFilesData(query);
     res.status(200).json(result);
   } catch (error) {
-    sendRouteError(res, error);
+    const message =
+      error instanceof Error ? error.message : "Unexpected error";
+    res.status(500).json({ error: message });
   }
 };
 
@@ -95,17 +107,31 @@ export const uploadFile = async (req: Request, res: Response) => {
     });
     res.status(201).json(result);
   } catch (error) {
-    sendRouteError(res, error);
+    const message =
+      error instanceof Error ? error.message : "Unexpected error";
+    res.status(500).json({ error: message });
   }
 };
 
 export const patchFile = async (req: Request, res: Response) => {
+  const id = parseIdParam(String(req.params.id));
+  if (id === null) {
+    res.status(400).json({ error: "Invalid id." });
+    return;
+  }
+
+  const { isPublic } = req.body as PatchFileBody;
   try {
-    const { isPublic } = req.body as PatchFileBody;
-    const result = await patchFileData(parseIdParam(String(req.params.id)), isPublic);
+    const result = await patchFileData(id, isPublic);
     res.status(200).json(result);
   } catch (error) {
-    sendRouteError(res, error);
+    const message =
+      error instanceof Error ? error.message : "Unexpected error";
+    if (message.endsWith("not found.")) {
+      res.status(404).json({ error: message });
+      return;
+    }
+    res.status(500).json({ error: message });
   }
 };
 
@@ -126,7 +152,9 @@ export const streamFile = async (req: Request, res: Response) => {
       range: typeof req.headers.range === "string" ? req.headers.range : undefined,
     });
   } catch (error) {
-    sendRouteError(res, error);
+    const message =
+      error instanceof Error ? error.message : "Unexpected error";
+    res.status(500).json({ error: message });
     return;
   }
 
@@ -162,7 +190,8 @@ export const streamFile = async (req: Request, res: Response) => {
   const stream = object.body as Readable;
   stream.on("error", (err) => {
     if (!res.headersSent) {
-      sendRouteError(res, err);
+      const message = err instanceof Error ? err.message : "Unexpected error";
+      res.status(500).json({ error: message });
     } else {
       req.socket.destroy();
     }

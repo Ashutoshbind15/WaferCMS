@@ -4,9 +4,9 @@ import { stdin as input, stdout as output } from "node:process";
 import {
   countUsers,
   findUserByUsername,
-  hashPassword,
   insertUser,
 } from "@packages/cms-db/users";
+import { hashPassword } from "../lib/password";
 
 const parseUsernameArg = (): string | null => {
   const index = process.argv.indexOf("--username");

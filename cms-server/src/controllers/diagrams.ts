@@ -8,70 +8,98 @@ import {
 } from "@packages/cms-db/access";
 import { type ListPageQuery } from "@packages/cms-db/pagination";
 import { parseListQuery } from "../lib/pagination";
-import { parseIdParam, sendRouteError } from "../lib/http";
+import { parseIdParam } from "../lib/http";
 import type { DiagramBody } from "../lib/validation";
 
-const listDiagramsData = async (query: ListPageQuery) =>
-  listDiagramRecords(query);
-
-const getDiagramData = async (id: number) => getDiagramRecord(id);
-
-const createDiagramData = async (input: DiagramBody) =>
-  addDiagramRecord(input.title, input.payload);
-
-const updateDiagramData = async (id: number, input: DiagramBody) =>
-  updateDiagramRecord(id, input.title, input.payload);
-
-const deleteDiagramData = async (id: number) => deleteDiagramRecord(id);
-
 export const listDiagrams = async (req: Request, res: Response) => {
+  let query: ListPageQuery;
   try {
-    const result = await listDiagramsData(parseListQuery(req.query));
+    query = parseListQuery(req.query);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unexpected error";
+    res.status(400).json({ error: message });
+    return;
+  }
+
+  try {
+    const result = await listDiagramRecords(query);
     res.json(result);
   } catch (error) {
-    sendRouteError(res, error);
+    const message =
+      error instanceof Error ? error.message : "Unexpected error";
+    res.status(500).json({ error: message });
   }
 };
 
 export const getDiagram = async (req: Request, res: Response) => {
-  try {
-    const result = await getDiagramData(parseIdParam(String(req.params.id)));
-    if (!result) {
-      res.status(404).json({ error: `Diagram ${req.params.id} not found.` });
-      return;
-    }
-    res.json(result);
-  } catch (error) {
-    sendRouteError(res, error);
+  const id = parseIdParam(String(req.params.id));
+  if (id === null) {
+    res.status(400).json({ error: "Invalid id." });
+    return;
   }
+
+  const result = await getDiagramRecord(id);
+  if (!result) {
+    res.status(404).json({ error: `Diagram ${req.params.id} not found.` });
+    return;
+  }
+  res.json(result);
 };
 
 export const createDiagram = async (req: Request, res: Response) => {
   try {
-    const result = await createDiagramData(req.body as DiagramBody);
+    const result = await addDiagramRecord(
+      req.body.title,
+      req.body.payload,
+    );
     res.status(201).json(result);
   } catch (error) {
-    sendRouteError(res, error);
+    const message =
+      error instanceof Error ? error.message : "Unexpected error";
+    res.status(500).json({ error: message });
   }
 };
 
 export const updateDiagram = async (req: Request, res: Response) => {
+  const id = parseIdParam(String(req.params.id));
+  if (id === null) {
+    res.status(400).json({ error: "Invalid id." });
+    return;
+  }
+
+  const body = req.body as DiagramBody;
   try {
-    const result = await updateDiagramData(
-      parseIdParam(String(req.params.id)),
-      req.body as DiagramBody,
-    );
+    const result = await updateDiagramRecord(id, body.title, body.payload);
     res.json(result);
   } catch (error) {
-    sendRouteError(res, error);
+    const message =
+      error instanceof Error ? error.message : "Unexpected error";
+    if (message.endsWith("not found.")) {
+      res.status(404).json({ error: message });
+      return;
+    }
+    res.status(500).json({ error: message });
   }
 };
 
 export const deleteDiagram = async (req: Request, res: Response) => {
+  const id = parseIdParam(String(req.params.id));
+  if (id === null) {
+    res.status(400).json({ error: "Invalid id." });
+    return;
+  }
+
   try {
-    const result = await deleteDiagramData(parseIdParam(String(req.params.id)));
+    const result = await deleteDiagramRecord(id);
     res.json(result);
   } catch (error) {
-    sendRouteError(res, error);
+    const message =
+      error instanceof Error ? error.message : "Unexpected error";
+    if (message.endsWith("not found.")) {
+      res.status(404).json({ error: message });
+      return;
+    }
+    res.status(500).json({ error: message });
   }
 };

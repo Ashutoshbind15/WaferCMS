@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import type { FileMetadataRow } from "@packages/cms-db/access";
 import { getFileMetadataById } from "@packages/cms-db/access";
-import { parseIdParam, sendRouteError } from "../lib/http";
+import { parseIdParam } from "../lib/http";
 import { trySessionAuth, type SessionAuthContext } from "./session-auth";
 import {
   apiKeyAuthRequired,
@@ -31,16 +31,9 @@ export const fileAccessAuth = async (
   res: Response,
   next: NextFunction,
 ) => {
-  if (req.method === "OPTIONS") {
-    next();
-    return;
-  }
-
-  let id: number;
-  try {
-    id = parseIdParam(String(req.params.id));
-  } catch (error) {
-    sendRouteError(res, error);
+  const id = parseIdParam(String(req.params.id));
+  if (id === null) {
+    res.status(400).json({ error: "Invalid id." });
     return;
   }
 

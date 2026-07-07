@@ -1,9 +1,6 @@
-import bcrypt from "bcryptjs";
 import { desc, eq, sql } from "drizzle-orm";
 import db from "./db";
 import { user } from "./schema";
-
-const BCRYPT_COST = 12;
 
 export type UserRecord = {
   id: number;
@@ -29,9 +26,6 @@ const toUserRecord = (row: {
   updatedAt: row.updatedAt,
   lastLoginAt: row.lastLoginAt,
 });
-
-export const hashPassword = async (password: string): Promise<string> =>
-  bcrypt.hash(password, BCRYPT_COST);
 
 export const countUsers = async (): Promise<number> => {
   const [row] = await db
@@ -88,7 +82,7 @@ export const findUserByUsername = async (
   const [row] = await db
     .select()
     .from(user)
-    .where(eq(user.username, username.trim()));
+    .where(eq(user.username, username));
 
   if (!row) {
     return null;
@@ -118,24 +112,6 @@ export const findUserById = async (id: number): Promise<UserRecord | null> => {
   }
 
   return toUserRecord(row);
-};
-
-export const verifyUserPassword = async (
-  username: string,
-  password: string,
-): Promise<UserRecord | null> => {
-  const record = await findUserByUsername(username);
-  if (!record || !record.enabled) {
-    return null;
-  }
-
-  const matches = await bcrypt.compare(password, record.passwordHash);
-  if (!matches) {
-    return null;
-  }
-
-  const { passwordHash: _, ...userRecord } = record;
-  return userRecord;
 };
 
 export const disableUser = async (id: number): Promise<UserRecord> => {

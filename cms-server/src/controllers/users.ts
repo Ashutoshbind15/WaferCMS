@@ -2,52 +2,62 @@ import type { Request, Response } from "express";
 import {
   disableUser,
   findUserByUsername,
-  hashPassword,
   insertUser,
   listUsers,
 } from "@packages/cms-db/users";
-import { parseIdParam, sendRouteError } from "../lib/http";
+import { parseIdParam } from "../lib/http";
+import { hashPassword } from "../lib/password";
 import type { CreateUserBody } from "../lib/validation";
-
-const listUsersData = async () => listUsers();
-
-const createUserData = async (input: CreateUserBody) => {
-  const username = input.username.trim();
-
-  const existing = await findUserByUsername(username);
-  if (existing) {
-    throw new Error("Username already exists.");
-  }
-
-  const passwordHash = await hashPassword(input.password);
-  return insertUser({ username, passwordHash });
-};
-
-const disableUserData = async (id: number) => disableUser(id);
 
 export const listUsersHandler = async (_req: Request, res: Response) => {
   try {
-    const users = await listUsersData();
+    const users = await listUsers();
     res.json({ data: users });
   } catch (error) {
-    sendRouteError(res, error);
+    const message =
+      error instanceof Error ? error.message : "Unexpected error";
+    res.status(500).json({ error: message });
   }
 };
 
 export const createUserHandler = async (req: Request, res: Response) => {
+  const { username, password } = req.body as CreateUserBody;
+  const trimmedUsername = username.trim();
+
+  const existing = await findUserByUsername(trimmedUsername);
+  if (existing) {
+    res.status(400).json({ error: "Username already exists." });
+    return;
+  }
+
   try {
-    const user = await createUserData(req.body as CreateUserBody);
+    const passwordHash = await hashPassword(password);
+    const user = await insertUser({ username: trimmedUsername, passwordHash });
     res.status(201).json(user);
   } catch (error) {
-    sendRouteError(res, error);
+    const message =
+      error instanceof Error ? error.message : "Unexpected error";
+    res.status(500).json({ error: message });
   }
 };
 
 export const disableUserHandler = async (req: Request, res: Response) => {
+  const id = parseIdParam(String(req.params.id));
+  if (id === null) {
+    res.status(400).json({ error: "Invalid id." });
+    return;
+  }
+
   try {
-    const user = await disableUserData(parseIdParam(String(req.params.id)));
+    const user = await disableUser(id);
     res.json(user);
   } catch (error) {
-    sendRouteError(res, error);
+    const message =
+      error instanceof Error ? error.message : "Unexpected error";
+    if (message.endsWith("not found.")) {
+      res.status(404).json({ error: message });
+      return;
+    }
+    res.status(500).json({ error: message });
   }
 };
