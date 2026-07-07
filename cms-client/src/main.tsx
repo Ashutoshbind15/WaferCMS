@@ -27,6 +27,7 @@ import CollectionCreatePage from "./pages/collections/collection-create";
 import CollectionDetailPage from "./pages/collections/collection-detail";
 import CollectionItemsPage from "./pages/collections/collection-items";
 import CollectionItemEditorPage from "./pages/collections/collection-item-editor";
+import ImageTransformTestPage from "./pages/dev/image-transform-test";
 
 function RootLayout() {
   return (
@@ -87,6 +88,10 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 
                 <Route path="api-keys" element={<ApiKeysPage />} />
                 <Route path="users" element={<UsersPage />} />
+                <Route
+                  path="dev/image-transforms"
+                  element={<ImageTransformTestPage />}
+                />
               </Route>
             </Route>
           </Routes>

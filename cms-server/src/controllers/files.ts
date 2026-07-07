@@ -1,20 +1,25 @@
 import type { Request, Response } from "express";
 import type { Readable } from "node:stream";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import {
   insertFileMetadata,
   listFileMetadata,
   updateFileMetadata,
   type FileMetadataRow,
 } from "@packages/cms-db/access";
-import { getObject, putObject } from "@packages/storage/lib";
+import { getObject, getObjectBuffer, putObject } from "@packages/storage/lib";
 import { type ListPageQuery, type PaginatedRows } from "@packages/cms-db/pagination";
 import { parseListQuery } from "../lib/pagination";
 import { cmsPublicBaseUrl } from "../lib/asset-url";
 import { toFileResponse, type FileResponse } from "../lib/files";
 import { parseIdParam, sendNoContent } from "../lib/http";
 import type { PatchFileBody, UploadFileBody } from "../lib/validation";
+import { imageMaxBytes } from "../lib/image-config";
+import {
+  parseImageTransformQuery,
+} from "../lib/image-transform-params";
+import { transformImage } from "../lib/image-transform";
 
 const safeBasename = (name: string): string => {
   const base = path.basename(name).replace(/[^\w.\-]+/g, "_");
@@ -142,6 +147,80 @@ export const streamFile = async (req: Request, res: Response) => {
   const download = req.query.download === "1" || req.query.download === "true";
   const isImage = row.contentType?.startsWith("image/") ?? false;
 
+  if (!download && isImage) {
+    try {
+      const params = parseImageTransformQuery(req.query);
+      if (params !== null) {
+        await streamTransformedImage(req, res, row, params);
+        return;
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unexpected error";
+      res.status(400).json({ error: message });
+      return;
+    }
+  }
+
+  await streamOriginalFile(req, res, row, download, isImage);
+};
+
+const streamTransformedImage = async (
+  _req: Request,
+  res: Response,
+  row: FileMetadataRow,
+  params: Parameters<typeof transformImage>[1],
+) => {
+  if (row.byteLength > imageMaxBytes()) {
+    res.status(413).json({ error: "Image too large to transform." });
+    return;
+  }
+
+  let fetched;
+  try {
+    fetched = await getObjectBuffer({ key: row.objectKey });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unexpected error";
+    res.status(500).json({ error: message });
+    return;
+  }
+
+  let transformed;
+  try {
+    transformed = await transformImage(fetched.buffer, params, row.contentType ?? null);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unexpected error";
+    res.status(422).json({ error: message });
+    return;
+  }
+
+  const etag = `"${createHash("sha1")
+    .update(`${row.id}:${row.objectKey}:${transformed.contentType}:${transformed.buffer.length}`)
+    .digest("hex")}"`;
+
+  res.status(200);
+  res.set("Content-Type", transformed.contentType);
+  res.set("Content-Length", String(transformed.buffer.length));
+  res.set("ETag", etag);
+  res.set(
+    "Cache-Control",
+    row.isPublic
+      ? "public, max-age=31536000, immutable"
+      : "private, no-store",
+  );
+  res.set("Content-Disposition", "inline");
+  res.send(transformed.buffer);
+};
+
+const streamOriginalFile = async (
+  req: Request,
+  res: Response,
+  row: FileMetadataRow,
+  download: boolean,
+  isImage: boolean,
+) => {
   let object;
   try {
     object = await getObject({

@@ -84,3 +84,32 @@ export async function getObject(params: {
     contentRange: output.ContentRange,
   };
 }
+
+export type GetObjectBufferResult = {
+  buffer: Buffer;
+  contentType: string | undefined;
+};
+
+/**
+ * Fetch an entire object into a Buffer. Use for cases that need the full body
+ * in memory (e.g. image transforms).
+ */
+export async function getObjectBuffer(params: {
+  key: string;
+}): Promise<GetObjectBufferResult> {
+  const command = new GetObjectCommand({
+    Bucket: bucket,
+    Key: params.key,
+  });
+
+  const output = await s3Client.send(command);
+  const body = output.Body as Readable;
+  const chunks: Buffer[] = [];
+  for await (const chunk of body) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  return {
+    buffer: Buffer.concat(chunks),
+    contentType: output.ContentType,
+  };
+}
