@@ -154,9 +154,7 @@ export default function CollectionItemsPage() {
                 >
                   <button
                     onClick={() =>
-                      navigate(
-                        `/collections/${collectionId}/items/${item.id}`,
-                      )
+                      navigate(`/collections/${collectionId}/items/${item.id}`)
                     }
                     className="min-w-0 flex-1 text-left"
                   >

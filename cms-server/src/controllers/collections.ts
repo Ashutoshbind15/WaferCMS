@@ -3,6 +3,7 @@ import {
   addCollectionRecord,
   deleteCollectionRecord,
   getCollectionRecord,
+  getCollectionRecordBySlug,
   listCollectionRecords,
   updateCollectionRecord,
 } from "@packages/cms-db/collections";
@@ -30,6 +31,21 @@ export const listCollections = async (req: Request, res: Response) => {
       error instanceof Error ? error.message : "Unexpected error";
     res.status(500).json({ error: message });
   }
+};
+
+export const getCollectionBySlug = async (req: Request, res: Response) => {
+  const slug = String(req.params.slug ?? "").trim();
+  if (!slug) {
+    res.status(400).json({ error: "Slug is required." });
+    return;
+  }
+
+  const result = await getCollectionRecordBySlug(slug);
+  if (!result) {
+    res.status(404).json({ error: `Collection "${slug}" not found.` });
+    return;
+  }
+  res.json(result);
 };
 
 export const getCollection = async (req: Request, res: Response) => {

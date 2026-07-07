@@ -92,16 +92,6 @@ export const collectionFieldBodySchema = z.object({
   required: z.boolean().optional().default(false),
 });
 
-export const contentBodySchema = z.object({
-  title: z.string().trim().min(1, "Title is required."),
-  payload: z.unknown(),
-});
-
-export const diagramBodySchema = z.object({
-  title: z.string().trim().min(1, "Title is required."),
-  payload: z.unknown(),
-});
-
 export const collectionItemBodySchema = z.object({
   values: z
     .unknown()
@@ -127,8 +117,6 @@ export type CreateApiKeyBody = z.infer<typeof createApiKeyBodySchema>;
 export type RevokeApiKeyBody = z.infer<typeof revokeApiKeyBodySchema>;
 export type CollectionBody = z.infer<typeof collectionBodySchema>;
 export type CollectionFieldBody = z.infer<typeof collectionFieldBodySchema>;
-export type ContentBody = z.infer<typeof contentBodySchema>;
-export type DiagramBody = z.infer<typeof diagramBodySchema>;
 export type CollectionItemBody = z.infer<typeof collectionItemBodySchema>;
 export type PatchFileBody = z.infer<typeof patchFileBodySchema>;
 export type UploadFileBody = z.infer<typeof uploadFileBodySchema>;

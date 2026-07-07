@@ -1,7 +1,5 @@
 import { NavLink, useMatch } from "react-router";
 import {
-  FileText,
-  PenTool,
   ImageIcon,
   Plus,
   KeyRound,
@@ -24,22 +22,23 @@ import {
 } from "@/components/ui/sidebar";
 
 export function AppSidebar() {
-  const contentList = useMatch({ path: "/content", end: true });
-  const contentNew = useMatch("/content/new");
-
-  const diagramsList = useMatch({ path: "/diagrams", end: true });
-  const diagramById = useMatch("/diagrams/:id");
-
   const library = useMatch({ path: "/library", end: true });
   const collectionsList = useMatch({ path: "/collections", end: true });
   const collectionNew = useMatch("/collections/new");
   const collectionById = useMatch("/collections/:id");
+  const collectionItems = useMatch("/collections/:id/items");
+  const collectionItemEdit = useMatch("/collections/:id/items/:itemId");
+  const collectionNewItem = useMatch("/collections/:id/items/new");
   const apiKeys = useMatch({ path: "/api-keys", end: true });
   const users = useMatch({ path: "/users", end: true });
 
-  const diagramsActive = Boolean(diagramsList || diagramById);
   const collectionsActive = Boolean(
-    collectionsList || collectionNew || collectionById,
+    collectionsList ||
+      collectionNew ||
+      collectionById ||
+      collectionItems ||
+      collectionItemEdit ||
+      collectionNewItem,
   );
 
   return (
@@ -48,7 +47,7 @@ export function AppSidebar() {
         <SidebarMenu className="min-w-0 flex-1">
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild tooltip="CMS Admin">
-              <NavLink to="/content">
+              <NavLink to="/collections">
                 <div className="flex size-8 items-center justify-center rounded-md bg-sidebar-primary text-sm font-bold text-sidebar-primary-foreground">
                   C
                 </div>
@@ -62,78 +61,6 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Content</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={Boolean(contentList)}
-                  tooltip="All pages"
-                >
-                  <NavLink to="/content" end>
-                    <FileText />
-                    <span>All pages</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={Boolean(contentNew)}
-                  tooltip="New page"
-                >
-                  <NavLink to="/content/new">
-                    <Plus />
-                    <span>New page</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Diagrams</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={diagramsActive}
-                  tooltip="Diagrams"
-                >
-                  <NavLink to="/diagrams">
-                    <PenTool />
-                    <span>All diagrams</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Images</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={Boolean(library)}
-                  tooltip="Image library"
-                >
-                  <NavLink to="/library">
-                    <ImageIcon />
-                    <span>Library</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
         <SidebarGroup>
           <SidebarGroupLabel>Collections</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -159,6 +86,26 @@ export function AppSidebar() {
                   <NavLink to="/collections/new">
                     <Plus />
                     <span>New collection</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Images</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={Boolean(library)}
+                  tooltip="Image library"
+                >
+                  <NavLink to="/library">
+                    <ImageIcon />
+                    <span>Library</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>

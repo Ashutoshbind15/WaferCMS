@@ -9,22 +9,6 @@ import {
   unique,
 } from "drizzle-orm/pg-core";
 
-export const blogContent = pgTable("blog_content", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  title: text().notNull(),
-  payload: json().notNull(),
-  createdAt: timestamp().notNull().defaultNow(),
-  updatedAt: timestamp().notNull().defaultNow(),
-});
-
-export const blogDiagram = pgTable("blog_diagram", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  title: text().notNull(),
-  payload: json().notNull(),
-  createdAt: timestamp().notNull().defaultNow(),
-  updatedAt: timestamp().notNull().defaultNow(),
-});
-
 export const fileMetadata = pgTable("file_metadata", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   /** Internal storage key (UUID-prefixed). Never exposed in API responses. */

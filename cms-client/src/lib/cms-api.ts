@@ -2,14 +2,6 @@ const base =
   import.meta.env.VITE_CMS_API_BASE?.replace(/\/$/, "") ??
   (import.meta.env.DEV ? "" : "http://localhost:3001");
 
-type EntityRecord = {
-  id: number;
-  title: string;
-  payload: unknown;
-  createdAt: string;
-  updatedAt: string;
-};
-
 export type PagePagination = {
   mode: "page";
   page: number;
@@ -59,15 +51,6 @@ const buildListQuery = (query: ListQuery = {}) => {
   return params.toString();
 };
 
-export type ContentRecord = EntityRecord;
-export type DiagramRecord = EntityRecord;
-
-export type CollectionFieldType =
-  | "text"
-  | "long-text"
-  | "richtext"
-  | "diagrams";
-
 export type CollectionRecord = {
   id: number;
   slug: string;
@@ -88,6 +71,12 @@ export type CollectionFieldRecord = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type CollectionFieldType =
+  | "text"
+  | "long-text"
+  | "richtext"
+  | "diagrams";
 
 export type CollectionItemRecord = {
   id: number;
@@ -230,82 +219,6 @@ export async function disableUser(id: number): Promise<void> {
   });
 }
 
-export async function fetchContentList(
-  query: ListQuery = { count: true },
-): Promise<PaginatedResult<ContentRecord>> {
-  const qs = buildListQuery(query);
-  const url = qs ? `${base}/content?${qs}` : `${base}/content`;
-  return requestJson<PaginatedResult<ContentRecord>>(url);
-}
-
-export async function fetchContent(id: number): Promise<ContentRecord> {
-  return requestJson<ContentRecord>(`${base}/content/${id}`);
-}
-
-export async function createContent(input: {
-  title: string;
-  payload: unknown;
-}): Promise<{ id: number }> {
-  return requestCreatedId(`${base}/content`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
-  });
-}
-
-export async function updateContent(
-  id: number,
-  input: { title: string; payload: unknown },
-): Promise<void> {
-  return mutateJson(`${base}/content/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
-  });
-}
-
-export async function deleteContent(id: number) {
-  return deleteJson(`${base}/content/${id}`, { method: "DELETE" });
-}
-
-export async function fetchDiagramList(
-  query: ListQuery = { count: true },
-): Promise<PaginatedResult<DiagramRecord>> {
-  const qs = buildListQuery(query);
-  const url = qs ? `${base}/diagrams?${qs}` : `${base}/diagrams`;
-  return requestJson<PaginatedResult<DiagramRecord>>(url);
-}
-
-export async function fetchDiagram(id: number): Promise<DiagramRecord> {
-  return requestJson<DiagramRecord>(`${base}/diagrams/${id}`);
-}
-
-export async function createDiagram(input: {
-  title: string;
-  payload: unknown;
-}): Promise<{ id: number }> {
-  return requestCreatedId(`${base}/diagrams`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
-  });
-}
-
-export async function updateDiagram(
-  id: number,
-  input: { title: string; payload: unknown },
-): Promise<void> {
-  return mutateJson(`${base}/diagrams/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
-  });
-}
-
-export async function deleteDiagram(id: number) {
-  return deleteJson(`${base}/diagrams/${id}`, { method: "DELETE" });
-}
-
 export async function fetchLibraryFiles(
   query: ListQuery = { count: true },
 ): Promise<PaginatedResult<LibraryFileRecord>> {
@@ -424,6 +337,14 @@ export async function fetchCollectionList(
   const qs = buildListQuery(query);
   const url = qs ? `${base}/collections?${qs}` : `${base}/collections`;
   return requestJson<PaginatedResult<CollectionRecord>>(url);
+}
+
+export async function fetchCollectionBySlug(
+  slug: string,
+): Promise<CollectionRecord> {
+  return requestJson<CollectionRecord>(
+    `${base}/collections/by-slug/${encodeURIComponent(slug)}`,
+  );
 }
 
 export async function fetchCollection(id: number): Promise<CollectionRecord> {

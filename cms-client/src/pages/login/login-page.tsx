@@ -21,7 +21,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
 
   const from =
-    (location.state as { from?: string } | null)?.from ?? "/content";
+    (location.state as { from?: string } | null)?.from ?? "/collections";
 
   if (!loading && user) {
     return <Navigate to={from} replace />;

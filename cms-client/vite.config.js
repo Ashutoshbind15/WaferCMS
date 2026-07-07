@@ -16,9 +16,8 @@ export default defineConfig({
     proxy: {
       "/auth": cmsApiTarget,
       "/users": cmsApiTarget,
-      "/content": cmsApiTarget,
-      "/diagrams": cmsApiTarget,
       "/files": cmsApiTarget,
+      "/collections": cmsApiTarget,
       "/api-keys": cmsApiTarget,
     },
   },

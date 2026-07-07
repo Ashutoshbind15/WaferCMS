@@ -13,12 +13,6 @@ import { Toaster } from "@/components/ui/sonner";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 
 import LoginPage from "./pages/login/login-page";
-import ContentListPage from "./pages/content/content-list";
-import ContentCreatePage from "./pages/content/content-create";
-import ContentEditorPage from "./pages/content/content-editor";
-import DiagramsListPage from "./pages/diagrams/diagrams-list";
-import DiagramCreatePage from "./pages/diagrams/diagram-create";
-import DiagramEditorPage from "./pages/diagrams/diagram-editor";
 import LibraryPage from "./pages/library/library-page";
 import ApiKeysPage from "./pages/api-keys/api-keys-page";
 import UsersPage from "./pages/users/users-page";
@@ -52,15 +46,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="/login" element={<LoginPage />} />
             <Route element={<RequireAuth />}>
               <Route element={<RootLayout />}>
-                <Route index element={<Navigate to="/content" replace />} />
-
-                <Route path="content" element={<ContentListPage />} />
-                <Route path="content/new" element={<ContentCreatePage />} />
-                <Route path="content/:id" element={<ContentEditorPage />} />
-
-                <Route path="diagrams" element={<DiagramsListPage />} />
-                <Route path="diagrams/new" element={<DiagramCreatePage />} />
-                <Route path="diagrams/:id" element={<DiagramEditorPage />} />
+                <Route index element={<Navigate to="/collections" replace />} />
 
                 <Route path="library" element={<LibraryPage />} />
 

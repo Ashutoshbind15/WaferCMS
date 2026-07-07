@@ -8,25 +8,18 @@ import {
   createCollection,
   createCollectionField,
   createCollectionItem,
-  createContent,
-  createDiagram,
   createUser,
   deleteCollection,
   deleteCollectionField,
   deleteCollectionItem,
-  deleteContent,
-  deleteDiagram,
   disableUser,
   fetchApiKeys,
   fetchCollection,
+  fetchCollectionBySlug,
   fetchCollectionFields,
   fetchCollectionItem,
   fetchCollectionItems,
   fetchCollectionList,
-  fetchContent,
-  fetchContentList,
-  fetchDiagram,
-  fetchDiagramList,
   fetchLibraryFiles,
   fetchUsers,
   patchLibraryFile,
@@ -34,20 +27,15 @@ import {
   updateCollection,
   updateCollectionField,
   updateCollectionItem,
-  updateContent,
-  updateDiagram,
   type ApiKeyScope,
   type CollectionFieldType,
 } from "@/lib/cms-api";
 
 export const cmsQueryKeys = {
-  content: (page: number) => ["cms", "content", { page }] as const,
-  contentItem: (id: number) => ["cms", "content", id] as const,
-  diagrams: (page: number) => ["cms", "diagrams", { page }] as const,
-  diagram: (id: number) => ["cms", "diagrams", id] as const,
   files: (page: number) => ["cms", "files", { page }] as const,
   collections: (page: number) => ["cms", "collections", { page }] as const,
   collection: (id: number) => ["cms", "collections", id] as const,
+  collectionBySlug: (slug: string) => ["cms", "collections", "slug", slug] as const,
   collectionFields: (id: number) =>
     ["cms", "collections", id, "fields"] as const,
   collectionItems: (id: number, page: number) =>
@@ -60,107 +48,11 @@ export const cmsQueryKeys = {
 
 const validId = (id: number) => Number.isInteger(id) && id > 0;
 
-export function useContentList(page: number) {
+export function useCollectionBySlug(slug: string) {
   return useQuery({
-    queryKey: cmsQueryKeys.content(page),
-    queryFn: () => fetchContentList({ page, count: true }),
-  });
-}
-
-export function useContent(id: number) {
-  return useQuery({
-    queryKey: cmsQueryKeys.contentItem(id),
-    queryFn: () => fetchContent(id),
-    enabled: validId(id),
-  });
-}
-
-export function useCreateContent() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: createContent,
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["cms", "content"] });
-    },
-  });
-}
-
-export function useUpdateContent(id: number) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (input: { title: string; payload: unknown }) =>
-      updateContent(id, input),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["cms", "content"] });
-      void queryClient.invalidateQueries({
-        queryKey: cmsQueryKeys.contentItem(id),
-      });
-    },
-  });
-}
-
-export function useDeleteContent() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: deleteContent,
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["cms", "content"] });
-    },
-  });
-}
-
-export function useDiagramList(page: number) {
-  return useQuery({
-    queryKey: cmsQueryKeys.diagrams(page),
-    queryFn: () => fetchDiagramList({ page, count: true }),
-  });
-}
-
-export function useDiagram(id: number) {
-  return useQuery({
-    queryKey: cmsQueryKeys.diagram(id),
-    queryFn: () => fetchDiagram(id),
-    enabled: validId(id),
-  });
-}
-
-export function useCreateDiagram() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: createDiagram,
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["cms", "diagrams"] });
-    },
-  });
-}
-
-export function useUpdateDiagram(id: number) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (input: { title: string; payload: unknown }) =>
-      updateDiagram(id, input),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["cms", "diagrams"] });
-      void queryClient.invalidateQueries({
-        queryKey: cmsQueryKeys.diagram(id),
-      });
-    },
-  });
-}
-
-export function useDeleteDiagram() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: deleteDiagram,
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["cms", "diagrams"] });
-    },
+    queryKey: cmsQueryKeys.collectionBySlug(slug),
+    queryFn: () => fetchCollectionBySlug(slug),
+    enabled: slug.trim().length > 0,
   });
 }
 

@@ -3,6 +3,7 @@ import {
   createCollection,
   deleteCollection,
   getCollection,
+  getCollectionBySlug,
   listCollections,
   updateCollection,
 } from "../controllers/collections";
@@ -14,6 +15,7 @@ import { collectionBodySchema } from "../lib/validation";
 const router: Router = Router({ mergeParams: true });
 
 router.get("/", listCollections);
+router.get("/by-slug/:slug", getCollectionBySlug);
 router.get("/:id", getCollection);
 router.post("/", validateBody(collectionBodySchema), createCollection);
 router.put("/:id", validateBody(collectionBodySchema), updateCollection);

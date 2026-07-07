@@ -2,8 +2,6 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import contentRouter from "./routes/content";
-import diagramsRouter from "./routes/diagrams";
 import filesRouter from "./routes/files";
 import apiKeysRouter from "./routes/api-keys";
 import authRouter from "./routes/auth";
@@ -32,8 +30,6 @@ app.get("/ok", (req, res) => {
 
 app.use("/auth", authRouter);
 app.use("/users", sessionAuthMiddleware, usersRouter);
-app.use("/content", contentAuthMiddleware, contentRouter);
-app.use("/diagrams", contentAuthMiddleware, diagramsRouter);
 app.use("/files", filesRouter);
 app.use("/collections", contentAuthMiddleware, collectionsRouter);
 app.use("/api-keys", sessionAuthMiddleware, apiKeysRouter);
