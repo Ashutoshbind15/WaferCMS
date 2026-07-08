@@ -96,7 +96,9 @@ export default function UsersPage() {
             <CardHeader>
               <CardTitle>Create user</CardTitle>
               <CardDescription>
-                Add another admin who can sign in to the CMS client.
+                Give someone else access to the CMS. If you host this client,
+                they can sign in here too. Admins can create and read
+                everything.
               </CardDescription>
             </CardHeader>
             <CardContent>

@@ -7,6 +7,11 @@ import {
 import { usePatchLibraryFile } from "@/lib/queries";
 import { formatBytes } from "@/lib/format-bytes";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface FileCardProps {
   file: LibraryFileRecord;
@@ -43,20 +48,26 @@ export function FileCard({ file }: FileCardProps) {
         ) : (
           <ImageIcon className="h-8 w-8" />
         )}
-        <span
-          className="absolute right-1.5 top-1.5 inline-flex items-center gap-1 rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-medium backdrop-blur"
-          title={file.isPublic ? "Public" : "Private"}
-        >
-          {file.isPublic ? (
-            <>
-              <Unlock className="size-3" /> Public
-            </>
-          ) : (
-            <>
-              <Lock className="size-3" /> Private
-            </>
-          )}
-        </span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="absolute right-1.5 top-1.5 inline-flex cursor-default items-center gap-1 rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-medium backdrop-blur">
+              {file.isPublic ? (
+                <>
+                  <Unlock className="size-3" /> Public
+                </>
+              ) : (
+                <>
+                  <Lock className="size-3" /> Private
+                </>
+              )}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-56">
+            {file.isPublic
+              ? "Anyone with the URL can load this image. No API key needed."
+              : "The URL won't load without an API key."}
+          </TooltipContent>
+        </Tooltip>
       </div>
 
       <div className="flex flex-col gap-1 p-3">
@@ -69,23 +80,32 @@ export function FileCard({ file }: FileCardProps) {
         <p className="text-xs text-muted-foreground">
           {formatBytes(file.byteLength)}
         </p>
-        <Button
-          variant="outline"
-          size="xs"
-          className="mt-1 w-full"
-          disabled={patchFile.isPending}
-          onClick={() => void togglePublic()}
-        >
-          {file.isPublic ? (
-            <>
-              <EyeOff className="size-3" /> Make private
-            </>
-          ) : (
-            <>
-              <Eye className="size-3" /> Make public
-            </>
-          )}
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="xs"
+              className="mt-1 w-full"
+              disabled={patchFile.isPending}
+              onClick={() => void togglePublic()}
+            >
+              {file.isPublic ? (
+                <>
+                  <EyeOff className="size-3" /> Make private
+                </>
+              ) : (
+                <>
+                  <Eye className="size-3" /> Make public
+                </>
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-56">
+            {file.isPublic
+              ? "Requires an API key to view."
+              : "Anyone with the URL can load it."}
+          </TooltipContent>
+        </Tooltip>
       </div>
     </div>
   );

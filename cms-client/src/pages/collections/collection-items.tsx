@@ -118,6 +118,13 @@ export default function CollectionItemsPage() {
           <p className="mb-4 text-sm text-destructive">{error ?? queryError}</p>
         ) : null}
 
+        {!loading && fields.length > 0 ? (
+          <p className="mb-4 text-sm text-muted-foreground">
+            Each item is one entry. Fetch them from your app with the collection
+            slug and an API key.
+          </p>
+        ) : null}
+
         {loading ? (
           <p className="text-sm text-muted-foreground">Loading…</p>
         ) : fields.length === 0 ? (

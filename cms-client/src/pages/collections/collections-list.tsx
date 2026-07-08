@@ -4,6 +4,12 @@ import { ListPagination } from "@/components/layout/list-pagination";
 import { Header } from "@/components/layout/header";
 import { PageContainer } from "@/components/layout/page-container";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { useCollectionList, useDeleteCollection } from "@/lib/queries";
 
 export default function CollectionsListPage() {
@@ -59,6 +65,26 @@ export default function CollectionsListPage() {
         }
       />
       <PageContainer>
+        <Card className="mb-6 border-dashed">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Collections, fields, items</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm text-muted-foreground">
+            <p>
+              A <span className="font-medium text-foreground">collection</span> is
+              a content type (posts, people, etc.). Your app looks it up by slug.
+            </p>
+            <p>
+              <span className="font-medium text-foreground">Fields</span> are the
+              columns: title, body, image. API responses use these keys.
+            </p>
+            <p>
+              <span className="font-medium text-foreground">Items</span> are the
+              rows. Add them here or from your app with an API key.
+            </p>
+          </CardContent>
+        </Card>
+
         {error || queryError ? (
           <p className="mb-4 text-sm text-destructive">{error ?? queryError}</p>
         ) : null}
@@ -69,6 +95,9 @@ export default function CollectionsListPage() {
           <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-20 text-center">
             <p className="text-sm font-medium text-muted-foreground">
               No collections yet
+            </p>
+            <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+              Start with a collection, add fields, then items.
             </p>
           </div>
         ) : (

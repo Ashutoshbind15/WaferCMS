@@ -138,8 +138,8 @@ export default function ApiKeysPage() {
             <CardHeader>
               <CardTitle>Create API key</CardTitle>
               <CardDescription>
-                Generate a key for consumer backends. Copy the raw key into the
-                consumer env as CMS_API_TOKEN.
+                For calling the CMS API from your app. Put the raw key in an env
+                var (name it whatever you want) and send it on requests.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -181,8 +181,8 @@ export default function ApiKeysPage() {
                   Save this key now
                 </CardTitle>
                 <CardDescription>
-                  This is the only time the raw key is shown. Add it to the
-                  consumer `.env` as `CMS_API_TOKEN`.
+                  You won&apos;t see this again. Copy it into your app&apos;s env
+                  and attach it to API calls.
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center">

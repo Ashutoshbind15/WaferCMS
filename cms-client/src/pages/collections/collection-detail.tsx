@@ -107,6 +107,11 @@ export default function CollectionDetailPage() {
               </p>
             ) : null}
 
+            <p className="text-sm text-muted-foreground">
+              Set up fields here. When you&apos;re ready, add items from the{" "}
+              <span className="font-medium text-foreground">Items</span> tab.
+            </p>
+
             <CollectionFieldsPanel collectionId={collectionId} />
           </div>
         ) : null}
