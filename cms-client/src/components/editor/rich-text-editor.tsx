@@ -78,16 +78,18 @@ function RichTextEditor({
 
   return (
     <div>
-      <DragHandle
-        editor={editor}
-        computePositionConfig={{
-          placement: "right",
-        }}
-      >
-        <GripHorizontalIcon />
-      </DragHandle>
+      {isEditable ? (
+        <DragHandle
+          editor={editor}
+          computePositionConfig={{
+            placement: "right",
+          }}
+        >
+          <GripHorizontalIcon />
+        </DragHandle>
+      ) : null}
       <div>
-        <NormalMenu editor={editor} />
+        {isEditable ? <NormalMenu editor={editor} /> : null}
         <EditorContent
           editor={editor}
           className="h-[calc(100vh-20rem)] overflow-y-auto"

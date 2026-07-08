@@ -54,9 +54,10 @@ type FieldInputProps = {
   field: CollectionFieldRecord;
   value: unknown;
   onChange: (value: unknown) => void;
+  readOnly?: boolean;
 };
 
-function FieldInput({ field, value, onChange }: FieldInputProps) {
+function FieldInput({ field, value, onChange, readOnly = false }: FieldInputProps) {
   // Keep a ref to the latest onChange so the stable callbacks below never
   // need to be recreated. DiagramCanvas and RichTextEditor both have a
   // useEffect([..., onChange]) that re-fires whenever the callback reference
@@ -74,6 +75,7 @@ function FieldInput({ field, value, onChange }: FieldInputProps) {
       return (
         <Input
           value={typeof value === "string" ? value : ""}
+          readOnly={readOnly}
           onChange={(e) => onChange(e.target.value)}
         />
       );
@@ -81,6 +83,7 @@ function FieldInput({ field, value, onChange }: FieldInputProps) {
       return (
         <Textarea
           value={typeof value === "string" ? value : ""}
+          readOnly={readOnly}
           onChange={(e) => onChange(e.target.value)}
         />
       );
@@ -90,18 +93,30 @@ function FieldInput({ field, value, onChange }: FieldInputProps) {
           <Suspense fallback={<RichTextEditorFallback />}>
             <RichTextEditor
               initialContent={asRichText(value)}
-              isEditable
-              onChange={stableOnChange as (content: RichTextContent) => void}
+              isEditable={!readOnly}
+              onChange={
+                readOnly
+                  ? undefined
+                  : (stableOnChange as (content: RichTextContent) => void)
+              }
             />
           </Suspense>
         </div>
       );
     case "diagrams":
       return (
-        <div className="h-[28rem] overflow-hidden rounded-lg border border-border">
+        <div
+          className={`h-[28rem] overflow-hidden rounded-lg border border-border ${
+            readOnly ? "pointer-events-none" : ""
+          }`}
+        >
           <DiagramCanvas
             initialDocument={asDiagram(value)}
-            onChange={stableOnChange as (doc: DiagramDocument) => void}
+            onChange={
+              readOnly
+                ? () => {}
+                : (stableOnChange as (doc: DiagramDocument) => void)
+            }
           />
         </div>
       );
@@ -111,13 +126,15 @@ function FieldInput({ field, value, onChange }: FieldInputProps) {
 type CollectionItemFieldEditorsProps = {
   fields: CollectionFieldRecord[];
   values: Record<string, unknown>;
-  onChange: (key: string, value: unknown) => void;
+  onChange?: (key: string, value: unknown) => void;
+  readOnly?: boolean;
 };
 
 export function CollectionItemFieldEditors({
   fields,
   values,
   onChange,
+  readOnly = false,
 }: CollectionItemFieldEditorsProps) {
   return (
     <div className="space-y-4">
@@ -132,7 +149,8 @@ export function CollectionItemFieldEditors({
           <FieldInput
             field={field}
             value={values[field.key]}
-            onChange={(v) => onChange(field.key, v)}
+            readOnly={readOnly}
+            onChange={(v) => onChange?.(field.key, v)}
           />
         </div>
       ))}

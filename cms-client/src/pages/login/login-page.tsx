@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 
 export default function LoginPage() {
   const { user, loading, login } = useAuth();
@@ -64,13 +65,12 @@ export default function LoginPage() {
               autoComplete="username"
               aria-label="Username"
             />
-            <Input
-              type="password"
+            <PasswordInput
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
+              onChange={setPassword}
               placeholder="Password"
               autoComplete="current-password"
-              aria-label="Password"
+              ariaLabel="Password"
             />
             {error && (
               <p className="text-sm text-destructive" role="alert">

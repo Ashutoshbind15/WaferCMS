@@ -1,7 +1,6 @@
 import { NavLink, useMatch } from "react-router";
 import {
   ImageIcon,
-  Plus,
   KeyRound,
   Users,
   Database,
@@ -19,12 +18,14 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar";
+import { useRecentCollections } from "@/lib/queries";
 
 export function AppSidebar() {
+  const { state } = useSidebar();
   const library = useMatch({ path: "/library", end: true });
   const collectionsList = useMatch({ path: "/collections", end: true });
-  const collectionNew = useMatch("/collections/new");
   const collectionById = useMatch("/collections/:id");
   const collectionItems = useMatch("/collections/:id/items");
   const collectionItemEdit = useMatch("/collections/:id/items/:itemId");
@@ -34,12 +35,15 @@ export function AppSidebar() {
 
   const collectionsActive = Boolean(
     collectionsList ||
-      collectionNew ||
       collectionById ||
       collectionItems ||
       collectionItemEdit ||
       collectionNewItem,
   );
+
+  const recentQuery = useRecentCollections(5);
+  const recent = recentQuery.data?.data ?? [];
+  const activeCollectionId = collectionById?.params.id;
 
   return (
     <Sidebar collapsible="icon">
@@ -73,25 +77,36 @@ export function AppSidebar() {
                 >
                   <NavLink to="/collections">
                     <Database />
-                    <span>All collections</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={Boolean(collectionNew)}
-                  tooltip="New collection"
-                >
-                  <NavLink to="/collections/new">
-                    <Plus />
-                    <span>New collection</span>
+                    <span>Collections</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {state === "expanded" && recent.length > 0 ? (
+          <SidebarGroup>
+            <SidebarGroupLabel>Recent</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {recent.map((item) => (
+                  <SidebarMenuItem key={item.id}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={activeCollectionId === String(item.id)}
+                      tooltip={item.title}
+                    >
+                      <NavLink to={`/collections/${item.id}`}>
+                        <span className="truncate">{item.title}</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ) : null}
 
         <SidebarGroup>
           <SidebarGroupLabel>Images</SidebarGroupLabel>

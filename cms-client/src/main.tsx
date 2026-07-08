@@ -1,5 +1,12 @@
 import ReactDOM from "react-dom/client";
-import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router";
+import {
+  BrowserRouter,
+  Navigate,
+  Outlet,
+  Route,
+  Routes,
+  useParams,
+} from "react-router";
 import "./style.css";
 import "@scribblesvg/react-utils/editor.css";
 
@@ -17,9 +24,7 @@ import LibraryPage from "./pages/library/library-page";
 import ApiKeysPage from "./pages/api-keys/api-keys-page";
 import UsersPage from "./pages/users/users-page";
 import CollectionsListPage from "./pages/collections/collections-list";
-import CollectionCreatePage from "./pages/collections/collection-create";
 import CollectionDetailPage from "./pages/collections/collection-detail";
-import CollectionItemsPage from "./pages/collections/collection-items";
 import CollectionItemEditorPage from "./pages/collections/collection-item-editor";
 import ImageTransformTestPage from "./pages/dev/image-transform-test";
 
@@ -32,6 +37,13 @@ function RootLayout() {
       </SidebarInset>
       <Toaster />
     </>
+  );
+}
+
+function CollectionItemsRedirect() {
+  const { id } = useParams();
+  return (
+    <Navigate to={`/collections/${id}`} state={{ tab: "items" }} replace />
   );
 }
 
@@ -52,16 +64,12 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 
                 <Route path="collections" element={<CollectionsListPage />} />
                 <Route
-                  path="collections/new"
-                  element={<CollectionCreatePage />}
-                />
-                <Route
                   path="collections/:id"
                   element={<CollectionDetailPage />}
                 />
                 <Route
                   path="collections/:id/items"
-                  element={<CollectionItemsPage />}
+                  element={<CollectionItemsRedirect />}
                 />
                 <Route
                   path="collections/:id/items/new"

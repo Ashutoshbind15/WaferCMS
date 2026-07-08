@@ -72,7 +72,7 @@ function FieldEditor({
   const [keyTouched, setKeyTouched] = useState(!autoKeyFromLabel);
 
   return (
-    <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
+    <div className="space-y-3 rounded-lg border border-border p-4">
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor={`${id}-label`}>Label</Label>
@@ -312,7 +312,7 @@ export function CollectionFieldsPanel({
             ) : (
               <div
                 key={field.id}
-                className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card p-4"
+                className="flex items-center justify-between gap-4 rounded-md px-2 py-3 transition-colors hover:bg-accent/40"
               >
                 <div className="min-w-0">
                   <p className="text-sm font-medium">{field.label}</p>

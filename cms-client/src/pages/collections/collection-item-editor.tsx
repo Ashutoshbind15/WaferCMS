@@ -182,7 +182,8 @@ export default function CollectionItemEditorPage() {
 
   const pageTitle = isEditing ? "Edit item" : "New item";
   const fullTitle = record ? `${record.title} · ${pageTitle}` : pageTitle;
-  const onBack = () => navigate(`/collections/${collectionId}/items`);
+  const onBack = () =>
+    navigate(`/collections/${collectionId}`, { state: { tab: "items" } });
 
   if (queriesLoading) {
     return (

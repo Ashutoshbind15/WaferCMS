@@ -14,14 +14,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { PasswordInput } from "@/components/ui/password-input";
 import { useCreateUser, useDisableUser, useUsers } from "@/lib/queries";
 
 const formatDate = (value: string | null) => {
@@ -91,116 +86,109 @@ export default function UsersPage() {
     <>
       <Header title="Users" />
       <PageContainer>
-        <div className="grid gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Create user</CardTitle>
-              <CardDescription>
-                Give someone else access to the CMS. If you host this client,
-                they can sign in here too. Admins can create and read
+        <div className="space-y-8">
+          <section className="space-y-3">
+            <div className="space-y-1">
+              <h2 className="text-sm font-medium">Create user</h2>
+              <p className="text-sm text-muted-foreground">
+                Give someone else access to the CMS. Admins can create and read
                 everything.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form
-                className="grid gap-4 md:grid-cols-[1fr_1fr_auto]"
-                onSubmit={(event) => void onCreate(event)}
-              >
-                <Input
-                  value={username}
-                  onChange={(event) => setUsername(event.target.value)}
-                  placeholder="username"
-                  aria-label="Username"
-                />
-                <Input
-                  type="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  placeholder="password"
-                  aria-label="Password"
-                />
-                <Button type="submit" disabled={createUser.isPending}>
-                  {createUser.isPending ? "Creating..." : "Create user"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+              </p>
+            </div>
+            <form
+              className="grid gap-3 md:grid-cols-[1fr_1fr_auto]"
+              onSubmit={(event) => void onCreate(event)}
+            >
+              <Input
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
+                placeholder="username"
+                aria-label="Username"
+              />
+              <PasswordInput
+                value={password}
+                onChange={setPassword}
+                placeholder="password"
+                ariaLabel="Password"
+              />
+              <Button type="submit" disabled={createUser.isPending}>
+                {createUser.isPending ? "Creating..." : "Create user"}
+              </Button>
+            </form>
+            {error && (
+              <p className="text-sm text-destructive" role="alert">
+                {error}
+              </p>
+            )}
+          </section>
 
-          {error && (
-            <p className="text-sm text-destructive" role="alert">
-              {error}
-            </p>
-          )}
+          <Separator />
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="size-4" />
-                Existing users
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <p className="text-sm text-muted-foreground">Loading...</p>
-              ) : users.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No users yet.</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[640px] text-left text-sm">
-                    <thead>
-                      <tr className="border-b border-border text-muted-foreground">
-                        <th className="px-2 py-2 font-medium">Username</th>
-                        <th className="px-2 py-2 font-medium">Status</th>
-                        <th className="px-2 py-2 font-medium">Created</th>
-                        <th className="px-2 py-2 font-medium">Last login</th>
-                        <th className="px-2 py-2 font-medium" />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {users.map((user) => (
-                        <tr key={user.id} className="border-b border-border/60">
-                          <td className="px-2 py-3">{user.username}</td>
-                          <td className="px-2 py-3">
-                            {user.enabled ? "Active" : "Disabled"}
-                          </td>
-                          <td className="px-2 py-3">
-                            {formatDate(user.createdAt)}
-                          </td>
-                          <td className="px-2 py-3">
-                            {formatDate(user.lastLoginAt)}
-                          </td>
-                          <td className="px-2 py-3 text-right">
-                            {user.enabled && (
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                disabled={
-                                  disableUser.isPending &&
-                                  disableUser.variables === user.id
-                                }
-                                onClick={() =>
-                                  setDisableTarget({
-                                    id: user.id,
-                                    username: user.username,
-                                  })
-                                }
-                              >
-                                {disableUser.isPending &&
+          <section className="space-y-3">
+            <h2 className="flex items-center gap-2 text-sm font-medium">
+              <Users className="size-4" />
+              Existing users
+            </h2>
+            {loading ? (
+              <p className="text-sm text-muted-foreground">Loading...</p>
+            ) : users.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No users yet.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[640px] text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-border text-muted-foreground">
+                      <th className="px-2 py-2 font-medium">Username</th>
+                      <th className="px-2 py-2 font-medium">Status</th>
+                      <th className="px-2 py-2 font-medium">Created</th>
+                      <th className="px-2 py-2 font-medium">Last login</th>
+                      <th className="px-2 py-2 font-medium" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map((user) => (
+                      <tr key={user.id} className="border-b border-border/60">
+                        <td className="px-2 py-3">{user.username}</td>
+                        <td className="px-2 py-3">
+                          {user.enabled ? "Active" : "Disabled"}
+                        </td>
+                        <td className="px-2 py-3">
+                          {formatDate(user.createdAt)}
+                        </td>
+                        <td className="px-2 py-3">
+                          {formatDate(user.lastLoginAt)}
+                        </td>
+                        <td className="px-2 py-3 text-right">
+                          {user.enabled && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              disabled={
+                                disableUser.isPending &&
                                 disableUser.variables === user.id
-                                  ? "Disabling..."
-                                  : "Disable"}
-                              </Button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                              }
+                              onClick={() =>
+                                setDisableTarget({
+                                  id: user.id,
+                                  username: user.username,
+                                })
+                              }
+                            >
+                              {disableUser.isPending &&
+                              disableUser.variables === user.id
+                                ? "Disabling..."
+                                : "Disable"}
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
         </div>
       </PageContainer>
 

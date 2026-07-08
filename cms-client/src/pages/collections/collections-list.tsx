@@ -4,12 +4,7 @@ import { ListPagination } from "@/components/layout/list-pagination";
 import { Header } from "@/components/layout/header";
 import { PageContainer } from "@/components/layout/page-container";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { CollectionCreateDialog } from "@/components/collections/collection-create-dialog";
 import { useCollectionList, useDeleteCollection } from "@/lib/queries";
 
 export default function CollectionsListPage() {
@@ -17,6 +12,7 @@ export default function CollectionsListPage() {
   const [page, setPage] = useState(1);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const collectionsQuery = useCollectionList(page);
   const deleteCollection = useDeleteCollection();
@@ -59,32 +55,10 @@ export default function CollectionsListPage() {
       <Header
         title="Collections"
         action={
-          <Button onClick={() => navigate("/collections/new")}>
-            New collection
-          </Button>
+          <Button onClick={() => setCreateOpen(true)}>New collection</Button>
         }
       />
       <PageContainer>
-        <Card className="mb-6 border-dashed">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Collections, fields, items</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm text-muted-foreground">
-            <p>
-              A <span className="font-medium text-foreground">collection</span> is
-              a content type (posts, people, etc.). Your app looks it up by slug.
-            </p>
-            <p>
-              <span className="font-medium text-foreground">Fields</span> are the
-              columns: title, body, image. API responses use these keys.
-            </p>
-            <p>
-              <span className="font-medium text-foreground">Items</span> are the
-              rows. Add them here or from your app with an API key.
-            </p>
-          </CardContent>
-        </Card>
-
         {error || queryError ? (
           <p className="mb-4 text-sm text-destructive">{error ?? queryError}</p>
         ) : null}
@@ -99,20 +73,26 @@ export default function CollectionsListPage() {
             <p className="mt-1 max-w-sm text-sm text-muted-foreground">
               Start with a collection, add fields, then items.
             </p>
+            <Button
+              className="mt-4"
+              onClick={() => setCreateOpen(true)}
+            >
+              New collection
+            </Button>
           </div>
         ) : (
-          <div className="flex flex-col gap-2">
+          <div className="divide-y divide-border">
             {items.map((item) => (
               <div
                 key={item.id}
-                className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-accent/50"
+                className="flex items-center justify-between gap-4 rounded-md px-2 py-3 transition-colors hover:bg-accent/40"
               >
                 <button
                   onClick={() => navigate(`/collections/${item.id}`)}
                   className="min-w-0 flex-1 text-left"
                 >
                   <p className="text-sm font-medium">{item.title}</p>
-                  <p className="mt-1 truncate text-sm text-muted-foreground">
+                  <p className="mt-0.5 truncate text-sm text-muted-foreground">
                     <span className="font-mono">{item.slug}</span>
                     {item.description ? ` · ${item.description}` : ""}
                   </p>
@@ -140,6 +120,11 @@ export default function CollectionsListPage() {
           />
         ) : null}
       </PageContainer>
+
+      <CollectionCreateDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+      />
     </>
   );
 }

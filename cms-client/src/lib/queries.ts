@@ -82,6 +82,14 @@ export function useCollectionList(page: number) {
   });
 }
 
+/** Most-recently-touched collections (page 1 is ordered by updatedAt desc). */
+export function useRecentCollections(limit = 5) {
+  return useQuery({
+    queryKey: ["cms", "collections", "recent", { limit }] as const,
+    queryFn: () => fetchCollectionList({ page: 1, limit, count: false }),
+  });
+}
+
 export function useCollection(id: number) {
   return useQuery({
     queryKey: cmsQueryKeys.collection(id),

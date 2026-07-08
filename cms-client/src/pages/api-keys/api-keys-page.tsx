@@ -14,14 +14,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
@@ -133,63 +127,70 @@ export default function ApiKeysPage() {
     <>
       <Header title="API keys" />
       <PageContainer>
-        <div className="grid gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Create API key</CardTitle>
-              <CardDescription>
+        <div className="space-y-8">
+          <section className="space-y-3">
+            <div className="space-y-1">
+              <h2 className="text-sm font-medium">Create API key</h2>
+              <p className="text-sm text-muted-foreground">
                 For calling the CMS API from your app. Put the raw key in an env
-                var (name it whatever you want) and send it on requests.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form
-                className="grid gap-4 md:grid-cols-[1fr_180px_auto]"
-                onSubmit={(event) => void onCreate(event)}
+                var and send it on requests.
+              </p>
+            </div>
+            <form
+              className="grid gap-3 md:grid-cols-[1fr_180px_auto]"
+              onSubmit={(event) => void onCreate(event)}
+            >
+              <Input
+                value={label}
+                onChange={(event) => setLabel(event.target.value)}
+                placeholder="portfolio-prod"
+                aria-label="Key label"
+              />
+              <Select
+                value={scope}
+                onValueChange={(value) => setScope(value as ApiKeyScope)}
               >
-                <Input
-                  value={label}
-                  onChange={(event) => setLabel(event.target.value)}
-                  placeholder="portfolio-prod"
-                  aria-label="Key label"
-                />
-                <Select
-                  value={scope}
-                  onValueChange={(value) => setScope(value as ApiKeyScope)}
-                >
-                  <SelectTrigger aria-label="Key scope">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="read">Read</SelectItem>
-                    <SelectItem value="write">Write</SelectItem>
-                    <SelectItem value="read_write">Read + write</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button type="submit" disabled={createKey.isPending}>
-                  {createKey.isPending ? "Creating..." : "Create key"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+                <SelectTrigger aria-label="Key scope">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="read">Read</SelectItem>
+                  <SelectItem value="write">Write</SelectItem>
+                  <SelectItem value="read_write">Read + write</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button type="submit" disabled={createKey.isPending}>
+                {createKey.isPending ? "Creating..." : "Create key"}
+              </Button>
+            </form>
+            {error && (
+              <p className="text-sm text-destructive" role="alert">
+                {error}
+              </p>
+            )}
+          </section>
 
           {createdKey && (
-            <Card className="border-amber-500/40 bg-amber-500/5">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+            <div className="space-y-3 rounded-md border border-amber-500/40 bg-amber-500/5 p-4">
+              <div className="space-y-1">
+                <h2 className="flex items-center gap-2 text-sm font-medium">
                   <KeyRound className="size-4" />
                   Save this key now
-                </CardTitle>
-                <CardDescription>
+                </h2>
+                <p className="text-sm text-muted-foreground">
                   You won&apos;t see this again. Copy it into your app&apos;s env
                   and attach it to API calls.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                </p>
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <code className="block flex-1 overflow-x-auto rounded-md bg-background px-3 py-2 font-mono text-xs ring-1 ring-border">
                   {createdKey.rawKey}
                 </code>
-                <Button type="button" variant="outline" onClick={() => void onCopyRawKey()}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => void onCopyRawKey()}
+                >
                   <Copy className="size-4" />
                   Copy
                 </Button>
@@ -200,87 +201,79 @@ export default function ApiKeysPage() {
                 >
                   Dismiss
                 </Button>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
 
-          {error && (
-            <p className="text-sm text-destructive" role="alert">
-              {error}
-            </p>
-          )}
+          <Separator />
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Existing keys</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <p className="text-sm text-muted-foreground">Loading...</p>
-              ) : keys.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  No API keys yet.
-                </p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[640px] text-left text-sm">
-                    <thead>
-                      <tr className="border-b border-border text-muted-foreground">
-                        <th className="px-2 py-2 font-medium">Label</th>
-                        <th className="px-2 py-2 font-medium">Prefix</th>
-                        <th className="px-2 py-2 font-medium">Scope</th>
-                        <th className="px-2 py-2 font-medium">Status</th>
-                        <th className="px-2 py-2 font-medium">Created</th>
-                        <th className="px-2 py-2 font-medium">Last used</th>
-                        <th className="px-2 py-2 font-medium" />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {keys.map((key) => (
-                        <tr key={key.id} className="border-b border-border/60">
-                          <td className="px-2 py-3">{key.label}</td>
-                          <td className="px-2 py-3 font-mono text-xs">
-                            {key.keyPrefix}...
-                          </td>
-                          <td className="px-2 py-3">{scopeLabels[key.scope]}</td>
-                          <td className="px-2 py-3">
-                            {key.enabled ? "Active" : "Revoked"}
-                          </td>
-                          <td className="px-2 py-3">
-                            {formatDate(key.createdAt)}
-                          </td>
-                          <td className="px-2 py-3">
-                            {formatDate(key.lastUsedAt)}
-                          </td>
-                          <td className="px-2 py-3 text-right">
-                            {key.enabled && (
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                disabled={
-                                  revokeKey.isPending &&
-                                  revokeKey.variables === key.id
-                                }
-                                onClick={() =>
-                                  setRevokeTarget({ id: key.id, label: key.label })
-                                }
-                              >
-                                {revokeKey.isPending &&
+          <section className="space-y-3">
+            <h2 className="text-sm font-medium">Existing keys</h2>
+            {loading ? (
+              <p className="text-sm text-muted-foreground">Loading...</p>
+            ) : keys.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No API keys yet.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[640px] text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-border text-muted-foreground">
+                      <th className="px-2 py-2 font-medium">Label</th>
+                      <th className="px-2 py-2 font-medium">Prefix</th>
+                      <th className="px-2 py-2 font-medium">Scope</th>
+                      <th className="px-2 py-2 font-medium">Status</th>
+                      <th className="px-2 py-2 font-medium">Created</th>
+                      <th className="px-2 py-2 font-medium">Last used</th>
+                      <th className="px-2 py-2 font-medium" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {keys.map((key) => (
+                      <tr key={key.id} className="border-b border-border/60">
+                        <td className="px-2 py-3">{key.label}</td>
+                        <td className="px-2 py-3 font-mono text-xs">
+                          {key.keyPrefix}...
+                        </td>
+                        <td className="px-2 py-3">{scopeLabels[key.scope]}</td>
+                        <td className="px-2 py-3">
+                          {key.enabled ? "Active" : "Revoked"}
+                        </td>
+                        <td className="px-2 py-3">
+                          {formatDate(key.createdAt)}
+                        </td>
+                        <td className="px-2 py-3">
+                          {formatDate(key.lastUsedAt)}
+                        </td>
+                        <td className="px-2 py-3 text-right">
+                          {key.enabled && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              disabled={
+                                revokeKey.isPending &&
                                 revokeKey.variables === key.id
-                                  ? "Revoking..."
-                                  : "Revoke"}
-                              </Button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                              }
+                              onClick={() =>
+                                setRevokeTarget({ id: key.id, label: key.label })
+                              }
+                            >
+                              {revokeKey.isPending &&
+                              revokeKey.variables === key.id
+                                ? "Revoking..."
+                                : "Revoke"}
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
         </div>
       </PageContainer>
 
