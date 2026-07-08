@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "bootstrap-admin": "tsx src/scripts/bootstrap-admin.ts"
+    "bootstrap-admin": "tsx src/scripts/bootstrap-admin.ts",
+    "seed-demo": "tsx src/scripts/seed-demo-data.ts"
   },
   "keywords": [],
   "author": "",
