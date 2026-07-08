@@ -1,4 +1,5 @@
 import {
+  useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
@@ -115,6 +116,20 @@ export function useCollectionItems(collectionId: number, page: number) {
   });
 }
 
+export function useInfiniteCollectionItems(collectionId: number) {
+  return useInfiniteQuery({
+    queryKey: ["cms", "collections", collectionId, "items", "infinite"] as const,
+    queryFn: ({ pageParam }) =>
+      fetchCollectionItems(collectionId, { page: pageParam, count: true }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.pagination.hasNext
+        ? lastPage.pagination.page + 1
+        : undefined,
+    enabled: validId(collectionId),
+  });
+}
+
 export function useCollectionItem(collectionId: number, itemId: number) {
   return useQuery({
     queryKey: cmsQueryKeys.collectionItem(collectionId, itemId),
@@ -219,6 +234,7 @@ export function useCreateCollectionItem(collectionId: number) {
     mutationFn: (input: { values: Record<string, unknown> }) =>
       createCollectionItem(collectionId, input),
     onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["cms", "collections"] });
       void queryClient.invalidateQueries({
         queryKey: ["cms", "collections", collectionId, "items"],
       });
@@ -236,6 +252,7 @@ export function useUpdateCollectionItem(
     mutationFn: (input: { values: Record<string, unknown> }) =>
       updateCollectionItem(collectionId, itemId, input),
     onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["cms", "collections"] });
       void queryClient.invalidateQueries({
         queryKey: ["cms", "collections", collectionId, "items"],
       });
@@ -253,6 +270,7 @@ export function useDeleteCollectionItem(collectionId: number) {
     mutationFn: (itemId: number) =>
       deleteCollectionItem(collectionId, itemId),
     onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["cms", "collections"] });
       void queryClient.invalidateQueries({
         queryKey: ["cms", "collections", collectionId, "items"],
       });

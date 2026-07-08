@@ -1,4 +1,5 @@
 import { and, count, desc, eq, inArray, sql } from "drizzle-orm";
+import { touchCollectionRecord } from "./collections";
 import db from "./db";
 import { collectionData, collectionDataValue, collectionField } from "./schema";
 
@@ -91,6 +92,7 @@ export const insertCollectionData = async (
   if (!created) {
     throw new Error("Failed to create collection item.");
   }
+  await touchCollectionRecord(collectionId, client);
   return created;
 };
 
@@ -134,6 +136,7 @@ export const upsertCollectionDataValues = async (
 };
 
 export const touchCollectionData = async (
+  collectionId: number,
   dataId: number,
   client?: DbClient,
 ): Promise<void> => {
@@ -141,6 +144,7 @@ export const touchCollectionData = async (
     .update(collectionData)
     .set({ updatedAt: new Date() })
     .where(eq(collectionData.id, dataId));
+  await touchCollectionRecord(collectionId, client);
 };
 
 export const deleteCollectionData = async (
@@ -159,4 +163,5 @@ export const deleteCollectionData = async (
   if (!deleted) {
     throw new Error(`Collection item ${dataId} not found.`);
   }
+  await touchCollectionRecord(collectionId);
 };

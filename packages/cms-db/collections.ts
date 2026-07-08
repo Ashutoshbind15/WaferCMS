@@ -14,7 +14,24 @@ import {
 type CollectionRow = typeof collection.$inferSelect;
 export type CollectionFieldRow = typeof collectionField.$inferSelect;
 
+/** Accepts either the root db client or a transaction client. */
+type DbClient =
+  | typeof db
+  | Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+const withClient = (client: DbClient | undefined) => client ?? db;
+
 const normalizeSlug = (value: string) => value.trim().toLowerCase();
+
+export const touchCollectionRecord = async (
+  id: number,
+  client?: DbClient,
+): Promise<void> => {
+  await withClient(client)
+    .update(collection)
+    .set({ updatedAt: new Date() })
+    .where(eq(collection.id, id));
+};
 
 export const listCollectionRecords = async (
   query: ListPageQuery,

@@ -238,7 +238,7 @@ const updateItemData = async (
   const validated = validateItemValues(fields, input);
 
   await db.transaction(async (tx) => {
-    await touchCollectionData(dataId, tx);
+    await touchCollectionData(collectionId, dataId, tx);
     const valueRows = validated.map((v) => ({
       dataId,
       fieldId: v.fieldId,

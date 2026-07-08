@@ -100,7 +100,9 @@ export default function CollectionDetailPage() {
         {loading ? (
           <p className="text-sm text-muted-foreground">Loading…</p>
         ) : record ? (
-          <div className="mx-auto max-w-5xl space-y-6">
+          <div
+            className={`mx-auto space-y-6 ${tab === "items" ? "max-w-7xl" : "max-w-5xl"}`}
+          >
             {record.description ? (
               <p className="text-sm text-muted-foreground">
                 {record.description}

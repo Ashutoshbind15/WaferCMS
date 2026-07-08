@@ -1,34 +1,17 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { CollectionItemsBrowseView } from "@/components/collections/collection-items-browse-view";
+import { itemDisplayTitle } from "@/components/collections/collection-item-utils";
 import { ListPagination } from "@/components/layout/list-pagination";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CollectionItemsBrowseView } from "@/components/collections/collection-items-browse-view";
 import {
   useCollectionFields,
   useCollectionItems,
   useDeleteCollectionItem,
 } from "@/lib/queries";
-import {
-  type CollectionFieldRecord,
-  type CollectionItemRecord,
-} from "@/lib/cms-api";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
-
-const previewValue = (
-  item: CollectionItemRecord,
-  fields: CollectionFieldRecord[],
-): string => {
-  const previewField = fields.find(
-    (field) => field.fieldType === "text" || field.fieldType === "long-text",
-  );
-  if (!previewField) {
-    return "";
-  }
-  const value = item.values[previewField.key];
-  return typeof value === "string" ? value : "";
-};
 
 type Mode = "list" | "browse";
 
@@ -43,9 +26,8 @@ export function CollectionItemsTab({
 }: CollectionItemsTabProps) {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
-  const [mode, setMode] = useState<Mode>("list");
+  const [mode, setMode] = useState<Mode>("browse");
   const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const fieldsQuery = useCollectionFields(collectionId);
@@ -67,18 +49,6 @@ export function CollectionItemsTab({
           : fieldsQuery.error || itemsQuery.error
             ? "Failed to load items"
             : null;
-
-  useEffect(() => {
-    if (items.length === 0) {
-      setSelectedItemId(null);
-      return;
-    }
-    setSelectedItemId((current) =>
-      current && items.some((item) => item.id === current)
-        ? current
-        : items[0].id,
-    );
-  }, [items]);
 
   const handleDelete = async (
     event: React.MouseEvent<HTMLButtonElement>,
@@ -124,7 +94,7 @@ export function CollectionItemsTab({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {error || queryError ? (
         <p className="text-sm text-destructive">{error ?? queryError}</p>
       ) : null}
@@ -142,7 +112,16 @@ export function CollectionItemsTab({
         </Button>
       </div>
 
-      {loading ? (
+      {mode === "browse" ? (
+        <CollectionItemsBrowseView
+          collectionId={collectionId}
+          fields={fields}
+          onEdit={(itemId) =>
+            navigate(`/collections/${collectionId}/items/${itemId}`)
+          }
+          onNewItem={goNew}
+        />
+      ) : loading ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-16 text-center">
@@ -153,10 +132,10 @@ export function CollectionItemsTab({
             New item
           </Button>
         </div>
-      ) : mode === "list" ? (
+      ) : (
         <div className="divide-y divide-border">
           {items.map((item) => {
-            const preview = previewValue(item, fields);
+            const title = itemDisplayTitle(item, fields);
             return (
               <div
                 key={item.id}
@@ -168,9 +147,7 @@ export function CollectionItemsTab({
                   }
                   className="min-w-0 flex-1 text-left"
                 >
-                  <p className="text-sm font-medium">
-                    {preview || `Item #${item.id}`}
-                  </p>
+                  <p className="text-sm font-medium">{title}</p>
                   <p className="mt-0.5 truncate text-sm text-muted-foreground">
                     {fields.length} field
                     {fields.length === 1 ? "" : "s"} · updated{" "}
@@ -189,21 +166,9 @@ export function CollectionItemsTab({
             );
           })}
         </div>
-      ) : (
-        <CollectionItemsBrowseView
-          items={items}
-          fields={fields}
-          selectedItemId={selectedItemId}
-          onSelect={setSelectedItemId}
-          onEdit={(itemId) =>
-            navigate(`/collections/${collectionId}/items/${itemId}`)
-          }
-          deletingId={deletingId}
-          onDelete={handleDelete}
-        />
       )}
 
-      {pagination ? (
+      {mode === "list" && pagination ? (
         <ListPagination
           pagination={pagination}
           disabled={loading}
