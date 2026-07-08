@@ -1,7 +1,7 @@
 services:
   cms-postgres:
     image: postgres:18-trixie
-    container_name: portfolio-cms-postgres
+    container_name: wafercms-postgres
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -10,20 +10,7 @@ services:
       - "5432:5432"
     restart: unless-stopped
     volumes:
-      - portfolio-cms-postgres-data:/var/lib/postgresql
-
-  portfolio-postgres:
-    image: postgres:18-trixie
-    container_name: portfolio-app-postgres
-    environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_DB: portfolio
-    ports:
-      - "5433:5432"
-    restart: unless-stopped
-    volumes:
-      - portfolio-app-postgres-data:/var/lib/postgresql
+      - wafercms-postgres-data:/var/lib/postgresql
 
   rustfs:
     image: rustfs/rustfs:latest
@@ -36,6 +23,5 @@ services:
     restart: unless-stopped
 
 volumes:
-  portfolio-cms-postgres-data:
-  portfolio-app-postgres-data:
+  wafercms-postgres-data:
   rustfs_data:

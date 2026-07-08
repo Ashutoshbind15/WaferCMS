@@ -1,7 +1,6 @@
 packages:
   - "cms-client"
   - "cms-server"
-  - "portfolio"
   - "packages/*"
 minimumReleaseAge: 7200
 minimumReleaseAgeExclude:

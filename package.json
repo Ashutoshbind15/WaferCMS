@@ -1,27 +1,18 @@
 {
-  "name": "portfolio-repo",
+  "name": "wafercms",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev:all": "pnpm --parallel --filter cms-server --filter cms-client --filter portfolio run dev",
-    "dev:cms-server": "pnpm --filter cms-server run dev",
-    "dev:cms-client": "pnpm --filter cms-client run dev",
-    "dev:portfolio": "pnpm --filter portfolio run dev",
-    "typecheck:cms-server": "pnpm --workspace-root exec tsc --project cms-server/tsconfig.json --noEmit --ignoreDeprecations 6.0",
-    "typecheck:portfolio": "pnpm --workspace-root exec tsc --project portfolio/tsconfig.json --noEmit --ignoreDeprecations 6.0",
-    "typecheck:cms-db": "pnpm --filter @packages/cms-db run typecheck",
-    "typecheck:portfolio-db": "pnpm --filter @packages/portfolio-db run typecheck",
-    "db:generate:cms": "pnpm --filter @packages/cms-db run generate",
-    "db:generate:portfolio": "pnpm --filter @packages/portfolio-db run generate",
-    "db:migrate:cms": "pnpm --filter @packages/cms-db run migrate",
-    "db:migrate:portfolio": "pnpm --filter @packages/portfolio-db run migrate",
-    "db:push:cms": "pnpm --filter @packages/cms-db run push",
-    "db:push:portfolio": "pnpm --filter @packages/portfolio-db run push",
-    "db:studio:cms": "pnpm --filter @packages/cms-db run studio",
-    "db:studio:portfolio": "pnpm --filter @packages/portfolio-db run studio",
-    "db:push": "pnpm db:push:cms && pnpm db:push:portfolio",
-    "db:migrate:split": "node --import tsx scripts/migrate-split-databases.ts",
+    "dev": "pnpm --parallel --filter cms-server --filter cms-client run dev",
+    "dev:server": "pnpm --filter cms-server run dev",
+    "dev:client": "pnpm --filter cms-client run dev",
+    "typecheck:server": "pnpm --workspace-root exec tsc --project cms-server/tsconfig.json --noEmit --ignoreDeprecations 6.0",
+    "typecheck:db": "pnpm --filter @packages/cms-db run typecheck",
+    "db:generate": "pnpm --filter @packages/cms-db run generate",
+    "db:migrate": "pnpm --filter @packages/cms-db run migrate",
+    "db:push": "pnpm --filter @packages/cms-db run push",
+    "db:studio": "pnpm --filter @packages/cms-db run studio",
     "format": "prettier --write ."
   },
   "keywords": [],
@@ -31,7 +22,6 @@
   "devDependencies": {
     "@types/node": "25.5.0",
     "prettier": "3.8.1",
-    "tsx": "4.21.0",
     "typescript": "6.0.2"
   }
 }
