@@ -3,3 +3,4 @@ export {
   type RichTextContent,
 } from "./document";
 export { RichTextReadOnly } from "./rich-text-read-only";
+export { richTextExtensions } from "./extensions";
