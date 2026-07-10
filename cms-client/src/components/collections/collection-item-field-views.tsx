@@ -1,5 +1,5 @@
 import { EditorContent, useEditor } from "@tiptap/react";
-import { richTextExtensions } from "@packages/rich-text";
+import { richTextExtensions } from "@wafercms/rich-text";
 import {
   EMPTY_EDITOR_DOC,
   type RichTextContent,

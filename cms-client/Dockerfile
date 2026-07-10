@@ -16,7 +16,7 @@ COPY packages/rich-text packages/rich-text/
 ARG VITE_CMS_API_BASE=http://localhost:3001
 ENV VITE_CMS_API_BASE=$VITE_CMS_API_BASE
 
-RUN pnpm --filter cms-client build
+RUN pnpm --filter @wafercms/rich-text build && pnpm --filter cms-client build
 
 FROM caddy:2.11.4-alpine
 

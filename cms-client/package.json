@@ -22,7 +22,7 @@
   "dependencies": {
     "@catppuccin/highlightjs": "1.0.1",
     "@fontsource-variable/inter": "5.2.8",
-    "@packages/rich-text": "workspace:*",
+    "@wafercms/rich-text": "workspace:*",
     "@scribblesvg/core": "0.1.0",
     "@scribblesvg/react-utils": "0.1.0",
     "@tailwindcss/vite": "4.2.2",

@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useEditor, EditorContent, type Editor, useEditorState } from "@tiptap/react";
 import DragHandle from "@tiptap/extension-drag-handle-react";
 import "@catppuccin/highlightjs/css/catppuccin-mocha.css";
-import { richTextExtensions } from "@packages/rich-text";
+import { richTextExtensions } from "@wafercms/rich-text";
 import type { RichTextContent } from "./rich-text-document";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {

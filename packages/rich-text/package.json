@@ -1,15 +1,52 @@
 {
-  "name": "@packages/rich-text",
-  "version": "1.0.0",
-  "description": "",
+  "name": "@wafercms/rich-text",
+  "version": "0.1.0",
+  "description": "Shared rich-text document helpers and read-only renderer for WaferCMS",
   "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
   },
-  "packageManager": "pnpm@10.33.0",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "clean": "rm -rf dist",
+    "dev": "tsc --project tsconfig.build.json --watch --preserveWatchOutput",
+    "prepublishOnly": "pnpm run build",
+    "typecheck": "tsc --project tsconfig.json --noEmit"
+  },
+  "keywords": [
+    "rich-text",
+    "editor",
+    "wafercms"
+  ],
+  "author": "Bind Ashutosh Parasnath <91549538+Ashutoshbind15@users.noreply.github.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ashutoshbind15/WaferCMS.git",
+    "directory": "packages/rich-text"
+  },
+  "homepage": "https://github.com/Ashutoshbind15/WaferCMS/tree/main/packages/rich-text#readme",
+  "bugs": {
+    "url": "https://github.com/Ashutoshbind15/WaferCMS/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "peerDependencies": {
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
   },
   "dependencies": {
     "@tiptap/extension-code-block-lowlight": "3.21.0",
@@ -23,6 +60,5 @@
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "typescript": "6.0.2"
-  },
-  "license": "ISC"
+  }
 }
