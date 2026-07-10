@@ -64,6 +64,38 @@ function Editor({
 }
 ```
 
+### Required: typography & syntax highlighting
+
+This package does **not** ship typography or syntax-color styles. Install and wire these up in your app or headings/lists look plain and code blocks have no colors.
+
+**1. Typography (`prose` classes)**
+
+`RichTextReadOnly` defaults the content root to `wafer-rich-text__content prose prose-base`. The `prose` / `prose-`* classes only take effect if you provide styles for them - typically [@tailwindcss/typography](https://tailwindcss.com/docs/typography-plugin):
+
+```bash
+npm install @tailwindcss/typography
+```
+
+```css
+/* e.g. in your app CSS (Tailwind v4) */
+@plugin "@tailwindcss/typography";
+```
+
+Override via `contentClassName` on `RichTextReadOnly` if you use different typography classes - you still need whatever CSS makes those classes work.
+
+**2. Syntax highlighting (code blocks)**
+
+Code blocks use [lowlight](https://github.com/wooorm/lowlight), which emits `hljs-`* classes. Load a [highlight.js theme](https://highlightjs.org/demo) in your app:
+
+```bash
+npm install highlight.js
+```
+
+```ts
+import "highlight.js/styles/github-dark.css";
+// or any other theme, e.g. highlight.js/styles/github.css
+```
+
 ## License
 
 MIT

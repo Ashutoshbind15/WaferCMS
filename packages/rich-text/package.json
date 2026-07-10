@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "description": "Shared rich-text document helpers and read-only renderer for WaferCMS",
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "**/*.css"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -11,7 +13,8 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
-    }
+    },
+    "./styles.css": "./dist/styles.css"
   },
   "files": [
     "dist",
@@ -19,9 +22,9 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc --project tsconfig.build.json",
+    "build": "tsc --project tsconfig.build.json && cp src/styles.css dist/styles.css",
     "clean": "rm -rf dist",
-    "dev": "tsc --project tsconfig.build.json --watch --preserveWatchOutput",
+    "dev": "cp src/styles.css dist/styles.css && tsc --project tsconfig.build.json --watch --preserveWatchOutput",
     "prepublishOnly": "pnpm run build",
     "typecheck": "tsc --project tsconfig.json --noEmit"
   },

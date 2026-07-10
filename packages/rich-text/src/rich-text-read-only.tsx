@@ -4,11 +4,24 @@ import { useEffect, useRef } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import type { RichTextContent } from "./document";
 import { richTextExtensions } from "./extensions";
+import "./styles.css";
+
+const DEFAULT_CONTENT_CLASS = "wafer-rich-text__content prose prose-base";
+const DEFAULT_WRAPPER_CLASS = "wafer-rich-text";
 
 export function RichTextReadOnly({
   initialContent,
+  contentClassName = DEFAULT_CONTENT_CLASS,
+  className = DEFAULT_WRAPPER_CLASS,
 }: {
   initialContent: RichTextContent;
+  /**
+   * Classes on the TipTap content root. Include `prose` (and any size/color
+   * variants) so `@tailwindcss/typography` styles apply.
+   */
+  contentClassName?: string;
+  /** Classes on the outer `EditorContent` wrapper. */
+  className?: string;
 }) {
   const isApplyingExternalContent = useRef(false);
 
@@ -19,7 +32,7 @@ export function RichTextReadOnly({
     editable: false,
     editorProps: {
       attributes: {
-        class: "prose prose-base m-5 focus:outline-none",
+        class: contentClassName,
       },
     },
   });
@@ -41,10 +54,5 @@ export function RichTextReadOnly({
     }
   }, [editor, initialContent]);
 
-  return (
-    <EditorContent
-      editor={editor}
-      className="min-h-[200px] overflow-y-auto"
-    />
-  );
+  return <EditorContent editor={editor} className={className} />;
 }

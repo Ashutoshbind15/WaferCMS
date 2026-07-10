@@ -5,13 +5,11 @@ import {
   NodeViewContent,
   type NodeViewProps,
 } from "@tiptap/react";
+import "./styles.css";
 
 const NodeViewContentAsCode = NodeViewContent as React.ComponentType<{
   as: "code";
 }>;
-
-const itemClassName =
-  "cursor-default rounded px-2 py-1.5 text-sm outline-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground";
 
 const CodeBlockComponent: React.FC<NodeViewProps> = ({
   editor,
@@ -34,10 +32,8 @@ const CodeBlockComponent: React.FC<NodeViewProps> = ({
 
   if (!editor.isEditable) {
     return (
-      <NodeViewWrapper className="code-block" data-testid="code-block-node">
-        <span className="mb-1 block text-sm text-muted-foreground">
-          {languageLabel}
-        </span>
+      <NodeViewWrapper className="wafer-code-block" data-testid="code-block-node">
+        <span className="wafer-code-block__label">{languageLabel}</span>
         <pre>
           <NodeViewContentAsCode as="code" />
         </pre>
@@ -46,30 +42,34 @@ const CodeBlockComponent: React.FC<NodeViewProps> = ({
   }
 
   return (
-    <NodeViewWrapper className="code-block" data-testid="code-block-node">
+    <NodeViewWrapper className="wafer-code-block" data-testid="code-block-node">
       <Select.Root
         value={defaultLanguage}
         onValueChange={handleLanguageChange}
       >
         <Select.Trigger
-          className="mb-1 inline-flex h-8 w-44 items-center justify-between gap-2 rounded border border-input bg-transparent px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+          className="wafer-code-block__trigger"
           contentEditable={false}
         >
           <Select.Value placeholder="Language" />
-          <Select.Icon className="text-muted-foreground">▾</Select.Icon>
+          <Select.Icon className="wafer-code-block__trigger-icon">▾</Select.Icon>
         </Select.Trigger>
         <Select.Portal>
           <Select.Content
-            className="z-50 max-h-64 overflow-hidden rounded border border-border bg-popover text-popover-foreground shadow-md"
+            className="wafer-code-block__content"
             position="popper"
             sideOffset={4}
           >
-            <Select.Viewport className="p-1">
-              <Select.Item value="null" className={itemClassName}>
+            <Select.Viewport className="wafer-code-block__viewport">
+              <Select.Item value="null" className="wafer-code-block__item">
                 <Select.ItemText>auto</Select.ItemText>
               </Select.Item>
               {extension.options.lowlight.listLanguages().map((lang: string) => (
-                <Select.Item key={lang} value={lang} className={itemClassName}>
+                <Select.Item
+                  key={lang}
+                  value={lang}
+                  className="wafer-code-block__item"
+                >
                   <Select.ItemText>{lang}</Select.ItemText>
                 </Select.Item>
               ))}
