@@ -1,6 +1,5 @@
 export {
   EMPTY_EDITOR_DOC,
-  normalizeRichTextPayload,
   type RichTextContent,
 } from "./document";
 export { richTextExtensions } from "./extensions";

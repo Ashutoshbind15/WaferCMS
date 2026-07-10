@@ -16,11 +16,8 @@
     "@tiptap/pm": "3.21.0",
     "@tiptap/react": "3.21.0",
     "@tiptap/starter-kit": "3.21.0",
-    "clsx": "2.1.1",
     "lowlight": "3.3.0",
-    "lucide-react": "1.7.0",
-    "radix-ui": "1.4.3",
-    "tailwind-merge": "3.5.0"
+    "radix-ui": "1.4.3"
   },
   "devDependencies": {
     "@types/react": "19.2.14",
