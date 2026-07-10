@@ -8,9 +8,9 @@ import {
   updateCollectionRecord,
 } from "@packages/cms-db/collections";
 import { type ListPageQuery } from "@packages/cms-db/pagination";
-import { parseListQuery } from "../lib/pagination";
-import { parseIdParam, sendCreatedId, sendNoContent } from "../lib/http";
-import type { CollectionBody } from "../lib/validation";
+import { parseListQuery } from "../lib/pagination.js";
+import { parseIdParam, sendCreatedId, sendNoContent } from "../lib/http.js";
+import type { CollectionBody } from "../lib/validation.js";
 
 export const listCollections = async (req: Request, res: Response) => {
   let query: ListPageQuery;

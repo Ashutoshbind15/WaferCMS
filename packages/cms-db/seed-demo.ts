@@ -2,18 +2,18 @@ import { count } from "drizzle-orm";
 import {
   insertCollectionData,
   insertCollectionDataValues,
-} from "./collection-data";
+} from "./collection-data.js";
 import {
   addCollectionFieldRecord,
   addCollectionRecord,
   listCollectionFieldRecords,
-} from "./collections";
-import db from "./db";
+} from "./collections.js";
+import db from "./db.js";
 import {
   collection,
   fileMetadata,
   type CollectionFieldType,
-} from "./schema";
+} from "./schema.js";
 
 export const seedDemoCountCollections = async (): Promise<number> => {
   const [row] = await db.select({ value: count() }).from(collection);

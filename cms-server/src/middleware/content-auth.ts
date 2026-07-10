@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
-import { trySessionAuth } from "./session-auth";
-import { apiKeyAuthMiddleware } from "./api-key-auth";
+import { trySessionAuth } from "./session-auth.js";
+import { apiKeyAuthMiddleware } from "./api-key-auth.js";
 
 export const contentAuthMiddleware = async (
   req: Request,

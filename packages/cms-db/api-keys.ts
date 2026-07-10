@@ -1,9 +1,9 @@
 import { desc, eq } from "drizzle-orm";
-import db from "./db";
-import { apiKey, type ApiKeyScope } from "./schema";
+import db from "./db.js";
+import { apiKey, type ApiKeyScope } from "./schema.js";
 
 export type { ApiKeyScope };
-export { apiKeyScopeValues } from "./schema";
+export { apiKeyScopeValues } from "./schema.js";
 
 export type ApiKeyRecord = {
   id: number;

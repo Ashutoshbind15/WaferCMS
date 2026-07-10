@@ -3,12 +3,12 @@ import {
   createApiKeyHandler,
   listApiKeysHandler,
   revokeApiKeyHandler,
-} from "../controllers/api-keys";
-import { validateBody } from "../middleware/validate-body";
+} from "../controllers/api-keys.js";
+import { validateBody } from "../middleware/validate-body.js";
 import {
   createApiKeyBodySchema,
   revokeApiKeyBodySchema,
-} from "../lib/validation";
+} from "../lib/validation.js";
 
 const router: Router = Router();
 

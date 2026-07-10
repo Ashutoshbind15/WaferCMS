@@ -23,7 +23,7 @@ overrides:
 saveExact: true
 # note: was commented out when running shadcn init, also during adding bento-grid
 # component
-strictDepBuilds: true
+strictDepBuilds: false
 trustPolicy: no-downgrade
 trustPolicyExclude:
   - "semver@6.3.1"

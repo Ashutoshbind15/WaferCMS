@@ -13,7 +13,7 @@ import type { CollectionFieldType } from "@packages/cms-db/schema";
 import {
   seedDemoCreateGradientPng,
   seedDemoUploadGradientImage,
-} from "./seed-demo-utils";
+} from "./seed-demo-utils.js";
 
 const GRADIENT_PAIRS: [string, string][] = [
   ["#667eea", "#764ba2"],

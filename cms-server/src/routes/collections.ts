@@ -6,11 +6,11 @@ import {
   getCollectionBySlug,
   listCollections,
   updateCollection,
-} from "../controllers/collections";
-import collectionFieldsRouter from "./collection-fields";
-import collectionItemsRouter from "./collection-items";
-import { validateBody } from "../middleware/validate-body";
-import { collectionBodySchema } from "../lib/validation";
+} from "../controllers/collections.js";
+import collectionFieldsRouter from "./collection-fields.js";
+import collectionItemsRouter from "./collection-items.js";
+import { validateBody } from "../middleware/validate-body.js";
+import { collectionBodySchema } from "../lib/validation.js";
 
 const router: Router = Router({ mergeParams: true });
 

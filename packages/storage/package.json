@@ -4,9 +4,14 @@
   "description": "",
   "type": "module",
   "exports": {
-    "./lib": "./lib.ts"
+    "./lib": {
+      "types": "./dist/lib.d.ts",
+      "import": "./dist/lib.js"
+    }
   },
   "scripts": {
+    "dev": "tsc --project tsconfig.json --watch --preserveWatchOutput",
+    "build": "tsc --project tsconfig.json",
     "typecheck": "tsc --project tsconfig.json --noEmit",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -19,6 +24,7 @@
     "dotenv": "17.3.1"
   },
   "devDependencies": {
-    "@types/node": "25.5.0"
+    "@types/node": "25.5.0",
+    "typescript": "6.0.2"
   }
 }

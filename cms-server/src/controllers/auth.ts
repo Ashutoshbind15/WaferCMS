@@ -1,9 +1,9 @@
 import type { Request, Response } from "express";
 import { findUserByUsername, touchUserLastLogin } from "@packages/cms-db/users";
-import { clearSessionCookie, setSessionCookie } from "../lib/cookies";
-import { verifyPassword } from "../lib/password";
-import { signSession } from "../lib/session";
-import type { LoginBody } from "../lib/validation";
+import { clearSessionCookie, setSessionCookie } from "../lib/cookies.js";
+import { verifyPassword } from "../lib/password.js";
+import { signSession } from "../lib/session.js";
+import type { LoginBody } from "../lib/validation.js";
 
 const loginData = async (input: LoginBody) => {
   const record = await findUserByUsername(input.username);

@@ -5,9 +5,9 @@ import {
   getItem,
   listItems,
   updateItem,
-} from "../controllers/collection-items";
-import { validateBody } from "../middleware/validate-body";
-import { collectionItemBodySchema } from "../lib/validation";
+} from "../controllers/collection-items.js";
+import { validateBody } from "../middleware/validate-body.js";
+import { collectionItemBodySchema } from "../lib/validation.js";
 
 const router: Router = Router({ mergeParams: true });
 

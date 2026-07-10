@@ -6,7 +6,7 @@ import {
   findUserByUsername,
   insertUser,
 } from "@packages/cms-db/users";
-import { hashPassword } from "../lib/password";
+import { hashPassword } from "../lib/password.js";
 
 const parseUsernameArg = (): string | null => {
   const index = process.argv.indexOf("--username");

@@ -1,11 +1,11 @@
 import { count, desc, eq } from "drizzle-orm";
-import db from "./db";
+import db from "./db.js";
 import {
   type ListPageQuery,
   type PaginatedRows,
   paginateRows,
-} from "./pagination";
-import { fileMetadata } from "./schema";
+} from "./pagination.js";
+import { fileMetadata } from "./schema.js";
 
 export type FileMetadataRow = typeof fileMetadata.$inferSelect;
 

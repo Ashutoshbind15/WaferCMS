@@ -2,8 +2,8 @@ import sharp from "sharp";
 import {
   normalizeTransformParams,
   type ImageTransformParams,
-} from "./image-transform-params";
-import { imageMaxDimension } from "./image-config";
+} from "./image-transform-params.js";
+import { imageMaxDimension } from "./image-config.js";
 
 export type TransformedImage = {
   buffer: Buffer;

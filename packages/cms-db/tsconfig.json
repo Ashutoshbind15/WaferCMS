@@ -1,12 +1,17 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "types": ["node"],
     "strict": true,
     "skipLibCheck": true,
-    "noEmit": true
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "dist",
+    "rootDir": "."
   },
-  "include": ["./*.ts"]
+  "include": ["./*.ts"],
+  "exclude": ["./drizzle.config.ts", "./dist"]
 }

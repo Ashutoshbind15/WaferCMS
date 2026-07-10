@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import { findUserById } from "@packages/cms-db/users";
-import { getSessionCookieName } from "../lib/cookies";
-import { verifySession } from "../lib/session";
+import { getSessionCookieName } from "../lib/cookies.js";
+import { verifySession } from "../lib/session.js";
 
 export type SessionAuthContext = {
   userId: number;

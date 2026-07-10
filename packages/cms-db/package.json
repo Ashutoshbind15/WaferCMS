@@ -4,17 +4,46 @@
   "description": "",
   "type": "module",
   "exports": {
-    "./access": "./access.ts",
-    "./collections": "./collections.ts",
-    "./collection-data": "./collection-data.ts",
-    "./seed-demo": "./seed-demo.ts",
-    "./api-keys": "./api-keys.ts",
-    "./db": "./db.ts",
-    "./pagination": "./pagination.ts",
-    "./schema": "./schema.ts",
-    "./users": "./users.ts"
+    "./access": {
+      "types": "./dist/access.d.ts",
+      "import": "./dist/access.js"
+    },
+    "./collections": {
+      "types": "./dist/collections.d.ts",
+      "import": "./dist/collections.js"
+    },
+    "./collection-data": {
+      "types": "./dist/collection-data.d.ts",
+      "import": "./dist/collection-data.js"
+    },
+    "./seed-demo": {
+      "types": "./dist/seed-demo.d.ts",
+      "import": "./dist/seed-demo.js"
+    },
+    "./api-keys": {
+      "types": "./dist/api-keys.d.ts",
+      "import": "./dist/api-keys.js"
+    },
+    "./db": {
+      "types": "./dist/db.d.ts",
+      "import": "./dist/db.js"
+    },
+    "./pagination": {
+      "types": "./dist/pagination.d.ts",
+      "import": "./dist/pagination.js"
+    },
+    "./schema": {
+      "types": "./dist/schema.d.ts",
+      "import": "./dist/schema.js"
+    },
+    "./users": {
+      "types": "./dist/users.d.ts",
+      "import": "./dist/users.js"
+    }
   },
   "scripts": {
+    "dev": "tsc --project tsconfig.json --watch --preserveWatchOutput",
+    "build": "tsc --project tsconfig.json",
     "typecheck": "tsc --project tsconfig.json --noEmit",
     "generate": "drizzle-kit generate",
     "migrate": "drizzle-kit migrate",
@@ -33,6 +62,7 @@
   "devDependencies": {
     "@types/node": "25.5.0",
     "@types/pg": "8.20.0",
-    "drizzle-kit": "0.31.10"
+    "drizzle-kit": "0.31.10",
+    "typescript": "6.0.2"
   }
 }

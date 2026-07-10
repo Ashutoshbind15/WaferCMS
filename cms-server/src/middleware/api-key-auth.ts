@@ -3,8 +3,8 @@ import {
   findEnabledApiKeyByHash,
   touchApiKeyLastUsed,
 } from "@packages/cms-db/api-keys";
-import { hashApiKey, scopeAllowsMethod } from "../lib/api-keys";
-import { parseBearerToken } from "../lib/auth";
+import { hashApiKey, scopeAllowsMethod } from "../lib/api-keys.js";
+import { parseBearerToken } from "../lib/auth.js";
 
 export type ApiKeyAuthContext = {
   apiKeyId: number;

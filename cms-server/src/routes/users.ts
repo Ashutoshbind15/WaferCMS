@@ -3,12 +3,12 @@ import {
   createUserHandler,
   disableUserHandler,
   listUsersHandler,
-} from "../controllers/users";
-import { validateBody } from "../middleware/validate-body";
+} from "../controllers/users.js";
+import { validateBody } from "../middleware/validate-body.js";
 import {
   createUserBodySchema,
   disableUserBodySchema,
-} from "../lib/validation";
+} from "../lib/validation.js";
 
 const router: Router = Router();
 

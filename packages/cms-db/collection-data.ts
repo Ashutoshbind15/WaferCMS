@@ -1,7 +1,7 @@
 import { and, count, desc, eq, inArray, sql } from "drizzle-orm";
-import { touchCollectionRecord } from "./collections";
-import db from "./db";
-import { collectionData, collectionDataValue, collectionField } from "./schema";
+import { touchCollectionRecord } from "./collections.js";
+import db from "./db.js";
+import { collectionData, collectionDataValue, collectionField } from "./schema.js";
 
 export type CollectionDataRow = typeof collectionData.$inferSelect;
 

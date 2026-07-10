@@ -2,13 +2,13 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import filesRouter from "./routes/files";
-import apiKeysRouter from "./routes/api-keys";
-import authRouter from "./routes/auth";
-import usersRouter from "./routes/users";
-import collectionsRouter from "./routes/collections";
-import { contentAuthMiddleware } from "./middleware/content-auth";
-import { sessionAuthMiddleware } from "./middleware/session-auth";
+import filesRouter from "./routes/files.js";
+import apiKeysRouter from "./routes/api-keys.js";
+import authRouter from "./routes/auth.js";
+import usersRouter from "./routes/users.js";
+import collectionsRouter from "./routes/collections.js";
+import { contentAuthMiddleware } from "./middleware/content-auth.js";
+import { sessionAuthMiddleware } from "./middleware/session-auth.js";
 
 const app = express();
 
@@ -34,6 +34,6 @@ app.use("/files", filesRouter);
 app.use("/collections", contentAuthMiddleware, collectionsRouter);
 app.use("/api-keys", sessionAuthMiddleware, apiKeysRouter);
 
-app.listen(3001, () => {
-  console.log("Server is running on port 3001");
+app.listen(Number(process.env.PORT) || 3001, () => {
+  console.log(`Server is running on port ${process.env.PORT || 3001}`);
 });

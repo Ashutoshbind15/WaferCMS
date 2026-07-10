@@ -5,9 +5,9 @@ import {
   getField,
   listFields,
   updateField,
-} from "../controllers/collection-fields";
-import { validateBody } from "../middleware/validate-body";
-import { collectionFieldBodySchema } from "../lib/validation";
+} from "../controllers/collection-fields.js";
+import { validateBody } from "../middleware/validate-body.js";
+import { collectionFieldBodySchema } from "../lib/validation.js";
 
 const router: Router = Router({ mergeParams: true });
 

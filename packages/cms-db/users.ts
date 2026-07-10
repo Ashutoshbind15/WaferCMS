@@ -1,6 +1,6 @@
 import { desc, eq, sql } from "drizzle-orm";
-import db from "./db";
-import { user } from "./schema";
+import db from "./db.js";
+import { user } from "./schema.js";
 
 export type UserRecord = {
   id: number;

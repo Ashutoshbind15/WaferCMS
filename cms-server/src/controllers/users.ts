@@ -5,9 +5,9 @@ import {
   insertUser,
   listUsers,
 } from "@packages/cms-db/users";
-import { parseIdParam, sendNoContent } from "../lib/http";
-import { hashPassword } from "../lib/password";
-import type { CreateUserBody } from "../lib/validation";
+import { parseIdParam, sendNoContent } from "../lib/http.js";
+import { hashPassword } from "../lib/password.js";
+import type { CreateUserBody } from "../lib/validation.js";
 
 export const listUsersHandler = async (_req: Request, res: Response) => {
   try {

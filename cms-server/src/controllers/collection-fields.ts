@@ -8,8 +8,8 @@ import {
   listCollectionFieldRecords,
   updateCollectionFieldRecord,
 } from "@packages/cms-db/collections";
-import { parseIdParam, sendNoContent } from "../lib/http";
-import type { CollectionFieldBody } from "../lib/validation";
+import { parseIdParam, sendNoContent } from "../lib/http.js";
+import type { CollectionFieldBody } from "../lib/validation.js";
 
 const parseCollectionId = (req: Request) =>
   parseIdParam(String(req.params.collectionId));

@@ -24,9 +24,9 @@ import {
   type PaginatedRows,
   paginateRows,
 } from "@packages/cms-db/pagination";
-import { parseListQuery } from "../lib/pagination";
-import { parseIdParam, sendCreatedId, sendNoContent } from "../lib/http";
-import type { CollectionItemBody } from "../lib/validation";
+import { parseListQuery } from "../lib/pagination.js";
+import { parseIdParam, sendCreatedId, sendNoContent } from "../lib/http.js";
+import type { CollectionItemBody } from "../lib/validation.js";
 
 export type CollectionItem = {
   id: number;

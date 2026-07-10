@@ -10,16 +10,16 @@ import {
 } from "@packages/cms-db/access";
 import { getObject, getObjectBuffer, putObject } from "@packages/storage/lib";
 import { type ListPageQuery, type PaginatedRows } from "@packages/cms-db/pagination";
-import { parseListQuery } from "../lib/pagination";
-import { cmsPublicBaseUrl } from "../lib/asset-url";
-import { toFileResponse, type FileResponse } from "../lib/files";
-import { parseIdParam, sendNoContent } from "../lib/http";
-import type { PatchFileBody, UploadFileBody } from "../lib/validation";
-import { imageMaxBytes } from "../lib/image-config";
+import { parseListQuery } from "../lib/pagination.js";
+import { cmsPublicBaseUrl } from "../lib/asset-url.js";
+import { toFileResponse, type FileResponse } from "../lib/files.js";
+import { parseIdParam, sendNoContent } from "../lib/http.js";
+import type { PatchFileBody, UploadFileBody } from "../lib/validation.js";
+import { imageMaxBytes } from "../lib/image-config.js";
 import {
   parseImageTransformQuery,
-} from "../lib/image-transform-params";
-import { transformImage } from "../lib/image-transform";
+} from "../lib/image-transform-params.js";
+import { transformImage } from "../lib/image-transform.js";
 
 const safeBasename = (name: string): string => {
   const base = path.basename(name).replace(/[^\w.\-]+/g, "_");

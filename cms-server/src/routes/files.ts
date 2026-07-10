@@ -5,14 +5,14 @@ import {
   patchFile,
   streamFile,
   uploadFile,
-} from "../controllers/files";
-import { contentAuthMiddleware } from "../middleware/content-auth";
-import { fileAccessAuth } from "../middleware/file-access-auth";
-import { validateBody } from "../middleware/validate-body";
+} from "../controllers/files.js";
+import { contentAuthMiddleware } from "../middleware/content-auth.js";
+import { fileAccessAuth } from "../middleware/file-access-auth.js";
+import { validateBody } from "../middleware/validate-body.js";
 import {
   patchFileBodySchema,
   uploadFileBodySchema,
-} from "../lib/validation";
+} from "../lib/validation.js";
 
 const upload = multer({ storage: multer.memoryStorage() });
 

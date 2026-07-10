@@ -1,9 +1,9 @@
 import { randomBytes } from "node:crypto";
 import type { Request, Response } from "express";
 import { insertApiKey, listApiKeys, revokeApiKey } from "@packages/cms-db/api-keys";
-import { hashApiKey } from "../lib/api-keys";
-import { parseIdParam, sendNoContent } from "../lib/http";
-import type { CreateApiKeyBody } from "../lib/validation";
+import { hashApiKey } from "../lib/api-keys.js";
+import { parseIdParam, sendNoContent } from "../lib/http.js";
+import type { CreateApiKeyBody } from "../lib/validation.js";
 
 const getPepper = (): string | null => {
   const pepper = process.env.CMS_API_KEY_PEPPER?.trim();

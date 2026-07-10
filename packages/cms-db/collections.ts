@@ -1,15 +1,15 @@
 import { and, asc, count, desc, eq } from "drizzle-orm";
-import db from "./db";
+import db from "./db.js";
 import {
   type ListPageQuery,
   type PaginatedRows,
   paginateRows,
-} from "./pagination";
+} from "./pagination.js";
 import {
   collection,
   collectionField,
   type CollectionFieldType,
-} from "./schema";
+} from "./schema.js";
 
 type CollectionRow = typeof collection.$inferSelect;
 export type CollectionFieldRow = typeof collectionField.$inferSelect;

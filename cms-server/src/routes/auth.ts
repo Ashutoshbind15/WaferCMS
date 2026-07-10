@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { login, logout, me } from "../controllers/auth";
-import { sessionAuthMiddleware } from "../middleware/session-auth";
-import { validateBody } from "../middleware/validate-body";
-import { loginBodySchema } from "../lib/validation";
+import { login, logout, me } from "../controllers/auth.js";
+import { sessionAuthMiddleware } from "../middleware/session-auth.js";
+import { validateBody } from "../middleware/validate-body.js";
+import { loginBodySchema } from "../lib/validation.js";
 
 const router: Router = Router();
 

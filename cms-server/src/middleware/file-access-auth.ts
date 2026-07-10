@@ -1,13 +1,13 @@
 import type { NextFunction, Request, Response } from "express";
 import type { FileMetadataRow } from "@packages/cms-db/access";
 import { getFileMetadataById } from "@packages/cms-db/access";
-import { parseIdParam } from "../lib/http";
-import { trySessionAuth, type SessionAuthContext } from "./session-auth";
+import { parseIdParam } from "../lib/http.js";
+import { trySessionAuth, type SessionAuthContext } from "./session-auth.js";
 import {
   apiKeyAuthRequired,
   tryApiKeyAuth,
   type ApiKeyAuthContext,
-} from "./api-key-auth";
+} from "./api-key-auth.js";
 
 declare global {
   namespace Express {

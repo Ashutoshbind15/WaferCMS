@@ -1,5 +1,5 @@
 import type { CookieOptions, Response } from "express";
-import { SESSION_MAX_AGE_SECONDS } from "./session";
+import { SESSION_MAX_AGE_SECONDS } from "./session.js";
 
 export const getSessionCookieName = (): string => {
   return process.env.COOKIE_SECURE === "true"

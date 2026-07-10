@@ -11,6 +11,11 @@ services:
     restart: unless-stopped
     volumes:
       - wafercms-postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d cms"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   rustfs:
     image: rustfs/rustfs:latest
@@ -20,6 +25,49 @@ services:
     volumes:
       - rustfs_data:/data
     command: /data
+    restart: unless-stopped
+
+  cms-server:
+    build:
+      context: .
+      dockerfile: cms-server/Dockerfile
+    container_name: wafercms-server
+    ports:
+      - "${CMS_SERVER_PORT:-3001}:3001"
+    environment:
+      PORT: 3001
+      CMS_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@cms-postgres:5432/cms
+      CMS_PUBLIC_BASE_URL: ${CMS_PUBLIC_BASE_URL:-http://localhost:3001}
+      CMS_IMAGE_MAX_BYTES: ${CMS_IMAGE_MAX_BYTES:-20971520}
+      CMS_IMAGE_MAX_DIMENSION: ${CMS_IMAGE_MAX_DIMENSION:-4096}
+      RUSTFS_ENDPOINT: http://rustfs:9000
+      RUSTFS_ACCESS_KEY_ID: ${RUSTFS_ACCESS_KEY_ID:-rustfsadmin}
+      RUSTFS_SECRET_ACCESS_KEY: ${RUSTFS_SECRET_ACCESS_KEY:-rustfsadmin}
+      RUSTFS_BUCKET: ${RUSTFS_BUCKET:-cms-files}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      CMS_API_KEY_PEPPER: ${CMS_API_KEY_PEPPER:-}
+      CMS_REQUIRE_API_KEY: ${CMS_REQUIRE_API_KEY:-true}
+      AUTH_SECRET: ${AUTH_SECRET:-}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:8080}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+    depends_on:
+      cms-postgres:
+        condition: service_healthy
+      rustfs:
+        condition: service_started
+    restart: unless-stopped
+
+  cms-client:
+    build:
+      context: .
+      dockerfile: cms-client/Dockerfile
+      args:
+        VITE_CMS_API_BASE: ${VITE_CMS_API_BASE:-http://localhost:3001}
+    container_name: wafercms-client
+    ports:
+      - "${CMS_CLIENT_PORT:-8080}:80"
+    depends_on:
+      - cms-server
     restart: unless-stopped
 
 volumes:
