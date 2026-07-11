@@ -46,7 +46,7 @@
     "build": "tsc --project tsconfig.json",
     "typecheck": "tsc --project tsconfig.json --noEmit",
     "generate": "drizzle-kit generate",
-    "migrate": "drizzle-kit migrate",
+    "migrate": "node ./dist/migrate.js",
     "push": "drizzle-kit push",
     "studio": "drizzle-kit studio"
   },

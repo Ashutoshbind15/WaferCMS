@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-echo "Applying database schema..."
-pnpm --filter @packages/cms-db exec drizzle-kit push --force
+echo "Applying pending database migrations..."
+pnpm --filter @packages/cms-db run migrate
 
 echo "Starting CMS server..."
 exec pnpm --filter cms-server start

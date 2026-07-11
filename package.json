@@ -13,7 +13,7 @@
     "typecheck:rich-text": "pnpm --filter @wafercms/rich-text run typecheck",
     "typecheck:db": "pnpm --filter @packages/cms-db run typecheck",
     "db:generate": "pnpm --filter @packages/cms-db run generate",
-    "db:migrate": "pnpm --filter @packages/cms-db run migrate",
+    "db:migrate": "pnpm --filter @packages/cms-db run build && pnpm --filter @packages/cms-db run migrate",
     "db:push": "pnpm --filter @packages/cms-db run push",
     "db:studio": "pnpm --filter @packages/cms-db run studio",
     "format": "prettier --write ."
