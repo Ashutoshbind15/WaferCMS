@@ -50,6 +50,9 @@ services:
       AUTH_SECRET: ${AUTH_SECRET:-}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:8080}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      CMS_BOOTSTRAP_ADMIN_USERNAME: ${CMS_BOOTSTRAP_ADMIN_USERNAME:-}
+      CMS_BOOTSTRAP_ADMIN_PASSWORD: ${CMS_BOOTSTRAP_ADMIN_PASSWORD:-}
+      CMS_FIRST_USER_LOCK_KEY: ${CMS_FIRST_USER_LOCK_KEY:-1234567890}
     depends_on:
       cms-postgres:
         condition: service_healthy

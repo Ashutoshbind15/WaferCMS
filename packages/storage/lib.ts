@@ -33,7 +33,6 @@ export async function putObject(params: {
   body: Buffer;
   contentType?: string;
 }): Promise<void> {
-  await ensureBucket();
   await s3Client.send(
     new PutObjectCommand({
       Bucket: bucket,

@@ -14,6 +14,7 @@ import {
   seedDemoCreateGradientPng,
   seedDemoUploadGradientImage,
 } from "./seed-demo-utils.js";
+import { ensureBucket } from "@packages/storage/lib";
 
 const GRADIENT_PAIRS: [string, string][] = [
   ["#667eea", "#764ba2"],
@@ -312,6 +313,8 @@ const main = async () => {
     await seedDemoClearCollections();
     await seedDemoClearFileMetadata();
   }
+
+  await ensureBucket();
 
   console.log("Seeding gradient images...");
   const imageIds = await seedDemoImages();

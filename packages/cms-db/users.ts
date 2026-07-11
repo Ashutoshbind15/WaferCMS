@@ -56,6 +56,62 @@ export const insertUser = async (input: {
   return created;
 };
 
+const parseFirstUserLockKey = (): number => {
+  const raw = process.env.CMS_FIRST_USER_LOCK_KEY?.trim();
+  if (!raw) {
+    throw new Error("CMS_FIRST_USER_LOCK_KEY is required.");
+  }
+
+  const parsed = Number(raw);
+  if (!Number.isInteger(parsed)) {
+    throw new Error("CMS_FIRST_USER_LOCK_KEY must be an integer.");
+  }
+
+  return parsed;
+};
+
+/** Postgres advisory lock key for first-user bootstrap. */
+const FIRST_USER_LOCK_KEY = parseFirstUserLockKey();
+
+/**
+ * Create the first user only when the table is empty.
+ * Uses a transaction advisory lock so concurrent bootstrap cannot
+ * create two admins.
+ */
+export const insertFirstUserIfEmpty = async (input: {
+  username: string;
+  passwordHash: string;
+}): Promise<{ id: number; username: string } | null> => {
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(${FIRST_USER_LOCK_KEY})`);
+
+    const [row] = await tx
+      .select({ count: sql<number>`count(*)::int` })
+      .from(user);
+
+    if ((row?.count ?? 0) > 0) {
+      return null;
+    }
+
+    const [created] = await tx
+      .insert(user)
+      .values({
+        username: input.username,
+        passwordHash: input.passwordHash,
+      })
+      .returning({
+        id: user.id,
+        username: user.username,
+      });
+
+    if (!created) {
+      throw new Error("Failed to create user.");
+    }
+
+    return created;
+  });
+};
+
 export const listUsers = async (): Promise<UserRecord[]> => {
   const rows = await db
     .select({
