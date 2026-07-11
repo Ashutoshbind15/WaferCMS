@@ -1,0 +1,157 @@
+name: Container images
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    paths:
+      - "cms-server/**"
+      - "cms-client/**"
+      - "packages/**"
+      - "scripts/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "docker-compose.yml"
+      - ".github/workflows/container-images.yml"
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: server
+            dockerfile: cms-server/Dockerfile
+            image_suffix: wafercms-server
+          - name: client
+            dockerfile: cms-client/Dockerfile
+            image_suffix: wafercms-client
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Image name (lowercase for GHCR)
+        id: image
+        shell: bash
+        run: |
+          owner="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
+          echo "name=ghcr.io/${owner}/${{ matrix.image_suffix }}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.image.outputs.name }}
+          labels: |
+            org.opencontainers.image.licenses=MIT
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: ${{ github.event_name != 'pull_request' }}
+          load: ${{ github.event_name == 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+      - name: Resolve image reference for Syft
+        id: ref
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            TAG="$(printf '%s\n' '${{ steps.meta.outputs.tags }}' | head -n1)"
+            echo "image=${TAG}" >> "$GITHUB_OUTPUT"
+          else
+            echo "image=${{ steps.image.outputs.name }}@${{ steps.build.outputs.digest }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Generate CycloneDX SBOM (Syft)
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ steps.ref.outputs.image }}
+          format: cyclonedx-json
+          artifact-name: wafercms-${{ matrix.name }}.cdx.json
+          output-file: wafercms-${{ matrix.name }}.cdx.json
+          upload-artifact: true
+          upload-release-assets: false
+
+      - name: Generate SPDX SBOM (Syft)
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ steps.ref.outputs.image }}
+          format: spdx-json
+          artifact-name: wafercms-${{ matrix.name }}.spdx.json
+          output-file: wafercms-${{ matrix.name }}.spdx.json
+          upload-artifact: true
+          upload-release-assets: false
+
+      - name: Extract in-image license notices
+        shell: bash
+        run: |
+          set -euo pipefail
+          IMAGE='${{ steps.ref.outputs.image }}'
+          if ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
+            docker pull "$IMAGE"
+          fi
+          CID="$(docker create "$IMAGE")"
+          mkdir -p "licenses-${{ matrix.name }}"
+          docker cp "${CID}:/licenses/." "licenses-${{ matrix.name }}/"
+          docker rm "${CID}"
+          ls -la "licenses-${{ matrix.name }}/"
+          test -f "licenses-${{ matrix.name }}/LICENSE"
+          test -f "licenses-${{ matrix.name }}/THIRD_PARTY_NOTICES"
+
+      - name: Upload license notices
+        uses: actions/upload-artifact@v4
+        with:
+          name: wafercms-${{ matrix.name }}-licenses
+          path: licenses-${{ matrix.name }}/
+
+      - name: Attest CycloneDX SBOM
+        if: github.event_name != 'pull_request' && steps.build.outputs.digest != ''
+        uses: actions/attest-sbom@v2
+        with:
+          subject-name: ${{ steps.image.outputs.name }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          sbom-path: wafercms-${{ matrix.name }}.cdx.json
+          push-to-registry: true

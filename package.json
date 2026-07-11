@@ -16,13 +16,17 @@
     "db:migrate": "pnpm --filter @packages/cms-db run build && pnpm --filter @packages/cms-db run migrate",
     "db:push": "pnpm --filter @packages/cms-db run push",
     "db:studio": "pnpm --filter @packages/cms-db run studio",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "licenses:notices:server": "node scripts/generate-third-party-notices.mjs --filter cms-server... --component cms-server --out dist/licenses/cms-server-THIRD_PARTY_NOTICES",
+    "licenses:notices:client": "node scripts/generate-third-party-notices.mjs --filter cms-client... --component cms-client --out dist/licenses/cms-client-THIRD_PARTY_NOTICES",
+    "licenses:notices": "pnpm run licenses:notices:server && pnpm run licenses:notices:client"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "packageManager": "pnpm@10.33.0",
   "devDependencies": {
+    "@quantco/pnpm-licenses": "2.4.2",
     "@types/node": "25.5.0",
     "prettier": "3.8.1",
     "typescript": "6.0.2"

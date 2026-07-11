@@ -4,3 +4,8 @@ node_modules
 request-test.txt
 dist
 .pnpm-store
+THIRD_PARTY_NOTICES
+**/THIRD_PARTY_NOTICES
+sbom*.json
+*.spdx.json
+*.cdx.json
