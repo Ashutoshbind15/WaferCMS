@@ -17,6 +17,9 @@
     "db:push": "pnpm --filter @packages/cms-db run push",
     "db:studio": "pnpm --filter @packages/cms-db run studio",
     "format": "prettier --write .",
+    "licenses:check": "node scripts/check-allowed-licenses.mjs",
+    "licenses:check:server": "node scripts/check-allowed-licenses.mjs --filter cms-server...",
+    "licenses:check:client": "node scripts/check-allowed-licenses.mjs --filter cms-client...",
     "licenses:notices:server": "node scripts/generate-third-party-notices.mjs --filter cms-server... --component cms-server --out dist/licenses/cms-server-THIRD_PARTY_NOTICES",
     "licenses:notices:client": "node scripts/generate-third-party-notices.mjs --filter cms-client... --component cms-client --out dist/licenses/cms-client-THIRD_PARTY_NOTICES",
     "licenses:notices": "pnpm run licenses:notices:server && pnpm run licenses:notices:client"

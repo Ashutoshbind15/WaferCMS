@@ -22,14 +22,33 @@ jobs:
             dockerfile: cms-server/Dockerfile
             package_json: cms-server/package.json
             image_suffix: wafercms-server
+            pnpm_filter: cms-server...
           - name: client
             dockerfile: cms-client/Dockerfile
             package_json: cms-client/package.json
             image_suffix: wafercms-client
+            pnpm_filter: cms-client...
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Node / pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter "${{ matrix.pnpm_filter }}"
+
+      - name: Check allowed production licenses
+        run: node scripts/check-allowed-licenses.mjs --filter "${{ matrix.pnpm_filter }}"
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -59,6 +78,7 @@ jobs:
             -f "${{ matrix.dockerfile }}" \
             -t "${TAGS[0]}" \
             -t "${TAGS[1]}" \
+            -t "${TAGS[2]}" \
             --build-arg "VERSION=${VERSION}" \
             --build-arg "REVISION=${REVISION}" \
             --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" \
