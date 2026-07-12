@@ -1,24 +1,7 @@
 name: Container images
 
 on:
-  push:
-    branches: [main]
-    tags: ["v*"]
-  pull_request:
-    paths:
-      - "cms-server/**"
-      - "cms-client/**"
-      - "packages/**"
-      - "scripts/**"
-      - "package.json"
-      - "pnpm-lock.yaml"
-      - "pnpm-workspace.yaml"
-      - "docker-compose.yml"
-      - ".github/workflows/container-images.yml"
   workflow_dispatch:
-
-env:
-  REGISTRY: ghcr.io
 
 permissions:
   contents: read
@@ -37,78 +20,63 @@ jobs:
         include:
           - name: server
             dockerfile: cms-server/Dockerfile
+            package_json: cms-server/package.json
             image_suffix: wafercms-server
           - name: client
             dockerfile: cms-client/Dockerfile
+            package_json: cms-client/package.json
             image_suffix: wafercms-client
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Image name (lowercase for GHCR)
-        id: image
-        shell: bash
-        run: |
-          owner="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
-          echo "name=ghcr.io/${owner}/${{ matrix.image_suffix }}" >> "$GITHUB_OUTPUT"
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: Log in to GHCR
-        if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Docker metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ steps.image.outputs.name }}
-          labels: |
-            org.opencontainers.image.licenses=MIT
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha,prefix=sha-
-            type=raw,value=latest,enable={{is_default_branch}}
-
       - name: Build and push
         id: build
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ${{ matrix.dockerfile }}
-          push: ${{ github.event_name != 'pull_request' }}
-          load: ${{ github.event_name == 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=${{ matrix.name }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
-
-      - name: Resolve image reference for Syft
-        id: ref
-        shell: bash
+        env:
+          IMAGE: ghcr.io/ashutoshbind15/${{ matrix.image_suffix }}
         run: |
           set -euo pipefail
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            TAG="$(printf '%s\n' '${{ steps.meta.outputs.tags }}' | head -n1)"
-            echo "image=${TAG}" >> "$GITHUB_OUTPUT"
-          else
-            echo "image=${{ steps.image.outputs.name }}@${{ steps.build.outputs.digest }}" >> "$GITHUB_OUTPUT"
-          fi
+
+          SHORT_SHA="$(echo "${{ github.sha }}" | cut -c1-7)"
+          VERSION="$(node -p "require('./${{ matrix.package_json }}').version")"
+          REVISION="${{ github.sha }}"
+
+          TAGS=(
+            "${IMAGE}:sha-${SHORT_SHA}"
+            "${IMAGE}:latest"
+          )
+
+          docker build \
+            -f "${{ matrix.dockerfile }}" \
+            -t "${TAGS[0]}" \
+            -t "${TAGS[1]}" \
+            --build-arg "VERSION=${VERSION}" \
+            --build-arg "REVISION=${REVISION}" \
+            --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" \
+            --label "org.opencontainers.image.licenses=MIT" \
+            .
+
+          for tag in "${TAGS[@]}"; do
+            docker push "$tag"
+          done
+
+          DIGEST="$(docker inspect --format='{{index .RepoDigests 0}}' "${TAGS[0]}" | awk -F@ '{print $2}')"
+          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
+          echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
+          echo "local_tag=${TAGS[0]}" >> "$GITHUB_OUTPUT"
 
       - name: Generate CycloneDX SBOM (Syft)
         uses: anchore/sbom-action@v0
         with:
-          image: ${{ steps.ref.outputs.image }}
+          image: ${{ steps.build.outputs.local_tag }}
           format: cyclonedx-json
           artifact-name: wafercms-${{ matrix.name }}.cdx.json
           output-file: wafercms-${{ matrix.name }}.cdx.json
@@ -118,7 +86,7 @@ jobs:
       - name: Generate SPDX SBOM (Syft)
         uses: anchore/sbom-action@v0
         with:
-          image: ${{ steps.ref.outputs.image }}
+          image: ${{ steps.build.outputs.local_tag }}
           format: spdx-json
           artifact-name: wafercms-${{ matrix.name }}.spdx.json
           output-file: wafercms-${{ matrix.name }}.spdx.json
@@ -129,10 +97,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          IMAGE='${{ steps.ref.outputs.image }}'
-          if ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
-            docker pull "$IMAGE"
-          fi
+          IMAGE='${{ steps.build.outputs.local_tag }}'
           CID="$(docker create "$IMAGE")"
           mkdir -p "licenses-${{ matrix.name }}"
           docker cp "${CID}:/licenses/." "licenses-${{ matrix.name }}/"
@@ -148,10 +113,10 @@ jobs:
           path: licenses-${{ matrix.name }}/
 
       - name: Attest CycloneDX SBOM
-        if: github.event_name != 'pull_request' && steps.build.outputs.digest != ''
+        if: steps.build.outputs.digest != ''
         uses: actions/attest-sbom@v2
         with:
-          subject-name: ${{ steps.image.outputs.name }}
+          subject-name: ${{ steps.build.outputs.image }}
           subject-digest: ${{ steps.build.outputs.digest }}
           sbom-path: wafercms-${{ matrix.name }}.cdx.json
           push-to-registry: true
