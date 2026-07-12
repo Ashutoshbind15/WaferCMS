@@ -51,6 +51,7 @@ jobs:
 
           TAGS=(
             "${IMAGE}:sha-${SHORT_SHA}"
+            "${IMAGE}:${VERSION}"
             "${IMAGE}:latest"
           )
 

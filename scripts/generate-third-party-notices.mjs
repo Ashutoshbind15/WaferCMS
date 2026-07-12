@@ -9,7 +9,6 @@
  *     --component cms-server \
  *     --out /licenses/THIRD_PARTY_NOTICES
  *
- * @see https://github.com/Quantco/pnpm-licenses
  */
 import { spawnSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -19,6 +18,10 @@ import { join } from "node:path";
 import { randomBytes } from "node:crypto";
 
 const PNPM_LICENSES_PKG = "@quantco/pnpm-licenses@2.4.2";
+
+/** SPDX ids that warrant a short callout (full texts still appear in the body). */
+const NOTABLE_LICENSE =
+  /\b(LGPL|AGPL|GPL-([23]|2\.0|3\.0)|MPL|EPL|CDDL|SSPL|OSL|EUPL)\b/i;
 
 const args = process.argv.slice(2);
 const getArg = (name, fallback) => {
@@ -59,6 +62,8 @@ const tmpDisclaimer = join(
 );
 writeFileSync(tmpJson, licensesJson.stdout, "utf8");
 
+const inventory = summarizeLicenses(JSON.parse(licensesJson.stdout));
+
 // Exclude this monorepo's own packages from third-party attribution.
 const excludeOwn = JSON.stringify([
   "wafercms",
@@ -85,30 +90,96 @@ if (disclaimer.status !== 0) {
 }
 
 const body = readFileSync(tmpDisclaimer, "utf8");
-const header = [
-  `Third-Party Notices for WaferCMS (${component})`,
-  `Generated: ${new Date().toISOString()}`,
-  "",
-  "WaferCMS itself is licensed under the MIT License; see /licenses/LICENSE.",
-  "",
-  "This file contains attribution notices and license texts for production",
-  "npm dependencies redistributed with this component, generated with",
-  "@quantco/pnpm-licenses (https://github.com/Quantco/pnpm-licenses).",
-  "",
-  "Operating-system packages and other contents of the container base image",
-  "are inventoried in the container SBOM (Syft) published alongside the image.",
-  "",
-  "NOTE: Some dependencies (notably sharp/libvips) use LGPL. Those libraries",
-  "are dynamically linked; their license texts appear in the notices below.",
-  "",
-  "".padEnd(72, "="),
-  "",
-  "",
-].join("\n");
+const header = buildHeader(component, inventory);
 
 mkdirSync(dirname(outPath), { recursive: true });
 writeFileSync(outPath, header + body, "utf8");
-console.log(`Wrote ${outPath} (${Buffer.byteLength(header + body)} bytes)`);
+console.log(
+  `Wrote ${outPath} (${Buffer.byteLength(header + body)} bytes; ${inventory.total} prod packages)`,
+);
+
+/**
+ * @param {unknown} data pnpm `licenses list --json` object: { [spdx]: Package[] }
+ */
+function summarizeLicenses(data) {
+  /** @type {Map<string, number>} */
+  const counts = new Map();
+  /** @type {{ name: string, version: string, license: string }[]} */
+  const notable = [];
+  let total = 0;
+
+  if (!data || typeof data !== "object") {
+    return { total: 0, counts, notable };
+  }
+
+  for (const [license, pkgs] of Object.entries(data)) {
+    if (!Array.isArray(pkgs)) continue;
+    counts.set(license, (counts.get(license) ?? 0) + pkgs.length);
+    total += pkgs.length;
+    if (!NOTABLE_LICENSE.test(license)) continue;
+    for (const pkg of pkgs) {
+      const name = pkg?.name;
+      if (typeof name !== "string") continue;
+      const version = Array.isArray(pkg.versions) ? pkg.versions[0] : pkg.version;
+      notable.push({
+        name,
+        version: typeof version === "string" ? version : "",
+        license,
+      });
+    }
+  }
+
+  notable.sort((a, b) => a.name.localeCompare(b.name));
+  return { total, counts, notable };
+}
+
+/**
+ * @param {string} component
+ * @param {{ total: number, counts: Map<string, number>, notable: { name: string, version: string, license: string }[] }} inventory
+ */
+function buildHeader(component, inventory) {
+  const lines = [
+    `Third-Party Notices for WaferCMS (${component})`,
+    `Generated: ${new Date().toISOString()}`,
+    "",
+    "WaferCMS itself is licensed under the MIT License; see /licenses/LICENSE.",
+    "",
+    "This file lists production npm dependencies redistributed with this",
+    "component and includes their license texts. It is generated with",
+    "@quantco/pnpm-licenses (https://github.com/Quantco/pnpm-licenses).",
+    "",
+    "OS packages and other contents of the container base image are covered",
+    "by the container SBOM (Syft) published alongside the image, not this file.",
+    "",
+  ];
+
+  if (inventory.total > 0) {
+    lines.push(`License summary (${inventory.total} packages by SPDX id):`);
+    const sorted = [...inventory.counts.entries()].sort((a, b) => {
+      if (b[1] !== a[1]) return b[1] - a[1];
+      return a[0].localeCompare(b[0]);
+    });
+    for (const [spdx, count] of sorted) {
+      lines.push(`  ${count}  ${spdx}`);
+    }
+    lines.push("");
+  }
+
+  if (inventory.notable.length > 0) {
+    lines.push(
+      "Copyleft or similarly notable SPDX licenses in this inventory",
+      "(full texts are included in the notices below):",
+    );
+    for (const pkg of inventory.notable) {
+      const ver = pkg.version ? `@${pkg.version}` : "";
+      lines.push(`  - ${pkg.name}${ver}  (${pkg.license})`);
+    }
+    lines.push("");
+  }
+
+  lines.push("".padEnd(72, "="), "", "");
+  return lines.join("\n");
+}
 
 /**
  * Resolve @quantco/pnpm-licenses CLI: global install, pnpm exec, then npx pin.
@@ -128,9 +199,7 @@ function runPnpmLicenses(cliArgs) {
       maxBuffer: 64 * 1024 * 1024,
     });
     if (last.status === 0) return last;
-    // ENOENT / not found → try next resolver
     if (last.error?.code === "ENOENT") continue;
-    // Other failures: still try fallbacks (e.g. pnpm exec when pkg not installed)
     if (/not found|Cannot find|ERR_PNPM|npm error/i.test(
       `${last.stderr ?? ""}${last.stdout ?? ""}`,
     )) {
