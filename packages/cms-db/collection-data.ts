@@ -1,9 +1,13 @@
-import { and, count, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, count, desc, eq, inArray, sql, type SQL } from "drizzle-orm";
 import { touchCollectionRecord } from "./collections.js";
 import db from "./db.js";
 import { collectionData, collectionDataValue, collectionField } from "./schema.js";
 
 export type CollectionDataRow = typeof collectionData.$inferSelect;
+
+export type CollectionDataFilter = {
+  includeDrafts: boolean;
+};
 
 export type CollectionDataValueRow = {
   dataId: number;
@@ -24,13 +28,25 @@ type DbClient =
 
 const withClient = (client: DbClient | undefined) => client ?? db;
 
+const collectionDataConditions = (
+  collectionId: number,
+  filter: CollectionDataFilter,
+): SQL => {
+  const conditions = [eq(collectionData.collectionId, collectionId)];
+  if (!filter.includeDrafts) {
+    conditions.push(eq(collectionData.draft, false));
+  }
+  return and(...conditions)!;
+};
+
 export const countCollectionData = async (
   collectionId: number,
+  filter: CollectionDataFilter,
 ): Promise<number> => {
   const [row] = await db
     .select({ value: count() })
     .from(collectionData)
-    .where(eq(collectionData.collectionId, collectionId));
+    .where(collectionDataConditions(collectionId, filter));
   return row?.value ?? 0;
 };
 
@@ -38,11 +54,12 @@ export const selectCollectionDataPage = async (
   collectionId: number,
   limit: number,
   offset: number,
+  filter: CollectionDataFilter,
 ): Promise<CollectionDataRow[]> => {
   return db
     .select()
     .from(collectionData)
-    .where(eq(collectionData.collectionId, collectionId))
+    .where(collectionDataConditions(collectionId, filter))
     .orderBy(desc(collectionData.updatedAt), desc(collectionData.id))
     .limit(limit)
     .offset(offset);
@@ -51,6 +68,7 @@ export const selectCollectionDataPage = async (
 export const selectCollectionDataById = async (
   collectionId: number,
   dataId: number,
+  filter: CollectionDataFilter,
 ): Promise<CollectionDataRow | null> => {
   const [row] = await db
     .select()
@@ -58,7 +76,7 @@ export const selectCollectionDataById = async (
     .where(
       and(
         eq(collectionData.id, dataId),
-        eq(collectionData.collectionId, collectionId),
+        collectionDataConditions(collectionId, filter),
       ),
     );
   return row ?? null;
@@ -83,11 +101,16 @@ export const selectCollectionDataValuesForIds = async (
 
 export const insertCollectionData = async (
   collectionId: number,
+  options: { draft: boolean },
   client?: DbClient,
 ): Promise<{ id: number }> => {
   const [created] = await withClient(client)
     .insert(collectionData)
-    .values({ collectionId, updatedAt: new Date() })
+    .values({
+      collectionId,
+      draft: options.draft,
+      updatedAt: new Date(),
+    })
     .returning({ id: collectionData.id });
   if (!created) {
     throw new Error("Failed to create collection item.");
@@ -135,15 +158,21 @@ export const upsertCollectionDataValues = async (
     });
 };
 
-export const touchCollectionData = async (
+export const updateCollectionData = async (
   collectionId: number,
   dataId: number,
+  patch: { draft: boolean },
   client?: DbClient,
 ): Promise<void> => {
   await withClient(client)
     .update(collectionData)
-    .set({ updatedAt: new Date() })
-    .where(eq(collectionData.id, dataId));
+    .set({ draft: patch.draft, updatedAt: new Date() })
+    .where(
+      and(
+        eq(collectionData.id, dataId),
+        eq(collectionData.collectionId, collectionId),
+      ),
+    );
   await touchCollectionRecord(collectionId, client);
 };
 

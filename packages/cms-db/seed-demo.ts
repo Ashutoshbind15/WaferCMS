@@ -79,7 +79,11 @@ export const seedDemoInsertCollectionItem = async (
   item: Record<string, unknown>,
 ): Promise<void> => {
   await db.transaction(async (tx) => {
-    const { id: dataId } = await insertCollectionData(collectionId, tx);
+    const { id: dataId } = await insertCollectionData(
+      collectionId,
+      { draft: false },
+      tx,
+    );
     const values = Object.entries(item)
       .map(([key, value]) => {
         const fieldId = fieldByKey.get(key);

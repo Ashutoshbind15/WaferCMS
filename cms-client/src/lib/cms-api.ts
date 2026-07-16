@@ -21,6 +21,8 @@ export type ListQuery = {
   page?: number;
   limit?: number;
   count?: boolean;
+  /** When true, draft items are included in list/get responses. */
+  includeDrafts?: boolean;
 };
 
 export type SessionUser = {
@@ -47,6 +49,9 @@ const buildListQuery = (query: ListQuery = {}) => {
   }
   if (query.count) {
     params.set("count", "true");
+  }
+  if (query.includeDrafts) {
+    params.set("includeDrafts", "true");
   }
   return params.toString();
 };
@@ -81,6 +86,7 @@ export type CollectionFieldType =
 export type CollectionItemRecord = {
   id: number;
   collectionId: number;
+  draft: boolean;
   values: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
@@ -443,15 +449,18 @@ export async function fetchCollectionItems(
 export async function fetchCollectionItem(
   collectionId: number,
   itemId: number,
+  query: Pick<ListQuery, "includeDrafts"> = {},
 ): Promise<CollectionItemRecord> {
-  return requestJson<CollectionItemRecord>(
-    `${base}/collections/${collectionId}/items/${itemId}`,
-  );
+  const qs = buildListQuery(query);
+  const url = qs
+    ? `${base}/collections/${collectionId}/items/${itemId}?${qs}`
+    : `${base}/collections/${collectionId}/items/${itemId}`;
+  return requestJson<CollectionItemRecord>(url);
 }
 
 export async function createCollectionItem(
   collectionId: number,
-  input: { values: Record<string, unknown> },
+  input: { values: Record<string, unknown>; draft: boolean },
 ): Promise<{ id: number }> {
   return requestCreatedId(
     `${base}/collections/${collectionId}/items`,
@@ -466,7 +475,7 @@ export async function createCollectionItem(
 export async function updateCollectionItem(
   collectionId: number,
   itemId: number,
-  input: { values: Record<string, unknown> },
+  input: { values: Record<string, unknown>; draft: boolean },
 ): Promise<void> {
   return mutateJson(
     `${base}/collections/${collectionId}/items/${itemId}`,

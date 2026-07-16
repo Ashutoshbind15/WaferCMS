@@ -88,6 +88,8 @@ export const collectionData = pgTable("collection_data", {
   collectionId: integer()
     .notNull()
     .references(() => collection.id, { onDelete: "cascade" }),
+  /** When true, item is omitted from list/get unless includeDrafts is requested. */
+  draft: boolean().notNull().default(false),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow(),
 });

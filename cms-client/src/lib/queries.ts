@@ -111,7 +111,11 @@ export function useCollectionItems(collectionId: number, page: number) {
   return useQuery({
     queryKey: cmsQueryKeys.collectionItems(collectionId, page),
     queryFn: () =>
-      fetchCollectionItems(collectionId, { page, count: true }),
+      fetchCollectionItems(collectionId, {
+        page,
+        count: true,
+        includeDrafts: true,
+      }),
     enabled: validId(collectionId),
   });
 }
@@ -120,7 +124,11 @@ export function useInfiniteCollectionItems(collectionId: number) {
   return useInfiniteQuery({
     queryKey: ["cms", "collections", collectionId, "items", "infinite"] as const,
     queryFn: ({ pageParam }) =>
-      fetchCollectionItems(collectionId, { page: pageParam, count: true }),
+      fetchCollectionItems(collectionId, {
+        page: pageParam,
+        count: true,
+        includeDrafts: true,
+      }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) =>
       lastPage.pagination.hasNext
@@ -133,7 +141,8 @@ export function useInfiniteCollectionItems(collectionId: number) {
 export function useCollectionItem(collectionId: number, itemId: number) {
   return useQuery({
     queryKey: cmsQueryKeys.collectionItem(collectionId, itemId),
-    queryFn: () => fetchCollectionItem(collectionId, itemId),
+    queryFn: () =>
+      fetchCollectionItem(collectionId, itemId, { includeDrafts: true }),
     enabled: validId(collectionId) && validId(itemId),
   });
 }
@@ -231,8 +240,10 @@ export function useCreateCollectionItem(collectionId: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: { values: Record<string, unknown> }) =>
-      createCollectionItem(collectionId, input),
+    mutationFn: (input: {
+      values: Record<string, unknown>;
+      draft: boolean;
+    }) => createCollectionItem(collectionId, input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["cms", "collections"] });
       void queryClient.invalidateQueries({
@@ -249,8 +260,10 @@ export function useUpdateCollectionItem(
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: { values: Record<string, unknown> }) =>
-      updateCollectionItem(collectionId, itemId, input),
+    mutationFn: (input: {
+      values: Record<string, unknown>;
+      draft: boolean;
+    }) => updateCollectionItem(collectionId, itemId, input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["cms", "collections"] });
       void queryClient.invalidateQueries({

@@ -7,6 +7,8 @@ import {
 import { Header } from "@/components/layout/header";
 import { PageContainer } from "@/components/layout/page-container";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import {
   useCollection,
   useCollectionFields,
@@ -18,35 +20,40 @@ import { type CollectionFieldRecord } from "@/lib/cms-api";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
-const valuesSnapshot = (values: Record<string, unknown>) =>
-  JSON.stringify(values);
+type ItemFormState = {
+  draft: boolean;
+  values: Record<string, unknown>;
+};
+
+const formSnapshot = (form: ItemFormState) => JSON.stringify(form);
 
 const emptyValues = (fields: CollectionFieldRecord[]): Record<string, unknown> =>
   Object.fromEntries(fields.map((field) => [field.key, emptyValueForField(field)]));
 
-const buildInitialValues = (
+const buildInitialForm = (
   fields: CollectionFieldRecord[],
-  itemValues?: Record<string, unknown>,
-): Record<string, unknown> => {
+  item?: { draft: boolean; values: Record<string, unknown> },
+): ItemFormState => {
   const base = emptyValues(fields);
-  if (!itemValues) {
-    return base;
+  if (!item) {
+    // New items start unpublished so they can be edited before going live.
+    return { draft: true, values: base };
   }
 
-  const merged = { ...base, ...itemValues };
+  const merged = { ...base, ...item.values };
   for (const field of fields) {
     if (merged[field.key] == null) {
       merged[field.key] = base[field.key];
     }
   }
-  return merged;
+  return { draft: item.draft, values: merged };
 };
 
 type CollectionItemFormProps = {
   collectionId: number;
   itemId?: number;
   fields: CollectionFieldRecord[];
-  initialValues: Record<string, unknown>;
+  initialForm: ItemFormState;
   pageTitle: string;
   onBack: () => void;
 };
@@ -55,7 +62,7 @@ function CollectionItemForm({
   collectionId,
   itemId,
   fields,
-  initialValues,
+  initialForm,
   pageTitle,
   onBack,
 }: CollectionItemFormProps) {
@@ -64,28 +71,31 @@ function CollectionItemForm({
   const createItem = useCreateCollectionItem(collectionId);
   const updateItem = useUpdateCollectionItem(collectionId, itemId ?? 0);
 
-  const [values, setValues] = useState(initialValues);
+  const [form, setForm] = useState(initialForm);
   const [savedSnapshot, setSavedSnapshot] = useState(() =>
-    valuesSnapshot(initialValues),
+    formSnapshot(initialForm),
   );
   const [error, setError] = useState<string | null>(null);
 
   const saving = createItem.isPending || updateItem.isPending;
-  const dirty = valuesSnapshot(values) !== savedSnapshot;
+  const dirty = formSnapshot(form) !== savedSnapshot;
 
   const handleChange = (key: string, value: unknown) => {
-    setValues((prev) => ({ ...prev, [key]: value }));
+    setForm((prev) => ({
+      ...prev,
+      values: { ...prev.values, [key]: value },
+    }));
   };
 
   const handleSave = async () => {
     setError(null);
     try {
       if (isEditing) {
-        await updateItem.mutateAsync({ values });
-        setSavedSnapshot(valuesSnapshot(values));
+        await updateItem.mutateAsync(form);
+        setSavedSnapshot(formSnapshot(form));
         toast.success("Item saved.");
       } else {
-        const created = await createItem.mutateAsync({ values });
+        const created = await createItem.mutateAsync(form);
         toast.success("Item created.");
         navigate(`/collections/${collectionId}/items/${created.id}`, {
           replace: true,
@@ -136,9 +146,28 @@ function CollectionItemForm({
         ) : null}
 
         <div className="mx-auto max-w-3xl space-y-4">
+          <div className="flex items-start gap-2.5 rounded-md border border-border px-3 py-2.5">
+            <Checkbox
+              id="item-draft"
+              checked={form.draft}
+              onCheckedChange={(checked) =>
+                setForm((prev) => ({ ...prev, draft: checked === true }))
+              }
+              className="mt-0.5"
+            />
+            <div className="min-w-0">
+              <Label htmlFor="item-draft" className="font-normal">
+                Draft
+              </Label>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Unpublished items are hidden from API consumers by default.
+              </p>
+            </div>
+          </div>
+
           <CollectionItemFieldEditors
             fields={fields}
-            values={values}
+            values={form.values}
             onChange={handleChange}
           />
         </div>
@@ -248,9 +277,11 @@ export default function CollectionItemEditorPage() {
   }
 
   const formKey = isEditing ? `item-${itemId}` : `new-${collectionId}`;
-  const initialValues = buildInitialValues(
+  const initialForm = buildInitialForm(
     fields,
-    isEditing ? itemQuery.data?.values : undefined,
+    isEditing && itemQuery.data
+      ? { draft: itemQuery.data.draft, values: itemQuery.data.values }
+      : undefined,
   );
 
   return (
@@ -259,7 +290,7 @@ export default function CollectionItemEditorPage() {
       collectionId={collectionId}
       itemId={isEditing ? numericItemId : undefined}
       fields={fields}
-      initialValues={initialValues}
+      initialForm={initialForm}
       pageTitle={fullTitle}
       onBack={onBack}
     />

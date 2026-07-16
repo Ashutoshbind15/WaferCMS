@@ -147,7 +147,14 @@ export function CollectionItemsTab({
                   }
                   className="min-w-0 flex-1 text-left"
                 >
-                  <p className="text-sm font-medium">{title}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-medium">{title}</p>
+                    {item.draft ? (
+                      <span className="rounded-md border border-border px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
+                        Draft
+                      </span>
+                    ) : null}
+                  </div>
                   <p className="mt-0.5 truncate text-sm text-muted-foreground">
                     {fields.length} field
                     {fields.length === 1 ? "" : "s"} · updated{" "}

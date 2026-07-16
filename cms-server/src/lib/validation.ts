@@ -100,6 +100,7 @@ export const collectionItemBodySchema = z.object({
         value !== null && typeof value === "object" && !Array.isArray(value),
       { message: "values object is required." },
     ),
+  draft: z.boolean({ error: "draft must be a boolean." }).default(false),
 });
 
 export const patchFileBodySchema = z.object({

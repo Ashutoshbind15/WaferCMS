@@ -8,8 +8,9 @@ import {
   selectCollectionDataById,
   selectCollectionDataPage,
   selectCollectionDataValuesForIds,
-  touchCollectionData,
+  updateCollectionData,
   upsertCollectionDataValues,
+  type CollectionDataFilter,
   type CollectionDataValueInput,
   type CollectionDataRow,
 } from "@packages/cms-db/collection-data";
@@ -31,6 +32,7 @@ import type { CollectionItemBody } from "../lib/validation.js";
 export type CollectionItem = {
   id: number;
   collectionId: number;
+  draft: boolean;
   values: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
@@ -133,6 +135,7 @@ const assembleItem = (
   return {
     id: row.id,
     collectionId: row.collectionId,
+    draft: row.draft,
     values,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
@@ -146,15 +149,22 @@ const isItemValidationError = (message: string): boolean =>
 const parseCollectionId = (req: Request) =>
   parseIdParam(String(req.params.collectionId));
 
+/** Drafts are excluded unless `includeDrafts=true` (or `1`) is passed. */
+const parseIncludeDrafts = (req: Request): boolean => {
+  const value = req.query.includeDrafts;
+  return value === "true" || value === "1";
+};
+
 const listItemsData = async (
   collectionId: number,
   query: ListPageQuery,
+  filter: CollectionDataFilter,
 ): Promise<PaginatedRows<CollectionItem>> => {
   const page = await paginateRows({
     query,
     fetchPage: (limit, offset) =>
-      selectCollectionDataPage(collectionId, limit, offset),
-    fetchTotal: () => countCollectionData(collectionId),
+      selectCollectionDataPage(collectionId, limit, offset, filter),
+    fetchTotal: () => countCollectionData(collectionId, filter),
   });
 
   if (page.data.length === 0) {
@@ -189,8 +199,9 @@ const listItemsData = async (
 const getItemData = async (
   collectionId: number,
   dataId: number,
+  filter: CollectionDataFilter,
 ): Promise<CollectionItem | null> => {
-  const row = await selectCollectionDataById(collectionId, dataId);
+  const row = await selectCollectionDataById(collectionId, dataId, filter);
   if (!row) {
     return null;
   }
@@ -205,13 +216,17 @@ const getItemData = async (
 
 const createItemData = async (
   collectionId: number,
-  input: { values: Record<string, unknown> },
+  input: { values: Record<string, unknown>; draft: boolean },
 ): Promise<{ id: number }> => {
   const fields = await listCollectionFieldRecords(collectionId);
   const validated = validateItemValues(fields, input);
 
   return db.transaction(async (tx) => {
-    const data = await insertCollectionData(collectionId, tx);
+    const data = await insertCollectionData(
+      collectionId,
+      { draft: input.draft },
+      tx,
+    );
     const valueRows = validated.map((v) => ({
       dataId: data.id,
       fieldId: v.fieldId,
@@ -227,9 +242,12 @@ const createItemData = async (
 const updateItemData = async (
   collectionId: number,
   dataId: number,
-  input: { values: Record<string, unknown> },
+  input: { values: Record<string, unknown>; draft: boolean },
 ): Promise<void> => {
-  const existing = await selectCollectionDataById(collectionId, dataId);
+  // Writes always resolve drafts so they can be edited/published.
+  const existing = await selectCollectionDataById(collectionId, dataId, {
+    includeDrafts: true,
+  });
   if (!existing) {
     throw new Error(`Collection item ${dataId} not found.`);
   }
@@ -238,7 +256,12 @@ const updateItemData = async (
   const validated = validateItemValues(fields, input);
 
   await db.transaction(async (tx) => {
-    await touchCollectionData(collectionId, dataId, tx);
+    await updateCollectionData(
+      collectionId,
+      dataId,
+      { draft: input.draft },
+      tx,
+    );
     const valueRows = validated.map((v) => ({
       dataId,
       fieldId: v.fieldId,
@@ -282,8 +305,12 @@ export const listItems = async (req: Request, res: Response) => {
     return;
   }
 
+  const filter: CollectionDataFilter = {
+    includeDrafts: parseIncludeDrafts(req),
+  };
+
   try {
-    const result = await listItemsData(collectionId, query);
+    const result = await listItemsData(collectionId, query, filter);
     res.json(result);
   } catch (error) {
     const message =
@@ -313,7 +340,11 @@ export const getItem = async (req: Request, res: Response) => {
     return;
   }
 
-  const result = await getItemData(collectionId, itemId);
+  const filter: CollectionDataFilter = {
+    includeDrafts: parseIncludeDrafts(req),
+  };
+
+  const result = await getItemData(collectionId, itemId, filter);
   if (!result) {
     res
       .status(404)
@@ -338,9 +369,9 @@ export const createItem = async (req: Request, res: Response) => {
     return;
   }
 
-  const { values } = req.body as CollectionItemBody;
+  const { values, draft } = req.body as CollectionItemBody;
   try {
-    const result = await createItemData(collectionId, { values });
+    const result = await createItemData(collectionId, { values, draft });
     sendCreatedId(res, result.id);
   } catch (error) {
     const message =
@@ -374,9 +405,9 @@ export const updateItem = async (req: Request, res: Response) => {
     return;
   }
 
-  const { values } = req.body as CollectionItemBody;
+  const { values, draft } = req.body as CollectionItemBody;
   try {
-    await updateItemData(collectionId, itemId, { values });
+    await updateItemData(collectionId, itemId, { values, draft });
     sendNoContent(res);
   } catch (error) {
     const message =

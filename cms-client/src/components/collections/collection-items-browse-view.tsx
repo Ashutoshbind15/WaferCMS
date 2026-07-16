@@ -272,9 +272,16 @@ export function CollectionItemsBrowseView({
               >
                 <header className="mb-8 flex items-start justify-between gap-4">
                   <div className="min-w-0">
-                    <h2 className="text-2xl font-semibold tracking-tight">
-                      {title}
-                    </h2>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="text-2xl font-semibold tracking-tight">
+                        {title}
+                      </h2>
+                      {item.draft ? (
+                        <span className="rounded-md border border-border px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
+                          Draft
+                        </span>
+                      ) : null}
+                    </div>
                     <p className="mt-1.5 text-sm text-muted-foreground">
                       Updated {new Date(item.updatedAt).toLocaleString()}
                     </p>
@@ -345,6 +352,7 @@ export function CollectionItemsBrowseView({
               >
                 <p className="truncate text-sm">{title}</p>
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                  {item.draft ? "Draft · " : ""}
                   {new Date(item.updatedAt).toLocaleDateString()}
                 </p>
               </button>
