@@ -189,7 +189,7 @@ const COLLECTIONS: CollectionDef[] = [
     fields: [
       { key: "name", label: "Name", fieldType: "text", required: true },
       { key: "description", label: "Description", fieldType: "long-text" },
-      { key: "price", label: "Price", fieldType: "text" },
+      { key: "price", label: "Price", fieldType: "number" },
     ],
     items: [],
   },
@@ -199,7 +199,7 @@ const COLLECTIONS: CollectionDef[] = [
     description: "Upcoming talks and meetups.",
     fields: [
       { key: "title", label: "Title", fieldType: "text", required: true },
-      { key: "date", label: "Date", fieldType: "text" },
+      { key: "date", label: "Date", fieldType: "date" },
       { key: "details", label: "Details", fieldType: "long-text" },
     ],
     items: [],

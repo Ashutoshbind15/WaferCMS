@@ -68,6 +68,46 @@ const validateRichtextValue = (_fieldKey: string, value: unknown): unknown =>
 const validateDiagramsValue = (_fieldKey: string, value: unknown): unknown =>
   value;
 
+const DATE_VALUE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+const validateNumberValue = (fieldKey: string, value: unknown): number => {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    throw new Error(
+      `Item value for field "${fieldKey}" must be a number.`,
+    );
+  }
+  return value;
+};
+
+const validateDateValue = (fieldKey: string, value: unknown): string => {
+  if (typeof value !== "string" || !DATE_VALUE_PATTERN.test(value)) {
+    throw new Error(
+      `Item value for field "${fieldKey}" must be a date (YYYY-MM-DD).`,
+    );
+  }
+  const [year, month, day] = value.split("-").map(Number);
+  const parsed = new Date(year, month - 1, day);
+  if (
+    parsed.getFullYear() !== year ||
+    parsed.getMonth() !== month - 1 ||
+    parsed.getDate() !== day
+  ) {
+    throw new Error(
+      `Item value for field "${fieldKey}" must be a valid date.`,
+    );
+  }
+  return value;
+};
+
+const validateBoolValue = (fieldKey: string, value: unknown): boolean => {
+  if (typeof value !== "boolean") {
+    throw new Error(
+      `Item value for field "${fieldKey}" must be a boolean.`,
+    );
+  }
+  return value;
+};
+
 const validateFieldValue = (
   fieldType: CollectionFieldType,
   fieldKey: string,
@@ -82,6 +122,12 @@ const validateFieldValue = (
       return validateRichtextValue(fieldKey, value);
     case "diagrams":
       return validateDiagramsValue(fieldKey, value);
+    case "number":
+      return validateNumberValue(fieldKey, value);
+    case "date":
+      return validateDateValue(fieldKey, value);
+    case "bool":
+      return validateBoolValue(fieldKey, value);
   }
 };
 

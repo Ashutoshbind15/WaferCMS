@@ -1,4 +1,5 @@
 import { EditorContent, useEditor } from "@tiptap/react";
+import { format } from "date-fns";
 import { richTextExtensions } from "@wafercms/rich-text";
 import {
   EMPTY_EDITOR_DOC,
@@ -7,6 +8,16 @@ import {
 import { DiagramRenderer } from "@scribblesvg/react-utils/renderer";
 import { EMPTY_DOCUMENT, type DiagramDocument } from "@scribblesvg/core";
 import type { CollectionFieldRecord } from "@/lib/cms-api";
+
+const DATE_VALUE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+const parseDateValue = (value: unknown): Date | undefined => {
+  if (typeof value !== "string" || !DATE_VALUE_PATTERN.test(value)) {
+    return undefined;
+  }
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year, month - 1, day);
+};
 
 const asRichText = (value: unknown): RichTextContent =>
   value && typeof value === "object" && !Array.isArray(value)
@@ -70,6 +81,33 @@ function FieldView({ field, value }: FieldViewProps) {
           <DiagramRenderer document={asDiagram(value)} className="w-full" />
         </div>
       );
+    case "number": {
+      if (typeof value !== "number" || !Number.isFinite(value)) {
+        return <p className="text-sm text-muted-foreground">—</p>;
+      }
+      return <p className="text-xl font-medium tracking-tight">{value}</p>;
+    }
+    case "date": {
+      const date = parseDateValue(value);
+      if (!date) {
+        return <p className="text-sm text-muted-foreground">—</p>;
+      }
+      return (
+        <p className="text-xl font-medium tracking-tight">
+          {format(date, "PPP")}
+        </p>
+      );
+    }
+    case "bool": {
+      if (typeof value !== "boolean") {
+        return <p className="text-sm text-muted-foreground">—</p>;
+      }
+      return (
+        <p className="text-xl font-medium tracking-tight">
+          {value ? "Yes" : "No"}
+        </p>
+      );
+    }
   }
 }
 

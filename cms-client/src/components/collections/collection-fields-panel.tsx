@@ -32,6 +32,9 @@ export const COLLECTION_FIELD_TYPE_OPTIONS: {
   { value: "long-text", label: "Long text" },
   { value: "richtext", label: "Rich text" },
   { value: "diagrams", label: "Diagrams" },
+  { value: "number", label: "Number" },
+  { value: "date", label: "Date" },
+  { value: "bool", label: "Boolean" },
 ];
 
 const fieldTypeLabel = (fieldType: CollectionFieldType) =>

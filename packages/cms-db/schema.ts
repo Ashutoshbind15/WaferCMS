@@ -50,6 +50,9 @@ export const collectionFieldTypeEnum = pgEnum("collection_field_type", [
   "long-text",
   "richtext",
   "diagrams",
+  "number",
+  "date",
+  "bool",
 ]);
 
 export const collectionFieldTypeValues = collectionFieldTypeEnum.enumValues;

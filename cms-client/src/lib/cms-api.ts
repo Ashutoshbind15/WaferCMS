@@ -81,7 +81,10 @@ export type CollectionFieldType =
   | "text"
   | "long-text"
   | "richtext"
-  | "diagrams";
+  | "diagrams"
+  | "number"
+  | "date"
+  | "bool";
 
 export type CollectionItemRecord = {
   id: number;
