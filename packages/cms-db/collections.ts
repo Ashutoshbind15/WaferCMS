@@ -188,9 +188,12 @@ export const addCollectionFieldRecord = async (
     position: number;
     required?: boolean;
     isTitle?: boolean;
+    relatedCollectionId?: number | null;
   },
 ): Promise<void> => {
   const isTitle = input.isTitle ?? false;
+  const relatedCollectionId =
+    input.fieldType === "relation" ? (input.relatedCollectionId ?? null) : null;
 
   await db.transaction(async (tx) => {
     if (isTitle) {
@@ -207,6 +210,7 @@ export const addCollectionFieldRecord = async (
         position: input.position,
         required: input.required ?? false,
         isTitle,
+        relatedCollectionId,
         updatedAt: new Date(),
       })
       .returning({ id: collectionField.id });
@@ -226,9 +230,12 @@ export const updateCollectionFieldRecord = async (
     fieldType: CollectionFieldType;
     required?: boolean;
     isTitle?: boolean;
+    relatedCollectionId?: number | null;
   },
 ): Promise<void> => {
   const isTitle = input.isTitle ?? false;
+  const relatedCollectionId =
+    input.fieldType === "relation" ? (input.relatedCollectionId ?? null) : null;
 
   await db.transaction(async (tx) => {
     if (isTitle) {
@@ -243,6 +250,7 @@ export const updateCollectionFieldRecord = async (
         fieldType: input.fieldType,
         required: input.required ?? false,
         isTitle,
+        relatedCollectionId,
         updatedAt: new Date(),
       })
       .where(

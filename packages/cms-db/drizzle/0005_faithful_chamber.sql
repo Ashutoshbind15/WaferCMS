@@ -1,0 +1,3 @@
+ALTER TYPE "public"."collection_field_type" ADD VALUE 'relation';--> statement-breakpoint
+ALTER TABLE "collection_field" ADD COLUMN "relatedCollectionId" integer;--> statement-breakpoint
+ALTER TABLE "collection_field" ADD CONSTRAINT "collection_field_relatedCollectionId_collection_id_fk" FOREIGN KEY ("relatedCollectionId") REFERENCES "public"."collection"("id") ON DELETE restrict ON UPDATE no action;

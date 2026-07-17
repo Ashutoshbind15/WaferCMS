@@ -1,4 +1,5 @@
-import { useId, useState } from "react";
+import { useId, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -20,8 +21,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  fetchCollectionList,
   type CollectionFieldRecord,
   type CollectionFieldType,
+  type CollectionRecord,
 } from "@/lib/cms-api";
 
 export const COLLECTION_FIELD_TYPE_OPTIONS: {
@@ -36,6 +39,7 @@ export const COLLECTION_FIELD_TYPE_OPTIONS: {
   { value: "date", label: "Date" },
   { value: "bool", label: "Boolean" },
   { value: "asset", label: "Asset" },
+  { value: "relation", label: "Relation" },
 ];
 
 const fieldTypeLabel = (fieldType: CollectionFieldType) =>
@@ -55,6 +59,7 @@ const emptyDraft = (): FieldDraft => ({
   fieldType: "text",
   required: false,
   isTitle: false,
+  relatedCollectionId: null,
 });
 
 type CollectionFieldsPanelProps = {
@@ -66,6 +71,8 @@ function FieldEditor({
   submitLabel,
   disabled,
   autoKeyFromLabel,
+  collections,
+  currentCollectionId,
   onChange,
   onSubmit,
   onCancel,
@@ -74,12 +81,17 @@ function FieldEditor({
   submitLabel: string;
   disabled: boolean;
   autoKeyFromLabel: boolean;
+  collections: CollectionRecord[];
+  currentCollectionId: number;
   onChange: (draft: FieldDraft) => void;
   onSubmit: () => void;
   onCancel?: () => void;
 }) {
   const id = useId();
   const [keyTouched, setKeyTouched] = useState(!autoKeyFromLabel);
+  const relatedOptions = collections.filter(
+    (collection) => collection.id !== currentCollectionId,
+  );
 
   return (
     <div className="space-y-3 rounded-lg border border-border p-4">
@@ -132,6 +144,8 @@ function FieldEditor({
                 isTitle: TITLE_CAPABLE_FIELD_TYPES.has(fieldType)
                   ? draft.isTitle
                   : false,
+                relatedCollectionId:
+                  fieldType === "relation" ? draft.relatedCollectionId : null,
               });
             }}
           >
@@ -179,6 +193,50 @@ function FieldEditor({
         </div>
       </div>
 
+      {draft.fieldType === "relation" ? (
+        <div className="space-y-2">
+          <Label htmlFor={`${id}-related`}>Related collection</Label>
+          <Select
+            value={
+              draft.relatedCollectionId !== null
+                ? String(draft.relatedCollectionId)
+                : undefined
+            }
+            onValueChange={(value) => {
+              const parsed = Number(value);
+              onChange({
+                ...draft,
+                relatedCollectionId:
+                  Number.isInteger(parsed) && parsed > 0 ? parsed : null,
+              });
+            }}
+          >
+            <SelectTrigger id={`${id}-related`} className="w-full max-w-md">
+              <SelectValue placeholder="Select a collection" />
+            </SelectTrigger>
+            <SelectContent>
+              {relatedOptions.length === 0 ? (
+                <SelectItem value="__none__" disabled>
+                  No other collections available
+                </SelectItem>
+              ) : (
+                relatedOptions.map((collection) => (
+                  <SelectItem
+                    key={collection.id}
+                    value={String(collection.id)}
+                  >
+                    {collection.title}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Stores a single item id from the selected collection.
+          </p>
+        </div>
+      ) : null}
+
       <div className="flex items-center gap-2">
         <Button size="sm" disabled={disabled} onClick={onSubmit}>
           {submitLabel}
@@ -197,6 +255,10 @@ export function CollectionFieldsPanel({
   collectionId,
 }: CollectionFieldsPanelProps) {
   const fieldsQuery = useCollectionFields(collectionId);
+  const collectionsQuery = useQuery({
+    queryKey: ["cms", "collections", "field-picker"] as const,
+    queryFn: () => fetchCollectionList({ page: 1, limit: 100, count: false }),
+  });
   const createField = useCreateCollectionField(collectionId);
   const updateField = useUpdateCollectionField(collectionId);
   const deleteField = useDeleteCollectionField(collectionId);
@@ -208,6 +270,11 @@ export function CollectionFieldsPanel({
   const [error, setError] = useState<string | null>(null);
 
   const fields = fieldsQuery.data ?? [];
+  const collections = collectionsQuery.data?.data ?? [];
+  const collectionTitleById = useMemo(
+    () => new Map(collections.map((collection) => [collection.id, collection.title])),
+    [collections],
+  );
   const loading = fieldsQuery.isPending;
 
   const startEdit = (field: CollectionFieldRecord) => {
@@ -218,6 +285,7 @@ export function CollectionFieldsPanel({
       fieldType: field.fieldType,
       required: field.required,
       isTitle: field.isTitle,
+      relatedCollectionId: field.relatedCollectionId,
     });
     setShowCreate(false);
   };
@@ -270,6 +338,16 @@ export function CollectionFieldsPanel({
         ? "Failed to load fields"
         : null;
 
+  const relatedLabel = (field: CollectionFieldRecord) => {
+    if (field.fieldType !== "relation" || field.relatedCollectionId === null) {
+      return null;
+    }
+    return (
+      collectionTitleById.get(field.relatedCollectionId) ??
+      `Collection #${field.relatedCollectionId}`
+    );
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-4">
@@ -305,6 +383,8 @@ export function CollectionFieldsPanel({
           submitLabel={createField.isPending ? "Adding…" : "Add field"}
           disabled={createField.isPending}
           autoKeyFromLabel
+          collections={collections}
+          currentCollectionId={collectionId}
           onChange={setCreateDraft}
           onSubmit={() => {
             void handleCreate();
@@ -338,6 +418,8 @@ export function CollectionFieldsPanel({
                   updateField.variables?.fieldId === field.id
                 }
                 autoKeyFromLabel={false}
+                collections={collections}
+                currentCollectionId={collectionId}
                 onChange={setEditDraft}
                 onSubmit={() => {
                   void handleUpdate(field.id);
@@ -355,6 +437,7 @@ export function CollectionFieldsPanel({
                     <span className="font-mono">{field.key}</span>
                     {" · "}
                     {fieldTypeLabel(field.fieldType)}
+                    {relatedLabel(field) ? ` → ${relatedLabel(field)}` : ""}
                     {field.required ? " · required" : ""}
                     {field.isTitle ? " · title" : ""}
                   </p>

@@ -7,6 +7,7 @@ import {
 } from "@/components/editor/rich-text-document";
 import { DiagramRenderer } from "@scribblesvg/react-utils/renderer";
 import { EMPTY_DOCUMENT, type DiagramDocument } from "@scribblesvg/core";
+import { RelationFieldLink } from "@/components/collections/collection-relation-field";
 import { AssetPreview } from "@/components/library/asset-preview";
 import type { CollectionFieldRecord } from "@/lib/cms-api";
 import { useLibraryFile } from "@/lib/queries";
@@ -112,6 +113,14 @@ function FieldView({ field, value }: FieldViewProps) {
     }
     case "asset":
       return <AssetFieldView value={value} />;
+    case "relation":
+      return (
+        <RelationFieldLink
+          relatedCollectionId={field.relatedCollectionId}
+          value={value}
+          className="text-xl font-medium tracking-tight"
+        />
+      );
   }
 }
 

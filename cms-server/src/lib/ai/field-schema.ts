@@ -8,7 +8,7 @@ export type AiFieldInput = {
   required: boolean;
 };
 
-/** Field types the model fills. Richtext/diagrams/asset are stubbed or skipped. */
+/** Field types the model fills. Other types (richtext, diagrams, asset, relation) are skipped. */
 export const AI_GENERATABLE_FIELD_TYPES = new Set<CollectionFieldType>([
   "text",
   "long-text",
@@ -17,11 +17,23 @@ export const AI_GENERATABLE_FIELD_TYPES = new Set<CollectionFieldType>([
   "bool",
 ]);
 
-export const isAiGeneratableField = (field: {
-  fieldType: CollectionFieldType;
-}): boolean => AI_GENERATABLE_FIELD_TYPES.has(field.fieldType);
+type AiGeneratableFieldType =
+  | "text"
+  | "long-text"
+  | "number"
+  | "date"
+  | "bool";
 
-const leafFor = (field: AiFieldInput): z.ZodType => {
+type AiGeneratableField = AiFieldInput & {
+  fieldType: AiGeneratableFieldType;
+};
+
+export const isAiGeneratableField = (
+  field: AiFieldInput,
+): field is AiGeneratableField =>
+  AI_GENERATABLE_FIELD_TYPES.has(field.fieldType);
+
+const leafFor = (field: AiGeneratableField): z.ZodType => {
   switch (field.fieldType) {
     case "text":
       return z
@@ -47,12 +59,6 @@ const leafFor = (field: AiFieldInput): z.ZodType => {
       return z
         .boolean()
         .describe(`Boolean true/false for "${field.label}" (${field.key}).`);
-    case "richtext":
-    case "diagrams":
-    case "asset":
-      throw new Error(
-        `Field type "${field.fieldType}" is not AI-generatable.`,
-      );
   }
 };
 

@@ -14,6 +14,27 @@ import type { CollectionFieldBody } from "../lib/validation.js";
 const parseCollectionId = (req: Request) =>
   parseIdParam(String(req.params.collectionId));
 
+/**
+ * DB checks Zod cannot do: related collection exists and is not self.
+ * Presence of relatedCollectionId for relation fields is enforced by
+ * collectionFieldBodySchema before this runs.
+ */
+const assertRelatedCollectionTarget = async (
+  collectionId: number,
+  relatedCollectionId: number,
+): Promise<string | null> => {
+  if (relatedCollectionId === collectionId) {
+    return "Relation fields cannot target the same collection.";
+  }
+
+  const related = await getCollectionRecord(relatedCollectionId);
+  if (!related) {
+    return `Related collection ${relatedCollectionId} not found.`;
+  }
+
+  return null;
+};
+
 export const listFields = async (req: Request, res: Response) => {
   const collectionId = parseCollectionId(req);
   if (collectionId === null) {
@@ -71,10 +92,23 @@ export const createField = async (req: Request, res: Response) => {
     return;
   }
 
+  const body = req.body as CollectionFieldBody;
+  if (body.fieldType === "relation") {
+    // Zod already requires a positive relatedCollectionId for relation fields.
+    const relationError = await assertRelatedCollectionTarget(
+      collectionId,
+      body.relatedCollectionId as number,
+    );
+    if (relationError) {
+      res.status(400).json({ error: relationError });
+      return;
+    }
+  }
+
   const position = await countCollectionFieldRecords(collectionId);
   try {
     await addCollectionFieldRecord(collectionId, {
-      ...(req.body as CollectionFieldBody),
+      ...body,
       position,
     });
     sendNoContent(res);
@@ -98,12 +132,20 @@ export const updateField = async (req: Request, res: Response) => {
     return;
   }
 
-  try {
-    await updateCollectionFieldRecord(
+  const body = req.body as CollectionFieldBody;
+  if (body.fieldType === "relation") {
+    const relationError = await assertRelatedCollectionTarget(
       collectionId,
-      fieldId,
-      req.body as CollectionFieldBody,
+      body.relatedCollectionId as number,
     );
+    if (relationError) {
+      res.status(400).json({ error: relationError });
+      return;
+    }
+  }
+
+  try {
+    await updateCollectionFieldRecord(collectionId, fieldId, body);
     sendNoContent(res);
   } catch (error) {
     const message =

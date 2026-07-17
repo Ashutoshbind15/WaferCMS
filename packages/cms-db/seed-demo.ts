@@ -68,6 +68,7 @@ export const seedDemoAddCollectionField = async (
     position: number;
     required?: boolean;
     isTitle?: boolean;
+    relatedCollectionId?: number | null;
   },
 ): Promise<void> => addCollectionFieldRecord(collectionId, input);
 
@@ -78,8 +79,8 @@ export const seedDemoInsertCollectionItem = async (
   collectionId: number,
   fieldByKey: Map<string, number>,
   item: Record<string, unknown>,
-): Promise<void> => {
-  await db.transaction(async (tx) => {
+): Promise<{ id: number }> => {
+  return db.transaction(async (tx) => {
     const { id: dataId } = await insertCollectionData(
       collectionId,
       { draft: false },
@@ -96,5 +97,6 @@ export const seedDemoInsertCollectionItem = async (
       .filter((row) => row !== null);
 
     await insertCollectionDataValues(values, tx);
+    return { id: dataId };
   });
 };

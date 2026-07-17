@@ -45,6 +45,8 @@ type FieldDef = {
   fieldType: CollectionFieldType;
   required?: boolean;
   isTitle?: boolean;
+  /** Resolved to relatedCollectionId during seed (relation fields only). */
+  relatedCollectionSlug?: string;
 };
 
 type CollectionDef = {
@@ -71,19 +73,19 @@ const minimalDiagram = () => ({
   elements: [] as unknown[],
 });
 
-const BLOG_CONTENT_ITEMS: Record<string, unknown>[] = [
-  { title: "Introduction", body: minimalRichtext("A short intro to the project.") },
-  { title: "Motivation", body: minimalRichtext("Why this problem is worth solving.") },
-  { title: "Goals", body: minimalRichtext("What success looks like for v1.") },
-  { title: "Architecture", body: minimalRichtext("High-level system layout.") },
-  { title: "Data model", body: minimalRichtext("Core entities and relationships.") },
-  { title: "API design", body: minimalRichtext("Public endpoints and auth.") },
-  { title: "Frontend", body: minimalRichtext("UI stack and rendering approach.") },
-  { title: "Deployment", body: minimalRichtext("How the app ships to production.") },
-  { title: "Observability", body: minimalRichtext("Logs, metrics, and alerts.") },
-  { title: "Trade-offs", body: minimalRichtext("Decisions we made and why.") },
-  { title: "Lessons learned", body: minimalRichtext("What we would do differently.") },
-  { title: "Next steps", body: minimalRichtext("Planned follow-up work.") },
+const BLOG_CONTENT_TITLES: { title: string; body: string }[] = [
+  { title: "Introduction", body: "A short intro to the project." },
+  { title: "Motivation", body: "Why this problem is worth solving." },
+  { title: "Goals", body: "What success looks like for v1." },
+  { title: "Architecture", body: "High-level system layout." },
+  { title: "Data model", body: "Core entities and relationships." },
+  { title: "API design", body: "Public endpoints and auth." },
+  { title: "Frontend", body: "UI stack and rendering approach." },
+  { title: "Deployment", body: "How the app ships to production." },
+  { title: "Observability", body: "Logs, metrics, and alerts." },
+  { title: "Trade-offs", body: "Decisions we made and why." },
+  { title: "Lessons learned", body: "What we would do differently." },
+  { title: "Next steps", body: "Planned follow-up work." },
 ];
 
 const BLOG_DIAGRAM_ITEMS: Record<string, unknown>[] = [
@@ -103,6 +105,39 @@ const BLOG_DIAGRAM_ITEMS: Record<string, unknown>[] = [
 
 const COLLECTIONS: CollectionDef[] = [
   {
+    slug: "team-members",
+    title: "Team Members",
+    description: "People behind the product.",
+    fields: [
+      {
+        key: "name",
+        label: "Name",
+        fieldType: "text",
+        required: true,
+        isTitle: true,
+      },
+      { key: "role", label: "Role", fieldType: "text" },
+      { key: "bio", label: "Bio", fieldType: "long-text" },
+    ],
+    items: [
+      {
+        name: "Ada Lovelace",
+        role: "Editor",
+        bio: "Writes the long-form pieces.",
+      },
+      {
+        name: "Grace Hopper",
+        role: "Engineer",
+        bio: "Keeps the CMS shipping.",
+      },
+      {
+        name: "Alan Turing",
+        role: "Researcher",
+        bio: "Explores adjacent ideas.",
+      },
+    ],
+  },
+  {
     slug: "blog-content",
     title: "Blog content",
     description: "TipTap content blocks for portfolio blog posts.",
@@ -115,8 +150,15 @@ const COLLECTIONS: CollectionDef[] = [
         isTitle: true,
       },
       { key: "body", label: "Body", fieldType: "richtext", required: true },
+      {
+        key: "author",
+        label: "Author",
+        fieldType: "relation",
+        relatedCollectionSlug: "team-members",
+      },
     ],
-    items: BLOG_CONTENT_ITEMS,
+    // Populated in seedDemoCollections once team-member item ids exist.
+    items: [],
   },
   {
     slug: "blog-diagrams",
@@ -133,23 +175,6 @@ const COLLECTIONS: CollectionDef[] = [
       { key: "document", label: "Document", fieldType: "diagrams", required: true },
     ],
     items: BLOG_DIAGRAM_ITEMS,
-  },
-  {
-    slug: "team-members",
-    title: "Team Members",
-    description: "People behind the product.",
-    fields: [
-      {
-        key: "name",
-        label: "Name",
-        fieldType: "text",
-        required: true,
-        isTitle: true,
-      },
-      { key: "role", label: "Role", fieldType: "text" },
-      { key: "bio", label: "Bio", fieldType: "long-text" },
-    ],
-    items: [],
   },
   {
     slug: "testimonials",
@@ -341,6 +366,8 @@ const seedDemoImages = async (): Promise<number[]> => {
 
 const seedDemoCollections = async () => {
   let itemCount = 0;
+  const collectionIdsBySlug = new Map<string, number>();
+  const itemIdsBySlug = new Map<string, number[]>();
 
   for (const collectionDef of COLLECTIONS) {
     const { id: collectionId } = await seedDemoAddCollection({
@@ -348,8 +375,25 @@ const seedDemoCollections = async () => {
       title: collectionDef.title,
       description: collectionDef.description,
     });
+    collectionIdsBySlug.set(collectionDef.slug, collectionId);
 
     for (const [position, field] of collectionDef.fields.entries()) {
+      let relatedCollectionId: number | null = null;
+      if (field.fieldType === "relation") {
+        if (!field.relatedCollectionSlug) {
+          throw new Error(
+            `Relation field "${field.key}" on "${collectionDef.slug}" needs relatedCollectionSlug.`,
+          );
+        }
+        relatedCollectionId =
+          collectionIdsBySlug.get(field.relatedCollectionSlug) ?? null;
+        if (relatedCollectionId === null) {
+          throw new Error(
+            `Related collection "${field.relatedCollectionSlug}" must be seeded before "${collectionDef.slug}".`,
+          );
+        }
+      }
+
       await seedDemoAddCollectionField(collectionId, {
         key: field.key,
         label: field.label,
@@ -357,19 +401,37 @@ const seedDemoCollections = async () => {
         position,
         required: field.required,
         isTitle: field.isTitle,
+        relatedCollectionId,
       });
     }
 
     const fields = await seedDemoListCollectionFields(collectionId);
     const fieldByKey = new Map(fields.map((field) => [field.key, field.id]));
 
-    for (const item of collectionDef.items) {
-      await seedDemoInsertCollectionItem(collectionId, fieldByKey, item);
-      itemCount += 1;
+    let items = collectionDef.items;
+    if (collectionDef.slug === "blog-content") {
+      const authorIds = itemIdsBySlug.get("team-members") ?? [];
+      items = BLOG_CONTENT_TITLES.map((entry, index) => ({
+        title: entry.title,
+        body: minimalRichtext(entry.body),
+        author: authorIds.length > 0 ? authorIds[index % authorIds.length]! : null,
+      }));
     }
 
+    const createdItemIds: number[] = [];
+    for (const item of items) {
+      const { id } = await seedDemoInsertCollectionItem(
+        collectionId,
+        fieldByKey,
+        item,
+      );
+      createdItemIds.push(id);
+      itemCount += 1;
+    }
+    itemIdsBySlug.set(collectionDef.slug, createdItemIds);
+
     console.log(
-      `  collection "${collectionDef.title}" (${collectionDef.items.length} items)`,
+      `  collection "${collectionDef.title}" (${items.length} items)`,
     );
   }
 

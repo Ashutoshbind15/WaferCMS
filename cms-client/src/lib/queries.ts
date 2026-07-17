@@ -204,6 +204,7 @@ export type CollectionFieldInput = {
   fieldType: CollectionFieldType;
   required: boolean;
   isTitle: boolean;
+  relatedCollectionId: number | null;
 };
 
 export function useCreateCollectionField(collectionId: number) {

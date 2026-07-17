@@ -74,6 +74,7 @@ export type CollectionFieldRecord = {
   position: number;
   required: boolean;
   isTitle: boolean;
+  relatedCollectionId: number | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -86,7 +87,8 @@ export type CollectionFieldType =
   | "number"
   | "date"
   | "bool"
-  | "asset";
+  | "asset"
+  | "relation";
 
 export type CollectionItemRecord = {
   id: number;
@@ -412,6 +414,7 @@ export async function createCollectionField(
     fieldType: CollectionFieldType;
     required?: boolean;
     isTitle?: boolean;
+    relatedCollectionId?: number | null;
   },
 ): Promise<void> {
   return mutateJson(`${base}/collections/${collectionId}/fields`, {
@@ -430,6 +433,7 @@ export async function updateCollectionField(
     fieldType: CollectionFieldType;
     required?: boolean;
     isTitle?: boolean;
+    relatedCollectionId?: number | null;
   },
 ): Promise<void> {
   return mutateJson(

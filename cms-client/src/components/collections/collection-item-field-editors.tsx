@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useRef } from "react";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { AssetFieldEditor } from "@/components/collections/collection-asset-field-editor";
+import { RelationFieldEditor } from "@/components/collections/collection-relation-field";
 import {
   EMPTY_EDITOR_DOC,
   type RichTextContent,
@@ -239,6 +240,16 @@ function FieldInput({ field, value, onChange, readOnly = false }: FieldInputProp
         <AssetFieldEditor
           value={value}
           onChange={onChange}
+          readOnly={readOnly}
+        />
+      );
+    case "relation":
+      return (
+        <RelationFieldEditor
+          relatedCollectionId={field.relatedCollectionId}
+          value={value}
+          onChange={onChange}
+          required={field.required}
           readOnly={readOnly}
         />
       );

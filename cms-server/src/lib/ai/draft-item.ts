@@ -99,7 +99,7 @@ const generateAiValues = async (
   const system = [
     "You draft CMS collection item field values as structured JSON.",
     "Only fill fields marked ai. Omit optional fields you cannot infer.",
-    "Do not invent values for skip fields (richtext, diagrams, asset).",
+    "Do not invent values for skip fields (richtext, diagrams, asset, relation).",
     "Match the field types exactly (strings, numbers, booleans, YYYY-MM-DD dates).",
   ].join(" ");
 

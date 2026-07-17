@@ -56,6 +56,7 @@ export const collectionFieldTypeEnum = pgEnum("collection_field_type", [
   "date",
   "bool",
   "asset",
+  "relation",
 ]);
 
 export const collectionFieldTypeValues = collectionFieldTypeEnum.enumValues;
@@ -84,6 +85,10 @@ export const collectionField = pgTable(
     required: boolean().notNull().default(false),
     /** When true, this field's value is used as the collection item display title. */
     isTitle: boolean().notNull().default(false),
+    /** Target collection for `relation` fields; null for all other types. */
+    relatedCollectionId: integer().references(() => collection.id, {
+      onDelete: "restrict",
+    }),
     createdAt: timestamp().notNull().defaultNow(),
     updatedAt: timestamp().notNull().defaultNow(),
   },

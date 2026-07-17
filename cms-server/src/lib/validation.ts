@@ -94,6 +94,12 @@ export const collectionFieldBodySchema = z
     }),
     required: z.boolean().optional().default(false),
     isTitle: z.boolean().optional().default(false),
+    relatedCollectionId: z
+      .number({ error: "relatedCollectionId must be a number." })
+      .int("relatedCollectionId must be an integer.")
+      .positive("relatedCollectionId must be a positive integer.")
+      .nullable()
+      .optional(),
   })
   .superRefine((value, ctx) => {
     if (value.isTitle && !titleCapableFieldTypes.has(value.fieldType)) {
@@ -101,6 +107,28 @@ export const collectionFieldBodySchema = z
         code: "custom",
         path: ["isTitle"],
         message: "Only text or long-text fields can be used as the item title.",
+      });
+    }
+
+    if (value.fieldType === "relation") {
+      if (
+        value.relatedCollectionId === undefined ||
+        value.relatedCollectionId === null
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["relatedCollectionId"],
+          message: "Relation fields require a relatedCollectionId.",
+        });
+      }
+    } else if (
+      value.relatedCollectionId !== undefined &&
+      value.relatedCollectionId !== null
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["relatedCollectionId"],
+        message: "relatedCollectionId is only allowed on relation fields.",
       });
     }
   });

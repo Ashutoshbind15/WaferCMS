@@ -1,5 +1,8 @@
 import { getFileMetadataById } from "@packages/cms-db/access";
-import type { CollectionDataValueInput } from "@packages/cms-db/collection-data";
+import {
+  selectCollectionDataById,
+  type CollectionDataValueInput,
+} from "@packages/cms-db/collection-data";
 import type { CollectionFieldRow } from "@packages/cms-db/collections";
 import { type CollectionFieldType } from "@packages/cms-db/schema";
 
@@ -91,35 +94,73 @@ const validateAssetValue = async (
   return value;
 };
 
-export const validateFieldValue = async (
-  fieldType: CollectionFieldType,
+const validateRelationValue = async (
   fieldKey: string,
+  relatedCollectionId: number | null,
+  value: unknown,
+): Promise<number> => {
+  if (relatedCollectionId === null) {
+    throw new Error(
+      `Item value for field "${fieldKey}" has no related collection configured.`,
+    );
+  }
+  if (typeof value !== "number" || !Number.isInteger(value) || value <= 0) {
+    throw new Error(
+      `Item value for field "${fieldKey}" must be a related item id.`,
+    );
+  }
+  const item = await selectCollectionDataById(relatedCollectionId, value, {
+    includeDrafts: true,
+  });
+  if (!item) {
+    throw new Error(
+      `Item value for field "${fieldKey}" references unknown related item ${value}.`,
+    );
+  }
+  return value;
+};
+
+type FieldValueContext = {
+  fieldType: CollectionFieldType;
+  fieldKey: string;
+  relatedCollectionId: number | null;
+};
+
+export const validateFieldValue = async (
+  field: FieldValueContext,
   value: unknown,
 ): Promise<unknown> => {
-  switch (fieldType) {
+  switch (field.fieldType) {
     case "text":
-      return validateTextValue(fieldKey, value);
+      return validateTextValue(field.fieldKey, value);
     case "long-text":
-      return validateLongTextValue(fieldKey, value);
+      return validateLongTextValue(field.fieldKey, value);
     case "richtext":
-      return validateRichtextValue(fieldKey, value);
+      return validateRichtextValue(field.fieldKey, value);
     case "diagrams":
-      return validateDiagramsValue(fieldKey, value);
+      return validateDiagramsValue(field.fieldKey, value);
     case "number":
-      return validateNumberValue(fieldKey, value);
+      return validateNumberValue(field.fieldKey, value);
     case "date":
-      return validateDateValue(fieldKey, value);
+      return validateDateValue(field.fieldKey, value);
     case "bool":
-      return validateBoolValue(fieldKey, value);
+      return validateBoolValue(field.fieldKey, value);
     case "asset":
-      return validateAssetValue(fieldKey, value);
+      return validateAssetValue(field.fieldKey, value);
+    case "relation":
+      return validateRelationValue(
+        field.fieldKey,
+        field.relatedCollectionId,
+        value,
+      );
   }
 };
 
 export const isItemValidationError = (message: string): boolean =>
   message.startsWith("Item value for field") ||
   message.startsWith("Unknown field key") ||
-  message.includes("references unknown asset");
+  message.includes("references unknown asset") ||
+  message.includes("references unknown related item");
 
 /**
  * Full create/update validation: unknown keys rejected, required fields enforced,
@@ -155,7 +196,14 @@ export const validateItemValues = async (
       throw new Error(`Item value for field "${field.key}" is required.`);
     }
 
-    const value = await validateFieldValue(field.fieldType, field.key, raw);
+    const value = await validateFieldValue(
+      {
+        fieldType: field.fieldType,
+        fieldKey: field.key,
+        relatedCollectionId: field.relatedCollectionId,
+      },
+      raw,
+    );
     result.push({ dataId: 0, fieldId: field.id, key: field.key, value });
   }
 
@@ -186,7 +234,14 @@ export const validateDraftItemValues = async (
       values[key] = null;
       continue;
     }
-    values[key] = await validateFieldValue(field.fieldType, field.key, raw);
+    values[key] = await validateFieldValue(
+      {
+        fieldType: field.fieldType,
+        fieldKey: field.key,
+        relatedCollectionId: field.relatedCollectionId,
+      },
+      raw,
+    );
   }
 
   return values;

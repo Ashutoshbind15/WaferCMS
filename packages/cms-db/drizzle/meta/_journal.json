@@ -36,6 +36,13 @@
       "when": 1784275420419,
       "tag": "0004_fuzzy_doctor_strange",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784310304639,
+      "tag": "0005_faithful_chamber",
+      "breakpoints": true
     }
   ]
 }
