@@ -1,0 +1,1 @@
+ALTER TABLE "collection_data" ADD COLUMN "draft" boolean DEFAULT false NOT NULL;
