@@ -44,11 +44,17 @@ const fieldTypeLabel = (fieldType: CollectionFieldType) =>
 
 type FieldDraft = CollectionFieldInput;
 
+const TITLE_CAPABLE_FIELD_TYPES = new Set<CollectionFieldType>([
+  "text",
+  "long-text",
+]);
+
 const emptyDraft = (): FieldDraft => ({
   key: "",
   label: "",
   fieldType: "text",
   required: false,
+  isTitle: false,
 });
 
 type CollectionFieldsPanelProps = {
@@ -118,9 +124,16 @@ function FieldEditor({
           <Label htmlFor={`${id}-type`}>Type</Label>
           <Select
             value={draft.fieldType}
-            onValueChange={(value) =>
-              onChange({ ...draft, fieldType: value as CollectionFieldType })
-            }
+            onValueChange={(value) => {
+              const fieldType = value as CollectionFieldType;
+              onChange({
+                ...draft,
+                fieldType,
+                isTitle: TITLE_CAPABLE_FIELD_TYPES.has(fieldType)
+                  ? draft.isTitle
+                  : false,
+              });
+            }}
           >
             <SelectTrigger id={`${id}-type`} className="w-full">
               <SelectValue />
@@ -134,18 +147,35 @@ function FieldEditor({
             </SelectContent>
           </Select>
         </div>
-        <div className="flex items-center gap-2 self-end pb-2">
-          <Checkbox
-            id={`${id}-required`}
-            checked={draft.required}
-            disabled={disabled}
-            onCheckedChange={(checked) =>
-              onChange({ ...draft, required: checked === true })
-            }
-          />
-          <Label htmlFor={`${id}-required`} className="font-normal">
-            Required
-          </Label>
+        <div className="flex flex-col gap-3 self-end pb-2">
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id={`${id}-required`}
+              checked={draft.required}
+              disabled={disabled}
+              onCheckedChange={(checked) =>
+                onChange({ ...draft, required: checked === true })
+              }
+            />
+            <Label htmlFor={`${id}-required`} className="font-normal">
+              Required
+            </Label>
+          </div>
+          {TITLE_CAPABLE_FIELD_TYPES.has(draft.fieldType) ? (
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id={`${id}-is-title`}
+                checked={draft.isTitle}
+                disabled={disabled}
+                onCheckedChange={(checked) =>
+                  onChange({ ...draft, isTitle: checked === true })
+                }
+              />
+              <Label htmlFor={`${id}-is-title`} className="font-normal">
+                Use as item title
+              </Label>
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -187,6 +217,7 @@ export function CollectionFieldsPanel({
       label: field.label,
       fieldType: field.fieldType,
       required: field.required,
+      isTitle: field.isTitle,
     });
     setShowCreate(false);
   };
@@ -325,6 +356,7 @@ export function CollectionFieldsPanel({
                     {" · "}
                     {fieldTypeLabel(field.fieldType)}
                     {field.required ? " · required" : ""}
+                    {field.isTitle ? " · title" : ""}
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">

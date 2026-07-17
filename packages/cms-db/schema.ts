@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
   integer,
@@ -7,6 +8,7 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 export const fileMetadata = pgTable("file_metadata", {
@@ -80,10 +82,17 @@ export const collectionField = pgTable(
     fieldType: collectionFieldTypeEnum().notNull(),
     position: integer().notNull(),
     required: boolean().notNull().default(false),
+    /** When true, this field's value is used as the collection item display title. */
+    isTitle: boolean().notNull().default(false),
     createdAt: timestamp().notNull().defaultNow(),
     updatedAt: timestamp().notNull().defaultNow(),
   },
-  (table) => [unique().on(table.collectionId, table.key)],
+  (table) => [
+    unique().on(table.collectionId, table.key),
+    uniqueIndex("collection_field_one_title_per_collection")
+      .on(table.collectionId)
+      .where(sql`${table.isTitle} = true`),
+  ],
 );
 
 /** One row per entry in a collection. Field values live in collection_data_value. */

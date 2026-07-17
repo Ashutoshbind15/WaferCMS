@@ -29,6 +29,13 @@
       "when": 1784271703905,
       "tag": "0003_giant_moonstone",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784275420419,
+      "tag": "0004_fuzzy_doctor_strange",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,2 @@
+ALTER TABLE "collection_field" ADD COLUMN "isTitle" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "collection_field_one_title_per_collection" ON "collection_field" USING btree ("collectionId") WHERE "collection_field"."isTitle" = true;

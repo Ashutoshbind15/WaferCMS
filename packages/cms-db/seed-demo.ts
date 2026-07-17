@@ -67,6 +67,7 @@ export const seedDemoAddCollectionField = async (
     fieldType: CollectionFieldType;
     position: number;
     required?: boolean;
+    isTitle?: boolean;
   },
 ): Promise<void> => addCollectionFieldRecord(collectionId, input);
 

@@ -44,6 +44,7 @@ type FieldDef = {
   label: string;
   fieldType: CollectionFieldType;
   required?: boolean;
+  isTitle?: boolean;
 };
 
 type CollectionDef = {
@@ -106,7 +107,13 @@ const COLLECTIONS: CollectionDef[] = [
     title: "Blog content",
     description: "TipTap content blocks for portfolio blog posts.",
     fields: [
-      { key: "title", label: "Title", fieldType: "text", required: true },
+      {
+        key: "title",
+        label: "Title",
+        fieldType: "text",
+        required: true,
+        isTitle: true,
+      },
       { key: "body", label: "Body", fieldType: "richtext", required: true },
     ],
     items: BLOG_CONTENT_ITEMS,
@@ -116,7 +123,13 @@ const COLLECTIONS: CollectionDef[] = [
     title: "Blog diagrams",
     description: "ScribbleSVG diagram blocks for portfolio blog posts.",
     fields: [
-      { key: "title", label: "Title", fieldType: "text", required: true },
+      {
+        key: "title",
+        label: "Title",
+        fieldType: "text",
+        required: true,
+        isTitle: true,
+      },
       { key: "document", label: "Document", fieldType: "diagrams", required: true },
     ],
     items: BLOG_DIAGRAM_ITEMS,
@@ -126,7 +139,13 @@ const COLLECTIONS: CollectionDef[] = [
     title: "Team Members",
     description: "People behind the product.",
     fields: [
-      { key: "name", label: "Name", fieldType: "text", required: true },
+      {
+        key: "name",
+        label: "Name",
+        fieldType: "text",
+        required: true,
+        isTitle: true,
+      },
       { key: "role", label: "Role", fieldType: "text" },
       { key: "bio", label: "Bio", fieldType: "long-text" },
     ],
@@ -137,7 +156,13 @@ const COLLECTIONS: CollectionDef[] = [
     title: "Testimonials",
     description: "Quotes from happy users.",
     fields: [
-      { key: "author", label: "Author", fieldType: "text", required: true },
+      {
+        key: "author",
+        label: "Author",
+        fieldType: "text",
+        required: true,
+        isTitle: true,
+      },
       { key: "quote", label: "Quote", fieldType: "long-text", required: true },
     ],
     items: [],
@@ -147,7 +172,13 @@ const COLLECTIONS: CollectionDef[] = [
     title: "FAQ",
     description: "Common questions and answers.",
     fields: [
-      { key: "question", label: "Question", fieldType: "text", required: true },
+      {
+        key: "question",
+        label: "Question",
+        fieldType: "text",
+        required: true,
+        isTitle: true,
+      },
       { key: "answer", label: "Answer", fieldType: "long-text", required: true },
     ],
     items: [],
@@ -157,7 +188,13 @@ const COLLECTIONS: CollectionDef[] = [
     title: "Projects",
     description: "Portfolio and case work.",
     fields: [
-      { key: "name", label: "Name", fieldType: "text", required: true },
+      {
+        key: "name",
+        label: "Name",
+        fieldType: "text",
+        required: true,
+        isTitle: true,
+      },
       { key: "description", label: "Description", fieldType: "long-text" },
     ],
     items: [],
@@ -167,7 +204,13 @@ const COLLECTIONS: CollectionDef[] = [
     title: "Guides",
     description: "How-to content for editors.",
     fields: [
-      { key: "title", label: "Title", fieldType: "text", required: true },
+      {
+        key: "title",
+        label: "Title",
+        fieldType: "text",
+        required: true,
+        isTitle: true,
+      },
       { key: "summary", label: "Summary", fieldType: "long-text" },
     ],
     items: [],
@@ -177,7 +220,13 @@ const COLLECTIONS: CollectionDef[] = [
     title: "Announcements",
     description: "Product and company news.",
     fields: [
-      { key: "title", label: "Title", fieldType: "text", required: true },
+      {
+        key: "title",
+        label: "Title",
+        fieldType: "text",
+        required: true,
+        isTitle: true,
+      },
       { key: "body", label: "Body", fieldType: "long-text" },
     ],
     items: [],
@@ -187,7 +236,13 @@ const COLLECTIONS: CollectionDef[] = [
     title: "Products",
     description: "Catalog items for the storefront.",
     fields: [
-      { key: "name", label: "Name", fieldType: "text", required: true },
+      {
+        key: "name",
+        label: "Name",
+        fieldType: "text",
+        required: true,
+        isTitle: true,
+      },
       { key: "description", label: "Description", fieldType: "long-text" },
       { key: "price", label: "Price", fieldType: "number" },
     ],
@@ -198,7 +253,13 @@ const COLLECTIONS: CollectionDef[] = [
     title: "Events",
     description: "Upcoming talks and meetups.",
     fields: [
-      { key: "title", label: "Title", fieldType: "text", required: true },
+      {
+        key: "title",
+        label: "Title",
+        fieldType: "text",
+        required: true,
+        isTitle: true,
+      },
       { key: "date", label: "Date", fieldType: "date" },
       { key: "details", label: "Details", fieldType: "long-text" },
     ],
@@ -209,7 +270,13 @@ const COLLECTIONS: CollectionDef[] = [
     title: "Partners",
     description: "Logos and blurbs for integration partners.",
     fields: [
-      { key: "name", label: "Name", fieldType: "text", required: true },
+      {
+        key: "name",
+        label: "Name",
+        fieldType: "text",
+        required: true,
+        isTitle: true,
+      },
       { key: "description", label: "Description", fieldType: "long-text" },
     ],
     items: [],
@@ -219,7 +286,13 @@ const COLLECTIONS: CollectionDef[] = [
     title: "Features",
     description: "Marketing feature bullets.",
     fields: [
-      { key: "title", label: "Title", fieldType: "text", required: true },
+      {
+        key: "title",
+        label: "Title",
+        fieldType: "text",
+        required: true,
+        isTitle: true,
+      },
       { key: "description", label: "Description", fieldType: "long-text" },
     ],
     items: [],
@@ -229,7 +302,13 @@ const COLLECTIONS: CollectionDef[] = [
     title: "Case Studies",
     description: "Longer customer stories.",
     fields: [
-      { key: "title", label: "Title", fieldType: "text", required: true },
+      {
+        key: "title",
+        label: "Title",
+        fieldType: "text",
+        required: true,
+        isTitle: true,
+      },
       { key: "summary", label: "Summary", fieldType: "long-text" },
     ],
     items: [],
@@ -277,6 +356,7 @@ const seedDemoCollections = async () => {
         fieldType: field.fieldType,
         position,
         required: field.required,
+        isTitle: field.isTitle,
       });
     }
 

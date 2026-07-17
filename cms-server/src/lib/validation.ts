@@ -80,17 +80,30 @@ export const collectionBodySchema = z.object({
     }),
 });
 
-export const collectionFieldBodySchema = z.object({
-  key: slugField(
-    "Field key is required.",
-    "Field key must start with a letter and contain only lowercase letters, numbers, and hyphens.",
-  ),
-  label: z.string().trim().min(1, "Field label is required."),
-  fieldType: z.enum(collectionFieldTypeValues, {
-    error: `Field type must be one of: ${collectionFieldTypeValues.join(", ")}.`,
-  }),
-  required: z.boolean().optional().default(false),
-});
+const titleCapableFieldTypes = new Set(["text", "long-text"]);
+
+export const collectionFieldBodySchema = z
+  .object({
+    key: slugField(
+      "Field key is required.",
+      "Field key must start with a letter and contain only lowercase letters, numbers, and hyphens.",
+    ),
+    label: z.string().trim().min(1, "Field label is required."),
+    fieldType: z.enum(collectionFieldTypeValues, {
+      error: `Field type must be one of: ${collectionFieldTypeValues.join(", ")}.`,
+    }),
+    required: z.boolean().optional().default(false),
+    isTitle: z.boolean().optional().default(false),
+  })
+  .superRefine((value, ctx) => {
+    if (value.isTitle && !titleCapableFieldTypes.has(value.fieldType)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["isTitle"],
+        message: "Only text or long-text fields can be used as the item title.",
+      });
+    }
+  });
 
 export const collectionItemBodySchema = z.object({
   values: z

@@ -164,6 +164,21 @@ export const countCollectionFieldRecords = async (
   return row?.value ?? 0;
 };
 
+const clearCollectionTitleFields = async (
+  collectionId: number,
+  client: DbClient,
+): Promise<void> => {
+  await withClient(client)
+    .update(collectionField)
+    .set({ isTitle: false, updatedAt: new Date() })
+    .where(
+      and(
+        eq(collectionField.collectionId, collectionId),
+        eq(collectionField.isTitle, true),
+      ),
+    );
+};
+
 export const addCollectionFieldRecord = async (
   collectionId: number,
   input: {
@@ -172,24 +187,34 @@ export const addCollectionFieldRecord = async (
     fieldType: CollectionFieldType;
     position: number;
     required?: boolean;
+    isTitle?: boolean;
   },
 ): Promise<void> => {
-  const [created] = await db
-    .insert(collectionField)
-    .values({
-      collectionId,
-      key: input.key,
-      label: input.label,
-      fieldType: input.fieldType,
-      position: input.position,
-      required: input.required ?? false,
-      updatedAt: new Date(),
-    })
-    .returning({ id: collectionField.id });
+  const isTitle = input.isTitle ?? false;
 
-  if (!created) {
-    throw new Error("Failed to create collection field.");
-  }
+  await db.transaction(async (tx) => {
+    if (isTitle) {
+      await clearCollectionTitleFields(collectionId, tx);
+    }
+
+    const [created] = await tx
+      .insert(collectionField)
+      .values({
+        collectionId,
+        key: input.key,
+        label: input.label,
+        fieldType: input.fieldType,
+        position: input.position,
+        required: input.required ?? false,
+        isTitle,
+        updatedAt: new Date(),
+      })
+      .returning({ id: collectionField.id });
+
+    if (!created) {
+      throw new Error("Failed to create collection field.");
+    }
+  });
 };
 
 export const updateCollectionFieldRecord = async (
@@ -200,28 +225,38 @@ export const updateCollectionFieldRecord = async (
     label: string;
     fieldType: CollectionFieldType;
     required?: boolean;
+    isTitle?: boolean;
   },
 ): Promise<void> => {
-  const [updated] = await db
-    .update(collectionField)
-    .set({
-      key: input.key,
-      label: input.label,
-      fieldType: input.fieldType,
-      required: input.required ?? false,
-      updatedAt: new Date(),
-    })
-    .where(
-      and(
-        eq(collectionField.id, fieldId),
-        eq(collectionField.collectionId, collectionId),
-      ),
-    )
-    .returning({ id: collectionField.id });
+  const isTitle = input.isTitle ?? false;
 
-  if (!updated) {
-    throw new Error(`Collection field ${fieldId} not found.`);
-  }
+  await db.transaction(async (tx) => {
+    if (isTitle) {
+      await clearCollectionTitleFields(collectionId, tx);
+    }
+
+    const [updated] = await tx
+      .update(collectionField)
+      .set({
+        key: input.key,
+        label: input.label,
+        fieldType: input.fieldType,
+        required: input.required ?? false,
+        isTitle,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(collectionField.id, fieldId),
+          eq(collectionField.collectionId, collectionId),
+        ),
+      )
+      .returning({ id: collectionField.id });
+
+    if (!updated) {
+      throw new Error(`Collection field ${fieldId} not found.`);
+    }
+  });
 };
 
 export const deleteCollectionFieldRecord = async (
