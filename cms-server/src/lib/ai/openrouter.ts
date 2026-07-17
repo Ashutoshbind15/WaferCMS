@@ -8,18 +8,12 @@ let cached: ReturnType<typeof createOpenRouter> | null = null;
 
 export const getDefaultAiModel = (): string => defaultModel;
 
-/** Fail boot when AI drafting cannot run. Call once during server start. */
-export const requireOpenRouterApiKey = (): void => {
-  if (!apiKey) {
-    throw new Error(
-      "OPENROUTER_API_KEY is not configured. Set it to enable the server.",
-    );
-  }
-};
-
 export const getOpenRouter = () => {
+  if (!apiKey) {
+    throw new Error("OPENROUTER_API_KEY is not configured.");
+  }
   if (!cached) {
-    cached = createOpenRouter({ apiKey: apiKey! });
+    cached = createOpenRouter({ apiKey });
   }
   return cached;
 };

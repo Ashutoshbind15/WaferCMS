@@ -53,6 +53,9 @@ services:
       CMS_BOOTSTRAP_ADMIN_USERNAME: ${CMS_BOOTSTRAP_ADMIN_USERNAME:-}
       CMS_BOOTSTRAP_ADMIN_PASSWORD: ${CMS_BOOTSTRAP_ADMIN_PASSWORD:-}
       CMS_FIRST_USER_LOCK_KEY: ${CMS_FIRST_USER_LOCK_KEY:-1234567890}
+      CMS_AI_DRAFTS_ENABLED: ${CMS_AI_DRAFTS_ENABLED:-false}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_DEFAULT_MODEL: ${OPENROUTER_DEFAULT_MODEL:-}
     depends_on:
       cms-postgres:
         condition: service_healthy
@@ -66,6 +69,7 @@ services:
       dockerfile: cms-client/Dockerfile
       args:
         VITE_CMS_API_BASE: ${VITE_CMS_API_BASE:-http://localhost:3001}
+        VITE_CMS_AI_DRAFTS_ENABLED: ${VITE_CMS_AI_DRAFTS_ENABLED:-false}
     container_name: wafercms-client
     ports:
       - "${CMS_CLIENT_PORT:-8080}:80"

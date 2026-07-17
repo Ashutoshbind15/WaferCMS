@@ -18,6 +18,8 @@ COPY packages/rich-text packages/rich-text/
 
 ARG VITE_CMS_API_BASE=http://localhost:3001
 ENV VITE_CMS_API_BASE=$VITE_CMS_API_BASE
+ARG VITE_CMS_AI_DRAFTS_ENABLED=false
+ENV VITE_CMS_AI_DRAFTS_ENABLED=$VITE_CMS_AI_DRAFTS_ENABLED
 
 RUN pnpm --filter @wafercms/rich-text build && pnpm --filter cms-client build \
   && node scripts/generate-third-party-notices.mjs \

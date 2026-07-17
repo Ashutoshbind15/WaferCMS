@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Sparkles } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -40,6 +40,9 @@ export function GenerateWithAiDialog({
   };
 
   const handleOpenChange = (next: boolean) => {
+    if (generating) {
+      return;
+    }
     if (!next) {
       reset();
     }
@@ -74,7 +77,20 @@ export function GenerateWithAiDialog({
           Generate with AI
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent
+        showCloseButton={!generating}
+        aria-busy={generating}
+        onPointerDownOutside={(e) => {
+          if (generating) {
+            e.preventDefault();
+          }
+        }}
+        onEscapeKeyDown={(e) => {
+          if (generating) {
+            e.preventDefault();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Generate with AI</DialogTitle>
           <DialogDescription>
@@ -84,7 +100,7 @@ export function GenerateWithAiDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="relative space-y-4">
           <div className="space-y-2">
             <Label htmlFor="ai-draft-prompt">Prompt</Label>
             <Textarea
@@ -98,6 +114,25 @@ export function GenerateWithAiDialog({
           </div>
           {error ? (
             <p className="text-sm text-destructive">{error}</p>
+          ) : null}
+
+          {generating ? (
+            <div
+              className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-md bg-background/80 backdrop-blur-[1px]"
+              role="status"
+              aria-live="polite"
+            >
+              <Loader2
+                className="h-8 w-8 animate-spin text-muted-foreground"
+                aria-hidden
+              />
+              <div className="space-y-1 text-center">
+                <p className="text-sm font-medium">Generating draft…</p>
+                <p className="text-xs text-muted-foreground">
+                  This can take a few seconds. Please wait.
+                </p>
+              </div>
+            </div>
           ) : null}
         </div>
 
@@ -113,7 +148,11 @@ export function GenerateWithAiDialog({
             disabled={!canSubmit}
             onClick={() => void handleGenerate()}
           >
-            <Sparkles className="mr-1 h-4 w-4" />
+            {generating ? (
+              <Loader2 className="mr-1 h-4 w-4 animate-spin" aria-hidden />
+            ) : (
+              <Sparkles className="mr-1 h-4 w-4" />
+            )}
             {generating ? "Generating…" : "Generate draft"}
           </Button>
         </DialogFooter>

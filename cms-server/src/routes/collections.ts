@@ -7,6 +7,7 @@ import {
   listCollections,
   updateCollection,
 } from "../controllers/collections.js";
+import { isAiDraftsEnabled } from "../lib/ai/features.js";
 import collectionAiRouter from "./collection-ai.js";
 import collectionFieldsRouter from "./collection-fields.js";
 import collectionItemsRouter from "./collection-items.js";
@@ -24,6 +25,8 @@ router.delete("/:id", deleteCollection);
 
 router.use("/:collectionId/fields", collectionFieldsRouter);
 router.use("/:collectionId/items", collectionItemsRouter);
-router.use("/:collectionId/ai", collectionAiRouter);
+if (isAiDraftsEnabled()) {
+  router.use("/:collectionId/ai", collectionAiRouter);
+}
 
 export default router;

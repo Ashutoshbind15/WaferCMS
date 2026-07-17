@@ -18,6 +18,7 @@ import {
   useUpdateCollectionItem,
 } from "@/lib/queries";
 import { type CollectionFieldRecord } from "@/lib/cms-api";
+import { aiDraftsEnabled } from "@/lib/features";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
@@ -131,7 +132,7 @@ function CollectionItemForm({
               <ArrowLeft className="mr-1 h-4 w-4" />
               Back
             </Button>
-            {!isEditing ? (
+            {aiDraftsEnabled && !isEditing ? (
               <GenerateWithAiDialog
                 collectionId={collectionId}
                 disabled={fields.length === 0 || saving}
