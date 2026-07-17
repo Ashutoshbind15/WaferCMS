@@ -512,3 +512,27 @@ export async function deleteCollectionItem(
     method: "DELETE",
   });
 }
+
+export type AiDraftResult = {
+  draft: { values: Record<string, unknown> };
+  model: string;
+  usage?: {
+    inputTokens?: number;
+    outputTokens?: number;
+    totalTokens?: number;
+  };
+};
+
+export async function draftCollectionItem(
+  collectionId: number,
+  input: { prompt: string; model?: string },
+): Promise<AiDraftResult> {
+  return requestJson<AiDraftResult>(
+    `${base}/collections/${collectionId}/ai/draft`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+}

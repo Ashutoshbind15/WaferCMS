@@ -7,6 +7,7 @@ import {
   listCollections,
   updateCollection,
 } from "../controllers/collections.js";
+import collectionAiRouter from "./collection-ai.js";
 import collectionFieldsRouter from "./collection-fields.js";
 import collectionItemsRouter from "./collection-items.js";
 import { validateBody } from "../middleware/validate-body.js";
@@ -23,5 +24,6 @@ router.delete("/:id", deleteCollection);
 
 router.use("/:collectionId/fields", collectionFieldsRouter);
 router.use("/:collectionId/items", collectionItemsRouter);
+router.use("/:collectionId/ai", collectionAiRouter);
 
 export default router;

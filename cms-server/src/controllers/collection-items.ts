@@ -11,7 +11,6 @@ import {
   updateCollectionData,
   upsertCollectionDataValues,
   type CollectionDataFilter,
-  type CollectionDataValueInput,
   type CollectionDataRow,
 } from "@packages/cms-db/collection-data";
 import {
@@ -19,8 +18,6 @@ import {
   listCollectionFieldRecords,
   type CollectionFieldRow,
 } from "@packages/cms-db/collections";
-import { getFileMetadataById } from "@packages/cms-db/access";
-import { type CollectionFieldType } from "@packages/cms-db/schema";
 import {
   type ListPageQuery,
   type PaginatedRows,
@@ -28,6 +25,10 @@ import {
 } from "@packages/cms-db/pagination";
 import { parseListQuery } from "../lib/pagination.js";
 import { parseIdParam, sendCreatedId, sendNoContent } from "../lib/http.js";
+import {
+  isItemValidationError,
+  validateItemValues,
+} from "../lib/item-values.js";
 import type { CollectionItemBody } from "../lib/validation.js";
 
 export type CollectionItem = {
@@ -37,156 +38,6 @@ export type CollectionItem = {
   values: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
-};
-
-type ValidatedValue = CollectionDataValueInput & { key: string };
-
-const validateTextValue = (fieldKey: string, value: unknown): string => {
-  if (typeof value !== "string") {
-    throw new Error(
-      `Item value for field "${fieldKey}" must be a string.`,
-    );
-  }
-  return value;
-};
-
-const validateLongTextValue = (fieldKey: string, value: unknown): string => {
-  if (typeof value !== "string") {
-    throw new Error(
-      `Item value for field "${fieldKey}" must be a string.`,
-    );
-  }
-  return value;
-};
-
-// TODO: export a `RichTextContent` validator from the rich-text package and
-// enforce the document shape here instead of accepting arbitrary JSON.
-const validateRichtextValue = (_fieldKey: string, value: unknown): unknown =>
-  value;
-
-// TODO: export a `DiagramDocument` validator from the diagrams package and
-// enforce the document shape here instead of accepting arbitrary JSON.
-const validateDiagramsValue = (_fieldKey: string, value: unknown): unknown =>
-  value;
-
-const DATE_VALUE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-
-const validateNumberValue = (fieldKey: string, value: unknown): number => {
-  if (typeof value !== "number" || !Number.isFinite(value)) {
-    throw new Error(
-      `Item value for field "${fieldKey}" must be a number.`,
-    );
-  }
-  return value;
-};
-
-const validateDateValue = (fieldKey: string, value: unknown): string => {
-  if (typeof value !== "string" || !DATE_VALUE_PATTERN.test(value)) {
-    throw new Error(
-      `Item value for field "${fieldKey}" must be a date (YYYY-MM-DD).`,
-    );
-  }
-  const [year, month, day] = value.split("-").map(Number);
-  const parsed = new Date(year, month - 1, day);
-  if (
-    parsed.getFullYear() !== year ||
-    parsed.getMonth() !== month - 1 ||
-    parsed.getDate() !== day
-  ) {
-    throw new Error(
-      `Item value for field "${fieldKey}" must be a valid date.`,
-    );
-  }
-  return value;
-};
-
-const validateBoolValue = (fieldKey: string, value: unknown): boolean => {
-  if (typeof value !== "boolean") {
-    throw new Error(
-      `Item value for field "${fieldKey}" must be a boolean.`,
-    );
-  }
-  return value;
-};
-
-const validateAssetValue = async (
-  fieldKey: string,
-  value: unknown,
-): Promise<number> => {
-  if (typeof value !== "number" || !Number.isInteger(value) || value <= 0) {
-    throw new Error(
-      `Item value for field "${fieldKey}" must be a library asset id.`,
-    );
-  }
-  const file = await getFileMetadataById(value);
-  if (!file) {
-    throw new Error(
-      `Item value for field "${fieldKey}" references unknown asset ${value}.`,
-    );
-  }
-  return value;
-};
-
-const validateFieldValue = async (
-  fieldType: CollectionFieldType,
-  fieldKey: string,
-  value: unknown,
-): Promise<unknown> => {
-  switch (fieldType) {
-    case "text":
-      return validateTextValue(fieldKey, value);
-    case "long-text":
-      return validateLongTextValue(fieldKey, value);
-    case "richtext":
-      return validateRichtextValue(fieldKey, value);
-    case "diagrams":
-      return validateDiagramsValue(fieldKey, value);
-    case "number":
-      return validateNumberValue(fieldKey, value);
-    case "date":
-      return validateDateValue(fieldKey, value);
-    case "bool":
-      return validateBoolValue(fieldKey, value);
-    case "asset":
-      return validateAssetValue(fieldKey, value);
-  }
-};
-
-const validateItemValues = async (
-  fields: CollectionFieldRow[],
-  input: { values: Record<string, unknown> },
-): Promise<ValidatedValue[]> => {
-  const knownKeys = new Set(fields.map((field) => field.key));
-
-  for (const key of Object.keys(input.values)) {
-    if (!knownKeys.has(key)) {
-      throw new Error(`Unknown field key "${key}".`);
-    }
-  }
-
-  const result: ValidatedValue[] = [];
-  for (const field of fields) {
-    const raw = input.values[field.key];
-
-    if (raw === undefined || raw === null) {
-      if (field.required) {
-        throw new Error(
-          `Item value for field "${field.key}" is required.`,
-        );
-      }
-      result.push({ dataId: 0, fieldId: field.id, key: field.key, value: null });
-      continue;
-    }
-
-    if (field.required && typeof raw === "string" && raw.trim() === "") {
-      throw new Error(`Item value for field "${field.key}" is required.`);
-    }
-
-    const value = await validateFieldValue(field.fieldType, field.key, raw);
-    result.push({ dataId: 0, fieldId: field.id, key: field.key, value });
-  }
-
-  return result;
 };
 
 const assembleItem = (
@@ -208,11 +59,6 @@ const assembleItem = (
     updatedAt: row.updatedAt,
   };
 };
-
-const isItemValidationError = (message: string): boolean =>
-  message.startsWith("Item value for field") ||
-  message.startsWith("Unknown field key") ||
-  message.includes("references unknown asset");
 
 const parseCollectionId = (req: Request) =>
   parseIdParam(String(req.params.collectionId));

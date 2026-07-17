@@ -14,6 +14,7 @@ import {
   deleteCollectionField,
   deleteCollectionItem,
   disableUser,
+  draftCollectionItem,
   fetchApiKeys,
   fetchCollection,
   fetchCollectionBySlug,
@@ -299,6 +300,13 @@ export function useDeleteCollectionItem(collectionId: number) {
         queryKey: ["cms", "collections", collectionId, "items"],
       });
     },
+  });
+}
+
+export function useDraftCollectionItem(collectionId: number) {
+  return useMutation({
+    mutationFn: (input: { prompt: string; model?: string }) =>
+      draftCollectionItem(collectionId, input),
   });
 }
 

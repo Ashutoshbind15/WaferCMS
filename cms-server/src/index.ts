@@ -10,6 +10,7 @@ import collectionsRouter from "./routes/collections.js";
 import { contentAuthMiddleware } from "./middleware/content-auth.js";
 import { sessionAuthMiddleware } from "./middleware/session-auth.js";
 import { maybeBootstrapAdminFromEnv } from "./lib/bootstrap-admin.js";
+import { requireOpenRouterApiKey } from "./lib/ai/openrouter.js";
 import { ensureBucket } from "@packages/storage/lib";
 
 const app = express();
@@ -39,6 +40,7 @@ app.use("/api-keys", sessionAuthMiddleware, apiKeysRouter);
 const start = async () => {
   await maybeBootstrapAdminFromEnv();
   await ensureBucket();
+  requireOpenRouterApiKey();
 
   const port = Number(process.env.PORT) || 3001;
   app.listen(port, () => {

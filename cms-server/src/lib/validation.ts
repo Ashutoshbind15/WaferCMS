@@ -15,7 +15,7 @@ const slugField = (
     .trim()
     .min(1, requiredMessage)
     .transform((value) => value.toLowerCase())
-    .refine((value) => slugPattern.test(value), { message: invalidMessage });
+    .refine((value) => slugPattern.test(value), { error: invalidMessage });
 
 const multipartBoolean = z.preprocess((value) => {
   if (value === undefined || value === null || value === "") {
@@ -111,9 +111,18 @@ export const collectionItemBodySchema = z.object({
     .refine(
       (value): value is Record<string, unknown> =>
         value !== null && typeof value === "object" && !Array.isArray(value),
-      { message: "values object is required." },
+      { error: "values object is required." },
     ),
   draft: z.boolean({ error: "draft must be a boolean." }).default(false),
+});
+
+export const aiDraftBodySchema = z.object({
+  prompt: z.string().trim().min(1, "Prompt is required."),
+  model: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => (value && value.length > 0 ? value : undefined)),
 });
 
 export const patchFileBodySchema = z.object({
@@ -132,5 +141,6 @@ export type RevokeApiKeyBody = z.infer<typeof revokeApiKeyBodySchema>;
 export type CollectionBody = z.infer<typeof collectionBodySchema>;
 export type CollectionFieldBody = z.infer<typeof collectionFieldBodySchema>;
 export type CollectionItemBody = z.infer<typeof collectionItemBodySchema>;
+export type AiDraftBody = z.infer<typeof aiDraftBodySchema>;
 export type PatchFileBody = z.infer<typeof patchFileBodySchema>;
 export type UploadFileBody = z.infer<typeof uploadFileBodySchema>;

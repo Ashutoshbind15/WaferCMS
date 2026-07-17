@@ -4,6 +4,7 @@ import {
   CollectionItemFieldEditors,
   emptyValueForField,
 } from "@/components/collections/collection-item-field-editors";
+import { GenerateWithAiDialog } from "@/components/collections/generate-with-ai-dialog";
 import { Header } from "@/components/layout/header";
 import { PageContainer } from "@/components/layout/page-container";
 import { Button } from "@/components/ui/button";
@@ -87,6 +88,18 @@ function CollectionItemForm({
     }));
   };
 
+  const handleAiDraft = (values: Record<string, unknown>) => {
+    setForm((prev) => {
+      const nextValues = { ...prev.values };
+      for (const field of fields) {
+        if (field.key in values && values[field.key] != null) {
+          nextValues[field.key] = values[field.key];
+        }
+      }
+      return { ...prev, values: nextValues };
+    });
+  };
+
   const handleSave = async () => {
     setError(null);
     try {
@@ -118,6 +131,13 @@ function CollectionItemForm({
               <ArrowLeft className="mr-1 h-4 w-4" />
               Back
             </Button>
+            {!isEditing ? (
+              <GenerateWithAiDialog
+                collectionId={collectionId}
+                disabled={fields.length === 0 || saving}
+                onDraft={handleAiDraft}
+              />
+            ) : null}
             {dirty ? (
               <span
                 className="inline-flex items-center"
