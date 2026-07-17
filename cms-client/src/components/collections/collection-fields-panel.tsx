@@ -35,6 +35,7 @@ export const COLLECTION_FIELD_TYPE_OPTIONS: {
   { value: "number", label: "Number" },
   { value: "date", label: "Date" },
   { value: "bool", label: "Boolean" },
+  { value: "asset", label: "Asset" },
 ];
 
 const fieldTypeLabel = (fieldType: CollectionFieldType) =>

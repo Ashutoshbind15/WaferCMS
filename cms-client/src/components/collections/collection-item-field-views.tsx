@@ -7,7 +7,9 @@ import {
 } from "@/components/editor/rich-text-document";
 import { DiagramRenderer } from "@scribblesvg/react-utils/renderer";
 import { EMPTY_DOCUMENT, type DiagramDocument } from "@scribblesvg/core";
+import { AssetPreview } from "@/components/library/asset-preview";
 import type { CollectionFieldRecord } from "@/lib/cms-api";
+import { useLibraryFile } from "@/lib/queries";
 
 const DATE_VALUE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -108,7 +110,39 @@ function FieldView({ field, value }: FieldViewProps) {
         </p>
       );
     }
+    case "asset":
+      return <AssetFieldView value={value} />;
   }
+}
+
+function AssetFieldView({ value }: { value: unknown }) {
+  const fileId =
+    typeof value === "number" && Number.isInteger(value) && value > 0
+      ? value
+      : null;
+  const fileQuery = useLibraryFile(fileId);
+
+  if (fileId === null) {
+    return <p className="text-sm text-muted-foreground">—</p>;
+  }
+
+  const filename =
+    fileQuery.data?.originalFilename ??
+    (fileQuery.isPending ? "Loading…" : `Asset #${fileId}`);
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-border/60 bg-card/20">
+      <AssetPreview
+        fileId={fileId}
+        contentType={fileQuery.data?.contentType}
+        filename={fileQuery.data?.originalFilename}
+        className="max-h-96 min-h-32"
+      />
+      <p className="truncate px-4 py-3 text-sm text-muted-foreground" title={filename}>
+        {filename}
+      </p>
+    </div>
+  );
 }
 
 type CollectionItemFieldViewsProps = {

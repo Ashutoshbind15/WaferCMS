@@ -1,6 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
 import {
+  getFileMeta,
   listFiles,
   patchFile,
   streamFile,
@@ -32,6 +33,7 @@ router.patch(
   validateBody(patchFileBodySchema),
   patchFile,
 );
+router.get("/:id/meta", contentAuthMiddleware, getFileMeta);
 router.get("/:id", fileAccessAuth, streamFile);
 
 export default router;

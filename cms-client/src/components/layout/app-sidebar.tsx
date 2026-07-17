@@ -1,6 +1,6 @@
 import { NavLink, useMatch } from "react-router";
 import {
-  ImageIcon,
+  Files,
   KeyRound,
   Users,
   Database,
@@ -109,17 +109,17 @@ export function AppSidebar() {
         ) : null}
 
         <SidebarGroup>
-          <SidebarGroupLabel>Images</SidebarGroupLabel>
+          <SidebarGroupLabel>Assets</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
                   isActive={Boolean(library)}
-                  tooltip="Image library"
+                  tooltip="File library"
                 >
                   <NavLink to="/library">
-                    <ImageIcon />
+                    <Files />
                     <span>Library</span>
                   </NavLink>
                 </SidebarMenuButton>

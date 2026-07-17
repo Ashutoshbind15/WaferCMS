@@ -53,6 +53,7 @@ export const collectionFieldTypeEnum = pgEnum("collection_field_type", [
   "number",
   "date",
   "bool",
+  "asset",
 ]);
 
 export const collectionFieldTypeValues = collectionFieldTypeEnum.enumValues;

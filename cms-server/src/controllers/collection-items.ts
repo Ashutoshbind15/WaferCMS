@@ -19,6 +19,7 @@ import {
   listCollectionFieldRecords,
   type CollectionFieldRow,
 } from "@packages/cms-db/collections";
+import { getFileMetadataById } from "@packages/cms-db/access";
 import { type CollectionFieldType } from "@packages/cms-db/schema";
 import {
   type ListPageQuery,
@@ -108,11 +109,29 @@ const validateBoolValue = (fieldKey: string, value: unknown): boolean => {
   return value;
 };
 
-const validateFieldValue = (
+const validateAssetValue = async (
+  fieldKey: string,
+  value: unknown,
+): Promise<number> => {
+  if (typeof value !== "number" || !Number.isInteger(value) || value <= 0) {
+    throw new Error(
+      `Item value for field "${fieldKey}" must be a library asset id.`,
+    );
+  }
+  const file = await getFileMetadataById(value);
+  if (!file) {
+    throw new Error(
+      `Item value for field "${fieldKey}" references unknown asset ${value}.`,
+    );
+  }
+  return value;
+};
+
+const validateFieldValue = async (
   fieldType: CollectionFieldType,
   fieldKey: string,
   value: unknown,
-): unknown => {
+): Promise<unknown> => {
   switch (fieldType) {
     case "text":
       return validateTextValue(fieldKey, value);
@@ -128,13 +147,15 @@ const validateFieldValue = (
       return validateDateValue(fieldKey, value);
     case "bool":
       return validateBoolValue(fieldKey, value);
+    case "asset":
+      return validateAssetValue(fieldKey, value);
   }
 };
 
-const validateItemValues = (
+const validateItemValues = async (
   fields: CollectionFieldRow[],
   input: { values: Record<string, unknown> },
-): ValidatedValue[] => {
+): Promise<ValidatedValue[]> => {
   const knownKeys = new Set(fields.map((field) => field.key));
 
   for (const key of Object.keys(input.values)) {
@@ -161,7 +182,7 @@ const validateItemValues = (
       throw new Error(`Item value for field "${field.key}" is required.`);
     }
 
-    const value = validateFieldValue(field.fieldType, field.key, raw);
+    const value = await validateFieldValue(field.fieldType, field.key, raw);
     result.push({ dataId: 0, fieldId: field.id, key: field.key, value });
   }
 
@@ -190,7 +211,8 @@ const assembleItem = (
 
 const isItemValidationError = (message: string): boolean =>
   message.startsWith("Item value for field") ||
-  message.startsWith("Unknown field key");
+  message.startsWith("Unknown field key") ||
+  message.includes("references unknown asset");
 
 const parseCollectionId = (req: Request) =>
   parseIdParam(String(req.params.collectionId));
@@ -265,7 +287,7 @@ const createItemData = async (
   input: { values: Record<string, unknown>; draft: boolean },
 ): Promise<{ id: number }> => {
   const fields = await listCollectionFieldRecords(collectionId);
-  const validated = validateItemValues(fields, input);
+  const validated = await validateItemValues(fields, input);
 
   return db.transaction(async (tx) => {
     const data = await insertCollectionData(
@@ -299,7 +321,7 @@ const updateItemData = async (
   }
 
   const fields = await listCollectionFieldRecords(collectionId);
-  const validated = validateItemValues(fields, input);
+  const validated = await validateItemValues(fields, input);
 
   await db.transaction(async (tx) => {
     await updateCollectionData(

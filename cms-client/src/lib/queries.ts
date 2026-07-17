@@ -21,6 +21,7 @@ import {
   fetchCollectionItem,
   fetchCollectionItems,
   fetchCollectionList,
+  fetchLibraryFile,
   fetchLibraryFiles,
   fetchUsers,
   patchLibraryFile,
@@ -34,6 +35,7 @@ import {
 
 export const cmsQueryKeys = {
   files: (page: number) => ["cms", "files", { page }] as const,
+  file: (id: number) => ["cms", "files", "meta", id] as const,
   collections: (page: number) => ["cms", "collections", { page }] as const,
   collection: (id: number) => ["cms", "collections", id] as const,
   collectionBySlug: (slug: string) => ["cms", "collections", "slug", slug] as const,
@@ -61,6 +63,14 @@ export function useLibraryFiles(page: number) {
   return useQuery({
     queryKey: cmsQueryKeys.files(page),
     queryFn: () => fetchLibraryFiles({ page, count: true }),
+  });
+}
+
+export function useLibraryFile(id: number | null) {
+  return useQuery({
+    queryKey: cmsQueryKeys.file(id ?? 0),
+    queryFn: () => fetchLibraryFile(id!),
+    enabled: id != null && validId(id),
   });
 }
 

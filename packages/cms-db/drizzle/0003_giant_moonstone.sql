@@ -1,0 +1,1 @@
+ALTER TYPE "public"."collection_field_type" ADD VALUE 'asset';

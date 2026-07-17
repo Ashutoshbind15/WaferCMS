@@ -3,6 +3,7 @@ import type { Readable } from "node:stream";
 import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 import {
+  getFileMetadataById,
   insertFileMetadata,
   listFileMetadata,
   updateFileMetadata,
@@ -44,7 +45,7 @@ type UploadInput = {
   isPublic: boolean;
 };
 
-const uploadFileData = async (input: UploadInput): Promise<void> => {
+const uploadFileData = async (input: UploadInput): Promise<FileResponse> => {
   const originalFilename = safeBasename(input.originalname);
   const objectKey = `${randomUUID()}-${originalFilename}`;
   const contentType = input.mimetype || null;
@@ -55,13 +56,15 @@ const uploadFileData = async (input: UploadInput): Promise<void> => {
     contentType: contentType ?? undefined,
   });
 
-  await insertFileMetadata({
+  const row = await insertFileMetadata({
     objectKey,
     originalFilename,
     contentType,
     byteLength: input.buffer.length,
     isPublic: input.isPublic,
   });
+
+  return toFileResponse(row, cmsPublicBaseUrl());
 };
 
 const patchFileData = async (
@@ -101,13 +104,13 @@ export const uploadFile = async (req: Request, res: Response) => {
 
   try {
     const { isPublic } = req.body as UploadFileBody;
-    await uploadFileData({
+    const created = await uploadFileData({
       buffer: file.buffer,
       originalname: file.originalname,
       mimetype: file.mimetype,
       isPublic,
     });
-    sendNoContent(res);
+    res.status(201).json(created);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unexpected error";
@@ -133,6 +136,27 @@ export const patchFile = async (req: Request, res: Response) => {
       res.status(404).json({ error: message });
       return;
     }
+    res.status(500).json({ error: message });
+  }
+};
+
+export const getFileMeta = async (req: Request, res: Response) => {
+  const id = parseIdParam(String(req.params.id));
+  if (id === null) {
+    res.status(400).json({ error: "Invalid id." });
+    return;
+  }
+
+  try {
+    const row = await getFileMetadataById(id);
+    if (!row) {
+      res.status(404).json({ error: `File ${id} not found.` });
+      return;
+    }
+    res.status(200).json(toFileResponse(row, cmsPublicBaseUrl()));
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unexpected error";
     res.status(500).json({ error: message });
   }
 };

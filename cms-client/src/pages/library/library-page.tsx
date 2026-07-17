@@ -10,6 +10,7 @@ import { useLibraryFiles } from "@/lib/queries";
 import { uploadLibraryFile } from "@/lib/cms-api";
 import { formatBytes } from "@/lib/format-bytes";
 import { Upload } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 interface UploadEntry {
   name: string;
@@ -71,16 +72,15 @@ export default function LibraryPage() {
 
   return (
     <>
-      <input
+      <Input
         ref={inputRef}
         type="file"
         className="hidden"
-        accept="image/*"
         multiple
         onChange={onFileChange}
       />
       <Header
-        title="Images"
+        title="Library"
         action={
           <Button
             disabled={uploading}
@@ -89,7 +89,7 @@ export default function LibraryPage() {
             }}
           >
             <Upload className="mr-1 h-4 w-4" />
-            {uploading ? "Uploading…" : "Upload image"}
+            {uploading ? "Uploading…" : "Upload file"}
           </Button>
         }
       />
@@ -119,10 +119,10 @@ export default function LibraryPage() {
         ) : files.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-20 text-center">
             <p className="text-sm font-medium text-muted-foreground">
-              No images yet
+              No files yet
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Upload your first image to get started.
+              Upload images, documents, or any other file to get started.
             </p>
           </div>
         ) : (

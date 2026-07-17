@@ -84,7 +84,8 @@ export type CollectionFieldType =
   | "diagrams"
   | "number"
   | "date"
-  | "bool";
+  | "bool"
+  | "asset";
 
 export type CollectionItemRecord = {
   id: number;
@@ -232,6 +233,12 @@ export async function fetchLibraryFiles(
   return requestJson<PaginatedResult<LibraryFileRecord>>(url);
 }
 
+export async function fetchLibraryFile(
+  id: number,
+): Promise<LibraryFileRecord> {
+  return requestJson<LibraryFileRecord>(`${base}/files/${id}/meta`);
+}
+
 export async function patchLibraryFile(
   id: number,
   input: { isPublic: boolean },
@@ -253,7 +260,7 @@ export function uploadLibraryFile(
   file: File,
   onProgress?: UploadProgressCallback,
   options?: { isPublic?: boolean },
-): Promise<void> {
+): Promise<LibraryFileRecord> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `${base}/files`);
@@ -273,7 +280,11 @@ export function uploadLibraryFile(
 
     xhr.addEventListener("load", () => {
       if (xhr.status >= 200 && xhr.status < 300) {
-        resolve();
+        try {
+          resolve(JSON.parse(xhr.responseText) as LibraryFileRecord);
+        } catch {
+          reject(new Error("Upload succeeded but response was invalid."));
+        }
       } else {
         try {
           const parsed = JSON.parse(xhr.responseText) as { error?: string };

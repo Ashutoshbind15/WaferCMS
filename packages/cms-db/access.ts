@@ -15,14 +15,21 @@ export const insertFileMetadata = async (row: {
   contentType: string | null;
   byteLength: number;
   isPublic?: boolean;
-}): Promise<void> => {
-  await db.insert(fileMetadata).values({
-    objectKey: row.objectKey,
-    originalFilename: row.originalFilename,
-    contentType: row.contentType,
-    byteLength: row.byteLength,
-    isPublic: row.isPublic ?? true,
-  });
+}): Promise<FileMetadataRow> => {
+  const [created] = await db
+    .insert(fileMetadata)
+    .values({
+      objectKey: row.objectKey,
+      originalFilename: row.originalFilename,
+      contentType: row.contentType,
+      byteLength: row.byteLength,
+      isPublic: row.isPublic ?? true,
+    })
+    .returning();
+  if (!created) {
+    throw new Error("Failed to insert file metadata.");
+  }
+  return created;
 };
 
 export const getFileMetadataById = async (

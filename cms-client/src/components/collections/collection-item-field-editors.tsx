@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useRef } from "react";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
+import { AssetFieldEditor } from "@/components/collections/collection-asset-field-editor";
 import {
   EMPTY_EDITOR_DOC,
   type RichTextContent,
@@ -18,10 +19,10 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Toggle } from "@/components/ui/toggle";
+import type { CollectionFieldRecord } from "@/lib/cms-api";
 import { cn } from "@/lib/utils";
 import { DiagramCanvas } from "@scribblesvg/react-utils/editor";
 import { EMPTY_DOCUMENT, type DiagramDocument } from "@scribblesvg/core";
-import type { CollectionFieldRecord } from "@/lib/cms-api";
 
 const RichTextEditor = lazy(loadRichTextEditor);
 
@@ -232,6 +233,14 @@ function FieldInput({ field, value, onChange, readOnly = false }: FieldInputProp
             }
           />
         </div>
+      );
+    case "asset":
+      return (
+        <AssetFieldEditor
+          value={value}
+          onChange={onChange}
+          readOnly={readOnly}
+        />
       );
   }
 }
