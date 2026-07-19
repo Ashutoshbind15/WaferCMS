@@ -36,6 +36,10 @@
       "types": "./dist/schema.d.ts",
       "import": "./dist/schema.js"
     },
+    "./auth-schema": {
+      "types": "./dist/auth-schema.d.ts",
+      "import": "./dist/auth-schema.js"
+    },
     "./users": {
       "types": "./dist/users.d.ts",
       "import": "./dist/users.js"

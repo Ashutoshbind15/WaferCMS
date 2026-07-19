@@ -5,8 +5,8 @@ import {
   insertUser,
   listUsers,
 } from "@packages/cms-db/users";
-import { parseIdParam, sendNoContent } from "../lib/http.js";
-import { hashPassword } from "../lib/password.js";
+import { hashPassword } from "better-auth/crypto";
+import { sendNoContent } from "../lib/http.js";
 import type { CreateUserBody } from "../lib/validation.js";
 
 export const listUsersHandler = async (_req: Request, res: Response) => {
@@ -42,8 +42,8 @@ export const createUserHandler = async (req: Request, res: Response) => {
 };
 
 export const disableUserHandler = async (req: Request, res: Response) => {
-  const id = parseIdParam(String(req.params.id));
-  if (id === null) {
+  const id = String(req.params.id ?? "").trim();
+  if (!id) {
     res.status(400).json({ error: "Invalid id." });
     return;
   }

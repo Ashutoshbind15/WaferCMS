@@ -1,10 +1,9 @@
 import type { NextFunction, Request, Response } from "express";
-import { findUserById } from "@packages/cms-db/users";
-import { getSessionCookieName } from "../lib/cookies.js";
-import { verifySession } from "../lib/session.js";
+import { fromNodeHeaders } from "better-auth/node";
+import { auth } from "../lib/auth.js";
 
 export type SessionAuthContext = {
-  userId: number;
+  userId: string;
   username: string;
 };
 
@@ -16,50 +15,47 @@ declare global {
   }
 }
 
+const sessionFromRequest = async (
+  req: Request,
+): Promise<SessionAuthContext | null> => {
+  const session = await auth.api.getSession({
+    headers: fromNodeHeaders(req.headers),
+  });
+
+  if (!session?.user) {
+    return null;
+  }
+
+  const username = session.user.username;
+  if (!username) {
+    return null;
+  }
+
+  if (session.user.enabled === false) {
+    return null;
+  }
+
+  return {
+    userId: session.user.id,
+    username,
+  };
+};
+
 export const sessionAuthMiddleware = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
-  const token = req.cookies?.[getSessionCookieName()] as string | undefined;
-  const payload = await verifySession(token);
-
-  if (!payload) {
+  const sessionAuth = await sessionFromRequest(req);
+  if (!sessionAuth) {
     res.status(401).json({ error: "Unauthorized." });
     return;
   }
 
-  const user = await findUserById(payload.userId);
-  if (!user || !user.enabled) {
-    res.status(401).json({ error: "Unauthorized." });
-    return;
-  }
-
-  req.sessionAuth = {
-    userId: user.id,
-    username: user.username,
-  };
-
+  req.sessionAuth = sessionAuth;
   next();
 };
 
 export const trySessionAuth = async (
   req: Request,
-): Promise<SessionAuthContext | null> => {
-  const token = req.cookies?.[getSessionCookieName()] as string | undefined;
-  const payload = await verifySession(token);
-
-  if (!payload) {
-    return null;
-  }
-
-  const user = await findUserById(payload.userId);
-  if (!user || !user.enabled) {
-    return null;
-  }
-
-  return {
-    userId: user.id,
-    username: user.username,
-  };
-};
+): Promise<SessionAuthContext | null> => sessionFromRequest(req);

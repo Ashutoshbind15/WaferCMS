@@ -36,6 +36,7 @@
     "@tiptap/react": "3.21.0",
     "@tiptap/starter-kit": "3.21.0",
     "@wafercms/rich-text": "workspace:*",
+    "better-auth": "1.6.23",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "date-fns": "4.4.0",

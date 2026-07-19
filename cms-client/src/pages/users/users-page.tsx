@@ -19,12 +19,7 @@ import { Separator } from "@/components/ui/separator";
 import { PasswordInput } from "@/components/ui/password-input";
 import { useCreateUser, useDisableUser, useUsers } from "@/lib/queries";
 
-const formatDate = (value: string | null) => {
-  if (!value) {
-    return "Never";
-  }
-  return new Date(value).toLocaleString();
-};
+const formatDate = (value: string) => new Date(value).toLocaleString();
 
 export default function UsersPage() {
   const usersQuery = useUsers();
@@ -34,7 +29,7 @@ export default function UsersPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [disableTarget, setDisableTarget] = useState<{
-    id: number;
+    id: string;
     username: string;
   } | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -141,7 +136,6 @@ export default function UsersPage() {
                       <th className="px-2 py-2 font-medium">Username</th>
                       <th className="px-2 py-2 font-medium">Status</th>
                       <th className="px-2 py-2 font-medium">Created</th>
-                      <th className="px-2 py-2 font-medium">Last login</th>
                       <th className="px-2 py-2 font-medium" />
                     </tr>
                   </thead>
@@ -154,9 +148,6 @@ export default function UsersPage() {
                         </td>
                         <td className="px-2 py-3">
                           {formatDate(user.createdAt)}
-                        </td>
-                        <td className="px-2 py-3">
-                          {formatDate(user.lastLoginAt)}
                         </td>
                         <td className="px-2 py-3 text-right">
                           {user.enabled && (

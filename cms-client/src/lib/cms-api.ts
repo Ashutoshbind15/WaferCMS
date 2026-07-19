@@ -1,3 +1,5 @@
+import { authClient } from "@/lib/auth-client";
+
 const base =
   import.meta.env.VITE_CMS_API_BASE?.replace(/\/$/, "") ??
   "http://localhost:3001";
@@ -26,17 +28,16 @@ export type ListQuery = {
 };
 
 export type SessionUser = {
-  id: number;
+  id: string;
   username: string;
 };
 
 export type UserRecord = {
-  id: number;
+  id: string;
   username: string;
   enabled: boolean;
   createdAt: string;
   updatedAt: string;
-  lastLoginAt: string | null;
 };
 
 const buildListQuery = (query: ListQuery = {}) => {
@@ -177,31 +178,54 @@ async function deleteJson(
 }
 
 export async function fetchSession(): Promise<SessionUser | null> {
-  const res = await apiFetch(`${base}/auth/me`);
-  if (res.status === 401) {
+  const { data, error } = await authClient.getSession();
+  if (error || !data?.user) {
     return null;
   }
-  if (!res.ok) {
-    throw new Error(await getErrorMessage(res));
+
+  const username = data.user.username;
+  if (!username || data.user.enabled === false) {
+    return null;
   }
-  const data = (await res.json()) as { user: SessionUser };
-  return data.user;
+
+  return {
+    id: data.user.id,
+    username,
+  };
 }
 
 export async function login(input: {
   username: string;
   password: string;
 }): Promise<SessionUser> {
-  const data = await requestJson<{ user: SessionUser }>(`${base}/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
+  const { data, error } = await authClient.signIn.username({
+    username: input.username,
+    password: input.password,
   });
-  return data.user;
+
+  if (error || !data?.user) {
+    throw new Error(error?.message ?? "Login failed.");
+  }
+
+  const username = data.user.username;
+  if (!username) {
+    throw new Error("Login failed.");
+  }
+  if (data.user.enabled === false) {
+    throw new Error("User is disabled.");
+  }
+
+  return {
+    id: data.user.id,
+    username,
+  };
 }
 
 export async function logout(): Promise<void> {
-  await requestJson(`${base}/auth/logout`, { method: "POST" });
+  const { error } = await authClient.signOut();
+  if (error) {
+    throw new Error(error.message ?? "Logout failed.");
+  }
 }
 
 export async function fetchUsers(): Promise<UserRecord[]> {
@@ -220,8 +244,8 @@ export async function createUser(input: {
   });
 }
 
-export async function disableUser(id: number): Promise<void> {
-  return mutateJson(`${base}/users/${id}`, {
+export async function disableUser(id: string): Promise<void> {
+  return mutateJson(`${base}/users/${encodeURIComponent(id)}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ enabled: false }),

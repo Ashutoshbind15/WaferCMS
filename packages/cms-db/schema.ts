@@ -37,15 +37,15 @@ export const apiKey = pgTable("api_key", {
   lastUsedAt: timestamp(),
 });
 
-export const user = pgTable("user", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  username: text().notNull().unique(),
-  passwordHash: text().notNull(),
-  enabled: boolean().notNull().default(true),
-  createdAt: timestamp().notNull().defaultNow(),
-  updatedAt: timestamp().notNull().defaultNow(),
-  lastLoginAt: timestamp(),
-});
+export {
+  user,
+  session,
+  account,
+  verification,
+  userRelations,
+  sessionRelations,
+  accountRelations,
+} from "./auth-schema.js";
 
 export const collectionFieldTypeEnum = pgEnum("collection_field_type", [
   "text",

@@ -4,7 +4,7 @@ import {
   touchApiKeyLastUsed,
 } from "@packages/cms-db/api-keys";
 import { hashApiKey, scopeAllowsMethod } from "../lib/api-keys.js";
-import { parseBearerToken } from "../lib/auth.js";
+import { parseBearerToken } from "../lib/bearer.js";
 
 export type ApiKeyAuthContext = {
   apiKeyId: number;

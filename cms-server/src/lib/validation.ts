@@ -36,11 +36,6 @@ const multipartBoolean = z.preprocess((value) => {
   return value;
 }, z.boolean({ error: "isPublic must be a boolean." }));
 
-export const loginBodySchema = z.object({
-  username: z.string().trim().min(1, "Username is required."),
-  password: z.string().min(1, "Password is required."),
-});
-
 export const createUserBodySchema = z.object({
   username: z.string().trim().min(1, "Username is required."),
   password: z.string().min(1, "Password is required."),
@@ -161,7 +156,6 @@ export const uploadFileBodySchema = z.object({
   isPublic: multipartBoolean.optional().default(true),
 });
 
-export type LoginBody = z.infer<typeof loginBodySchema>;
 export type CreateUserBody = z.infer<typeof createUserBodySchema>;
 export type DisableUserBody = z.infer<typeof disableUserBodySchema>;
 export type CreateApiKeyBody = z.infer<typeof createApiKeyBodySchema>;

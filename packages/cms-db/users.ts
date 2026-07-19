@@ -1,31 +1,34 @@
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import db from "./db.js";
-import { user } from "./schema.js";
+import { account, session, user } from "./schema.js";
 
 export type UserRecord = {
-  id: number;
+  id: string;
   username: string;
   enabled: boolean;
   createdAt: Date;
   updatedAt: Date;
-  lastLoginAt: Date | null;
 };
 
+/** Synthetic email for username-only accounts (Better Auth requires email). */
+export const emailForUsername = (username: string): string =>
+  `${username.toLowerCase()}@users.wafercms.local`;
+
 const toUserRecord = (row: {
-  id: number;
-  username: string;
-  enabled: boolean;
+  id: string;
+  username: string | null;
+  enabled: boolean | null;
   createdAt: Date;
   updatedAt: Date;
-  lastLoginAt: Date | null;
 }): UserRecord => ({
   id: row.id,
-  username: row.username,
-  enabled: row.enabled,
+  username: row.username ?? "",
+  enabled: row.enabled ?? true,
   createdAt: row.createdAt,
   updatedAt: row.updatedAt,
-  lastLoginAt: row.lastLoginAt,
 });
+
+const newId = (): string => crypto.randomUUID();
 
 export const countUsers = async (): Promise<number> => {
   const [row] = await db
@@ -37,23 +40,37 @@ export const countUsers = async (): Promise<number> => {
 export const insertUser = async (input: {
   username: string;
   passwordHash: string;
-}): Promise<{ id: number; username: string }> => {
-  const [created] = await db
-    .insert(user)
-    .values({
-      username: input.username,
-      passwordHash: input.passwordHash,
-    })
-    .returning({
-      id: user.id,
-      username: user.username,
+}): Promise<{ id: string; username: string }> => {
+  const username = input.username.trim();
+  const normalized = username.toLowerCase();
+  const id = newId();
+  const now = new Date();
+
+  await db.transaction(async (tx) => {
+    await tx.insert(user).values({
+      id,
+      name: username,
+      email: emailForUsername(normalized),
+      emailVerified: true,
+      username: normalized,
+      displayUsername: username,
+      enabled: true,
+      createdAt: now,
+      updatedAt: now,
     });
 
-  if (!created) {
-    throw new Error("Failed to create user.");
-  }
+    await tx.insert(account).values({
+      id: newId(),
+      accountId: id,
+      providerId: "credential",
+      userId: id,
+      password: input.passwordHash,
+      createdAt: now,
+      updatedAt: now,
+    });
+  });
 
-  return created;
+  return { id, username: normalized };
 };
 
 const parseFirstUserLockKey = (): number => {
@@ -81,7 +98,7 @@ const FIRST_USER_LOCK_KEY = parseFirstUserLockKey();
 export const insertFirstUserIfEmpty = async (input: {
   username: string;
   passwordHash: string;
-}): Promise<{ id: number; username: string } | null> => {
+}): Promise<{ id: string; username: string } | null> => {
   return db.transaction(async (tx) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(${FIRST_USER_LOCK_KEY})`);
 
@@ -93,22 +110,34 @@ export const insertFirstUserIfEmpty = async (input: {
       return null;
     }
 
-    const [created] = await tx
-      .insert(user)
-      .values({
-        username: input.username,
-        passwordHash: input.passwordHash,
-      })
-      .returning({
-        id: user.id,
-        username: user.username,
-      });
+    const username = input.username.trim();
+    const normalized = username.toLowerCase();
+    const id = newId();
+    const now = new Date();
 
-    if (!created) {
-      throw new Error("Failed to create user.");
-    }
+    await tx.insert(user).values({
+      id,
+      name: username,
+      email: emailForUsername(normalized),
+      emailVerified: true,
+      username: normalized,
+      displayUsername: username,
+      enabled: true,
+      createdAt: now,
+      updatedAt: now,
+    });
 
-    return created;
+    await tx.insert(account).values({
+      id: newId(),
+      accountId: id,
+      providerId: "credential",
+      userId: id,
+      password: input.passwordHash,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return { id, username: normalized };
   });
 };
 
@@ -120,33 +149,16 @@ export const listUsers = async (): Promise<UserRecord[]> => {
       enabled: user.enabled,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-      lastLoginAt: user.lastLoginAt,
     })
     .from(user)
     .orderBy(desc(user.createdAt), desc(user.id));
 
-  return rows;
+  return rows.map(toUserRecord);
 };
 
 export const findUserByUsername = async (
   username: string,
-): Promise<(UserRecord & { passwordHash: string }) | null> => {
-  const [row] = await db
-    .select()
-    .from(user)
-    .where(eq(user.username, username));
-
-  if (!row) {
-    return null;
-  }
-
-  return {
-    ...toUserRecord(row),
-    passwordHash: row.passwordHash,
-  };
-};
-
-export const findUserById = async (id: number): Promise<UserRecord | null> => {
+): Promise<UserRecord | null> => {
   const [row] = await db
     .select({
       id: user.id,
@@ -154,7 +166,25 @@ export const findUserById = async (id: number): Promise<UserRecord | null> => {
       enabled: user.enabled,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-      lastLoginAt: user.lastLoginAt,
+    })
+    .from(user)
+    .where(eq(user.username, username.toLowerCase()));
+
+  if (!row) {
+    return null;
+  }
+
+  return toUserRecord(row);
+};
+
+export const findUserById = async (id: string): Promise<UserRecord | null> => {
+  const [row] = await db
+    .select({
+      id: user.id,
+      username: user.username,
+      enabled: user.enabled,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
     })
     .from(user)
     .where(eq(user.id, id));
@@ -166,21 +196,18 @@ export const findUserById = async (id: number): Promise<UserRecord | null> => {
   return toUserRecord(row);
 };
 
-export const disableUser = async (id: number): Promise<void> => {
-  const [updated] = await db
-    .update(user)
-    .set({ enabled: false, updatedAt: new Date() })
-    .where(eq(user.id, id))
-    .returning({ id: user.id });
+export const disableUser = async (id: string): Promise<void> => {
+  await db.transaction(async (tx) => {
+    const [updated] = await tx
+      .update(user)
+      .set({ enabled: false, updatedAt: new Date() })
+      .where(and(eq(user.id, id)))
+      .returning({ id: user.id });
 
-  if (!updated) {
-    throw new Error(`User ${id} not found.`);
-  }
-};
+    if (!updated) {
+      throw new Error(`User ${id} not found.`);
+    }
 
-export const touchUserLastLogin = async (id: number): Promise<void> => {
-  await db
-    .update(user)
-    .set({ lastLoginAt: new Date(), updatedAt: new Date() })
-    .where(eq(user.id, id));
+    await tx.delete(session).where(eq(session.userId, id));
+  });
 };

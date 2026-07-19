@@ -1,10 +1,10 @@
 import { insertFirstUserIfEmpty } from "@packages/cms-db/users";
-import { hashPassword } from "./password.js";
+import { hashPassword } from "better-auth/crypto";
 
 export const createFirstAdmin = async (input: {
   username: string;
   password: string;
-}): Promise<{ id: number; username: string } | null> => {
+}): Promise<{ id: string; username: string } | null> => {
   const username = input.username.trim();
   if (!username) {
     throw new Error("Username is required.");
