@@ -12,6 +12,9 @@ import { sessionAuthMiddleware } from "./middleware/session-auth.js";
 import { maybeBootstrapAdminFromEnv } from "./lib/bootstrap-admin.js";
 import { isAiDraftsEnabled } from "./lib/ai/features.js";
 import { auth } from "./lib/auth.js";
+import { isMcpEnabled } from "./lib/public-url.js";
+import { createMcpRouter } from "./mcp/http.js";
+import { createWellKnownRouter } from "./mcp/well-known.js";
 import { ensureBucket } from "@packages/storage/lib";
 
 const app = express();
@@ -21,20 +24,31 @@ const corsOrigin = process.env.CORS_ORIGIN?.trim();
 app.use(
   cors(
     corsOrigin
-      ? { origin: corsOrigin, credentials: true }
+      ? {
+          origin: corsOrigin,
+          credentials: true,
+          exposedHeaders: ["WWW-Authenticate"],
+        }
       : undefined,
   ),
 );
 
+// OAuth discovery at the host root (MCP clients often skip path-prefixed issuer URLs).
+app.use(createWellKnownRouter());
+
 // Better Auth must run before express.json() — it parses its own body.
 app.all("/auth/{*any}", toNodeHandler(auth));
 
-app.use(express.json());
+app.use(express.json({ limit: "15mb" }));
 app.use(cookieParser());
 
 app.get("/ok", (req, res) => {
   res.send("CMS Server is running");
 });
+
+if (isMcpEnabled()) {
+  app.use("/mcp", createMcpRouter());
+}
 
 app.use("/users", sessionAuthMiddleware, usersRouter);
 app.use("/files", filesRouter);
@@ -60,6 +74,7 @@ const start = async () => {
     console.log(
       `AI item drafts: ${isAiDraftsEnabled() ? "enabled" : "disabled"}`,
     );
+    console.log(`MCP endpoint: ${isMcpEnabled() ? "enabled at /mcp" : "disabled"}`);
   });
 };
 

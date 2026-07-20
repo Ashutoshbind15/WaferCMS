@@ -29,6 +29,7 @@
   "dependencies": {
     "@better-auth/drizzle-adapter": "1.6.23",
     "@better-auth/oauth-provider": "1.6.23",
+    "@modelcontextprotocol/sdk": "1.29.0",
     "@openrouter/ai-sdk-provider": "3.0.0",
     "@packages/cms-db": "workspace:*",
     "@packages/storage": "workspace:*",

@@ -20,6 +20,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 
 import LoginPage from "./pages/login/login-page";
+import ConsentPage from "./pages/consent/consent-page";
 import LibraryPage from "./pages/library/library-page";
 import ApiKeysPage from "./pages/api-keys/api-keys-page";
 import UsersPage from "./pages/users/users-page";
@@ -56,6 +57,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <SidebarProvider>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/consent" element={<ConsentPage />} />
             <Route element={<RequireAuth />}>
               <Route element={<RootLayout />}>
                 <Route index element={<Navigate to="/collections" replace />} />

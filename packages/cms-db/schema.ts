@@ -47,6 +47,18 @@ export {
   accountRelations,
 } from "./auth-schema.js";
 
+export {
+  jwks,
+  oauthClient,
+  oauthRefreshToken,
+  oauthAccessToken,
+  oauthConsent,
+  oauthClientRelations,
+  oauthRefreshTokenRelations,
+  oauthAccessTokenRelations,
+  oauthConsentRelations,
+} from "./oauth-schema.js";
+
 export const collectionFieldTypeEnum = pgEnum("collection_field_type", [
   "text",
   "long-text",

@@ -3,6 +3,7 @@ import {
   inferAdditionalFields,
   usernameClient,
 } from "better-auth/client/plugins";
+import { oauthProviderClient } from "@better-auth/oauth-provider/client";
 
 const baseURL =
   import.meta.env.VITE_CMS_API_BASE?.replace(/\/$/, "") ??
@@ -13,6 +14,7 @@ export const authClient = createAuthClient({
   basePath: "/auth",
   plugins: [
     usernameClient(),
+    oauthProviderClient(),
     inferAdditionalFields({
       user: {
         enabled: {

@@ -194,17 +194,43 @@ export async function fetchSession(): Promise<SessionUser | null> {
   };
 }
 
+export type LoginResult = SessionUser & {
+  /** Present when Better Auth OAuth continue redirected after sign-in. */
+  redirectUrl?: string;
+};
+
 export async function login(input: {
   username: string;
   password: string;
-}): Promise<SessionUser> {
+}): Promise<LoginResult> {
   const { data, error } = await authClient.signIn.username({
     username: input.username,
     password: input.password,
   });
 
-  if (error || !data?.user) {
-    throw new Error(error?.message ?? "Login failed.");
+  if (error) {
+    throw new Error(error.message ?? "Login failed.");
+  }
+
+  // OAuth authorize continuation may return a redirect instead of a user payload.
+  const redirectUrl =
+    data &&
+    typeof data === "object" &&
+    "url" in data &&
+    typeof (data as { url?: unknown }).url === "string"
+      ? (data as { url: string }).url
+      : undefined;
+
+  if (redirectUrl) {
+    const session = await fetchSession();
+    if (!session) {
+      return { id: "", username: "", redirectUrl };
+    }
+    return { ...session, redirectUrl };
+  }
+
+  if (!data?.user) {
+    throw new Error("Login failed.");
   }
 
   const username = data.user.username;

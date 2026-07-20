@@ -17,7 +17,10 @@ import {
 type AuthContextValue = {
   user: SessionUser | null;
   loading: boolean;
-  login: (username: string, password: string) => Promise<void>;
+  login: (
+    username: string,
+    password: string,
+  ) => Promise<{ redirectUrl?: string } | void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
 };
@@ -50,7 +53,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (username: string, password: string) => {
     const sessionUser = await apiLogin({ username, password });
-    setUser(sessionUser);
+    if (sessionUser.id) {
+      setUser({ id: sessionUser.id, username: sessionUser.username });
+    }
+    return { redirectUrl: sessionUser.redirectUrl };
   }, []);
 
   const logout = useCallback(async () => {

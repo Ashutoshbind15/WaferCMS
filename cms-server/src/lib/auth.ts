@@ -1,10 +1,17 @@
 import { betterAuth } from "better-auth";
 import { APIError } from "better-auth/api";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
-import { username } from "better-auth/plugins";
+import { jwt, username } from "better-auth/plugins";
+import { oauthProvider } from "@better-auth/oauth-provider";
 import { findUserById } from "@packages/cms-db/users";
 import db from "@packages/cms-db/db";
 import * as schema from "@packages/cms-db/schema";
+import { MCP_SCOPES } from "./mcp-scopes.js";
+import {
+  adminUiOrigin,
+  cmsPublicBaseUrl,
+  mcpResourceUrl,
+} from "./public-url.js";
 
 const secret = process.env.BETTER_AUTH_SECRET?.trim() || "";
 if (!secret) {
@@ -71,7 +78,39 @@ export const auth = betterAuth({
       secure: cookieSecure,
     },
   },
-  plugins: [username()],
+  // Avoid conflicting with OAuth /oauth2/token.
+  disabledPaths: ["/token"],
+  plugins: [
+    username(),
+    jwt(),
+    oauthProvider({
+      loginPage: `${adminUiOrigin()}/login`,
+      consentPage: `${adminUiOrigin()}/consent`,
+      allowDynamicClientRegistration: true,
+      // MCP clients (Cursor/Claude) register public clients without a prior session.
+      allowUnauthenticatedClientRegistration: true,
+      validAudiences: [mcpResourceUrl()],
+      scopes: [...MCP_SCOPES],
+      // Default DCR clients get read scopes; write/AI must be requested explicitly.
+      clientRegistrationDefaultScopes: [
+        "openid",
+        "profile",
+        "offline_access",
+        "collections:read",
+        "items:read",
+        "files:read",
+      ],
+      clientRegistrationAllowedScopes: [...MCP_SCOPES],
+      silenceWarnings: {
+        oauthAuthServerConfig: true,
+        openidConfig: true,
+      },
+    }),
+  ],
 });
 
 export type Auth = typeof auth;
+
+/** Issuer URL for access-token verification (baseURL + basePath). */
+export const authIssuer = (): string =>
+  `${cmsPublicBaseUrl().replace(/\/$/, "")}/auth`;

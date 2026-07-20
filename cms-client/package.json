@@ -23,6 +23,7 @@
     "vite": "8.0.16"
   },
   "dependencies": {
+    "@better-auth/oauth-provider": "1.6.23",
     "@catppuccin/highlightjs": "1.0.1",
     "@fontsource-variable/inter": "5.2.8",
     "@scribblesvg/core": "0.1.0",
