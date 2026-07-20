@@ -7,10 +7,11 @@ import filesRouter from "./routes/files.js";
 import apiKeysRouter from "./routes/api-keys.js";
 import usersRouter from "./routes/users.js";
 import collectionsRouter from "./routes/collections.js";
+import aiRouter from "./routes/ai.js";
 import { contentAuthMiddleware } from "./middleware/content-auth.js";
 import { sessionAuthMiddleware } from "./middleware/session-auth.js";
 import { maybeBootstrapAdminFromEnv } from "./lib/bootstrap-admin.js";
-import { isAiDraftsEnabled } from "./lib/ai/features.js";
+import { isAiAgentEnabled, isAiDraftsEnabled } from "./lib/ai/features.js";
 import { auth } from "./lib/auth.js";
 import { ensureBucket } from "@packages/storage/lib";
 
@@ -40,6 +41,9 @@ app.use("/users", sessionAuthMiddleware, usersRouter);
 app.use("/files", filesRouter);
 app.use("/collections", contentAuthMiddleware, collectionsRouter);
 app.use("/api-keys", sessionAuthMiddleware, apiKeysRouter);
+if (isAiAgentEnabled()) {
+  app.use("/ai", sessionAuthMiddleware, aiRouter);
+}
 
 const start = async () => {
   await maybeBootstrapAdminFromEnv();
@@ -54,11 +58,23 @@ const start = async () => {
     );
   }
 
+  if (
+    isAiAgentEnabled() &&
+    !process.env.OPENROUTER_API_KEY?.trim()
+  ) {
+    throw new Error(
+      "CMS_AI_AGENT_ENABLED is true but OPENROUTER_API_KEY is not configured.",
+    );
+  }
+
   const port = Number(process.env.PORT) || 3001;
   app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
     console.log(
       `AI item drafts: ${isAiDraftsEnabled() ? "enabled" : "disabled"}`,
+    );
+    console.log(
+      `AI task agent: ${isAiAgentEnabled() ? "enabled" : "disabled"}`,
     );
   });
 };

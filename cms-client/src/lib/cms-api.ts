@@ -564,3 +564,28 @@ export async function draftCollectionItem(
     },
   );
 }
+
+/**
+ * Start a single-turn AI task stream (POST /ai/run).
+ * Returns the raw Response so the caller can consume UI-message SSE.
+ */
+export async function startAiAgentRun(
+  input: { prompt: string },
+  init?: { signal?: AbortSignal },
+): Promise<Response> {
+  const res = await apiFetch(`${base}/ai/run`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "text/event-stream",
+    },
+    body: JSON.stringify(input),
+    signal: init?.signal,
+  });
+
+  if (!res.ok) {
+    throw new Error(await getErrorMessage(res));
+  }
+
+  return res;
+}

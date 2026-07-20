@@ -2,6 +2,7 @@ import { NavLink, useMatch } from "react-router";
 import {
   Files,
   KeyRound,
+  Sparkles,
   Users,
   Database,
 } from "lucide-react";
@@ -21,6 +22,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useRecentCollections } from "@/lib/queries";
+import { aiAgentEnabled } from "@/lib/features";
 
 export function AppSidebar() {
   const { state } = useSidebar();
@@ -32,6 +34,7 @@ export function AppSidebar() {
   const collectionNewItem = useMatch("/collections/:id/items/new");
   const apiKeys = useMatch({ path: "/api-keys", end: true });
   const users = useMatch({ path: "/users", end: true });
+  const aiTasks = useMatch({ path: "/ai", end: true });
 
   const collectionsActive = Boolean(
     collectionsList ||
@@ -127,6 +130,28 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {aiAgentEnabled ? (
+          <SidebarGroup>
+            <SidebarGroupLabel>AI</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={Boolean(aiTasks)}
+                    tooltip="AI tasks"
+                  >
+                    <NavLink to="/ai">
+                      <Sparkles />
+                      <span>AI tasks</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ) : null}
 
         <SidebarGroup>
           <SidebarGroupLabel>Settings</SidebarGroupLabel>

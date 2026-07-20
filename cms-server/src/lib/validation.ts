@@ -148,6 +148,11 @@ export const aiDraftBodySchema = z.object({
     .transform((value) => (value && value.length > 0 ? value : undefined)),
 });
 
+/** Single-turn admin task agent — prompt only, no messages / conversationId. */
+export const aiAgentRunBodySchema = z.object({
+  prompt: z.string().trim().min(1, "Prompt is required."),
+});
+
 export const patchFileBodySchema = z.object({
   isPublic: z.boolean({ error: "isPublic must be a boolean." }),
 });
@@ -164,5 +169,6 @@ export type CollectionBody = z.infer<typeof collectionBodySchema>;
 export type CollectionFieldBody = z.infer<typeof collectionFieldBodySchema>;
 export type CollectionItemBody = z.infer<typeof collectionItemBodySchema>;
 export type AiDraftBody = z.infer<typeof aiDraftBodySchema>;
+export type AiAgentRunBody = z.infer<typeof aiAgentRunBodySchema>;
 export type PatchFileBody = z.infer<typeof patchFileBodySchema>;
 export type UploadFileBody = z.infer<typeof uploadFileBodySchema>;

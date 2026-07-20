@@ -27,6 +27,8 @@ import CollectionsListPage from "./pages/collections/collections-list";
 import CollectionDetailPage from "./pages/collections/collection-detail";
 import CollectionItemEditorPage from "./pages/collections/collection-item-editor";
 import ImageTransformTestPage from "./pages/dev/image-transform-test";
+import AiTaskPage from "./pages/ai/ai-task-page";
+import { aiAgentEnabled } from "@/lib/features";
 
 function RootLayout() {
   return (
@@ -82,6 +84,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 
                 <Route path="api-keys" element={<ApiKeysPage />} />
                 <Route path="users" element={<UsersPage />} />
+                {aiAgentEnabled ? (
+                  <Route path="ai" element={<AiTaskPage />} />
+                ) : null}
                 <Route
                   path="dev/image-transforms"
                   element={<ImageTransformTestPage />}

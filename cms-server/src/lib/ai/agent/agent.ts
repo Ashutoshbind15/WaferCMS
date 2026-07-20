@@ -67,7 +67,7 @@ export const createAgent = (options: CreateAgentOptions = {}) => {
 
 /**
  * Run a single admin task. Not a multi-turn chat — one prompt, tool loop, final text.
- * Streaming belongs in the run API (step 4).
+ * For streaming, use `createAgent().agent.stream` from the run API.
  */
 export const runAgent = async (
   input: AgentRunInput,
