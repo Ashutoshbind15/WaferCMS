@@ -16,10 +16,8 @@ RUN pnpm install --frozen-lockfile --filter cms-client...
 COPY cms-client cms-client/
 COPY packages/rich-text packages/rich-text/
 
-ARG VITE_CMS_API_BASE=http://localhost:3001
-ENV VITE_CMS_API_BASE=$VITE_CMS_API_BASE
-ARG VITE_CMS_AI_DRAFTS_ENABLED=false
-ENV VITE_CMS_AI_DRAFTS_ENABLED=$VITE_CMS_AI_DRAFTS_ENABLED
+# API base and feature flags are injected at container start via /config.js
+# (see docker-entrypoint.sh). Do not bake operator-specific URLs at build time.
 
 RUN pnpm --filter @wafercms/rich-text build && pnpm --filter cms-client build \
   && node scripts/generate-third-party-notices.mjs \
@@ -47,13 +45,19 @@ LABEL org.opencontainers.image.title="WaferCMS Client" \
 RUN apk upgrade --no-cache
 
 COPY cms-client/Caddyfile /etc/caddy/Caddyfile
+COPY cms-client/docker-entrypoint.sh /docker-entrypoint.sh
 COPY --from=build /app/cms-client/dist /srv
 COPY LICENSE /licenses/LICENSE
 COPY cms-client/LICENSE /licenses/cms-client.LICENSE
 COPY packages/rich-text/LICENSE /licenses/rich-text.LICENSE
 COPY --from=build /tmp/THIRD_PARTY_NOTICES /licenses/THIRD_PARTY_NOTICES
 
+RUN chmod +x /docker-entrypoint.sh
+
 EXPOSE 80
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget -qO- http://127.0.0.1:80/ >/dev/null || exit 1
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
+CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]

@@ -3,10 +3,9 @@ import {
   inferAdditionalFields,
   usernameClient,
 } from "better-auth/client/plugins";
+import { getCmsApiBase } from "@/lib/runtime-config";
 
-const baseURL =
-  import.meta.env.VITE_CMS_API_BASE?.replace(/\/$/, "") ??
-  "http://localhost:3001";
+const baseURL = getCmsApiBase();
 
 export const authClient = createAuthClient({
   baseURL,

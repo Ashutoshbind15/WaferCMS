@@ -1,0 +1,13 @@
+# Publish Postgres and RustFS to the host for local tooling (psql, S3 clients, etc.).
+# Usage (from repo root):
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+
+services:
+  cms-postgres:
+    ports:
+      - "${POSTGRES_PUBLISH_PORT:-5432}:5432"
+
+  rustfs:
+    ports:
+      - "${RUSTFS_S3_PUBLISH_PORT:-9000}:9000"
+      - "${RUSTFS_CONSOLE_PUBLISH_PORT:-9001}:9001"

@@ -1,7 +1,10 @@
-/** Build-time gate for AI item drafts. */
-export const aiDraftsEnabled =
-  import.meta.env.VITE_CMS_AI_DRAFTS_ENABLED === "true";
+import {
+  isAiAgentEnabled,
+  isAiDraftsEnabled,
+} from "@/lib/runtime-config";
 
-/** Build-time gate for the admin AI task agent UI. */
-export const aiAgentEnabled =
-  import.meta.env.VITE_CMS_AI_AGENT_ENABLED === "true";
+/** Runtime (container) or Vite gate for AI item drafts. */
+export const aiDraftsEnabled = isAiDraftsEnabled();
+
+/** Runtime (container) or Vite gate for the admin AI task agent UI. */
+export const aiAgentEnabled = isAiAgentEnabled();

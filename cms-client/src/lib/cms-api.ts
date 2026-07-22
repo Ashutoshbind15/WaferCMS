@@ -1,8 +1,7 @@
 import { authClient } from "@/lib/auth-client";
+import { getCmsApiBase } from "@/lib/runtime-config";
 
-const base =
-  import.meta.env.VITE_CMS_API_BASE?.replace(/\/$/, "") ??
-  "http://localhost:3001";
+const base = getCmsApiBase();
 
 export type PagePagination = {
   mode: "page";

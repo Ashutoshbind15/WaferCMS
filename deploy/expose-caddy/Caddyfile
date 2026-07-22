@@ -1,0 +1,12 @@
+# TLS for admin SPA + API on the same registrable domain (SameSite=Lax cookies).
+# Hostnames come from the caddy service environment (see .env.example).
+
+{$CMS_ADMIN_HOST} {
+	encode gzip
+	reverse_proxy cms-client:80
+}
+
+{$CMS_API_HOST} {
+	encode gzip
+	reverse_proxy cms-server:3001
+}

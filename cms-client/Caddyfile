@@ -1,6 +1,10 @@
 :80 {
 	root * /srv
 	encode gzip
+
+	@config path /config.js
+	header @config Cache-Control "no-store"
+
 	try_files {path} /index.html
 	file_server
 }
