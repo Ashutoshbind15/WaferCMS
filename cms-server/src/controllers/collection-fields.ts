@@ -8,7 +8,7 @@ import {
   listCollectionFieldRecords,
   updateCollectionFieldRecord,
 } from "@packages/cms-db/collections";
-import { parseIdParam, sendNoContent } from "../lib/http.js";
+import { parseIdParam, sendNoContent, sendServerError } from "../lib/http.js";
 import type { CollectionFieldBody } from "../lib/validation.js";
 
 const parseCollectionId = (req: Request) =>
@@ -113,9 +113,7 @@ export const createField = async (req: Request, res: Response) => {
     });
     sendNoContent(res);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unexpected error";
-    res.status(500).json({ error: message });
+    sendServerError(res, error);
   }
 };
 
@@ -154,7 +152,7 @@ export const updateField = async (req: Request, res: Response) => {
       res.status(404).json({ error: message });
       return;
     }
-    res.status(500).json({ error: message });
+    sendServerError(res, error);
   }
 };
 
@@ -181,6 +179,6 @@ export const deleteField = async (req: Request, res: Response) => {
       res.status(404).json({ error: message });
       return;
     }
-    res.status(500).json({ error: message });
+    sendServerError(res, error);
   }
 };

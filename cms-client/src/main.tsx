@@ -87,10 +87,12 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 {aiAgentEnabled ? (
                   <Route path="ai" element={<AiTaskPage />} />
                 ) : null}
-                <Route
-                  path="dev/image-transforms"
-                  element={<ImageTransformTestPage />}
-                />
+                {import.meta.env.DEV ? (
+                  <Route
+                    path="dev/image-transforms"
+                    element={<ImageTransformTestPage />}
+                  />
+                ) : null}
               </Route>
             </Route>
           </Routes>

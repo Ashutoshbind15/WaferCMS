@@ -14,7 +14,7 @@ import { type ListPageQuery, type PaginatedRows } from "@packages/cms-db/paginat
 import { parseListQuery } from "../lib/pagination.js";
 import { cmsPublicBaseUrl } from "../lib/asset-url.js";
 import { toFileResponse, type FileResponse } from "../lib/files.js";
-import { parseIdParam, sendNoContent } from "../lib/http.js";
+import { parseIdParam, sendNoContent, sendServerError } from "../lib/http.js";
 import type { PatchFileBody, UploadFileBody } from "../lib/validation.js";
 import { imageMaxBytes } from "../lib/image-config.js";
 import {
@@ -89,9 +89,7 @@ export const listFiles = async (req: Request, res: Response) => {
     const result = await listFilesData(query);
     res.status(200).json(result);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unexpected error";
-    res.status(500).json({ error: message });
+    sendServerError(res, error);
   }
 };
 
@@ -112,9 +110,7 @@ export const uploadFile = async (req: Request, res: Response) => {
     });
     res.status(201).json(created);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unexpected error";
-    res.status(500).json({ error: message });
+    sendServerError(res, error);
   }
 };
 
@@ -136,7 +132,7 @@ export const patchFile = async (req: Request, res: Response) => {
       res.status(404).json({ error: message });
       return;
     }
-    res.status(500).json({ error: message });
+    sendServerError(res, error);
   }
 };
 
@@ -155,9 +151,7 @@ export const getFileMeta = async (req: Request, res: Response) => {
     }
     res.status(200).json(toFileResponse(row, cmsPublicBaseUrl()));
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unexpected error";
-    res.status(500).json({ error: message });
+    sendServerError(res, error);
   }
 };
 
@@ -204,9 +198,7 @@ const streamTransformedImage = async (
   try {
     fetched = await getObjectBuffer({ key: row.objectKey });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unexpected error";
-    res.status(500).json({ error: message });
+    sendServerError(res, error);
     return;
   }
 
@@ -252,9 +244,7 @@ const streamOriginalFile = async (
       range: typeof req.headers.range === "string" ? req.headers.range : undefined,
     });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unexpected error";
-    res.status(500).json({ error: message });
+    sendServerError(res, error);
     return;
   }
 
@@ -290,8 +280,7 @@ const streamOriginalFile = async (
   const stream = object.body as Readable;
   stream.on("error", (err) => {
     if (!res.headersSent) {
-      const message = err instanceof Error ? err.message : "Unexpected error";
-      res.status(500).json({ error: message });
+      sendServerError(res, err);
     } else {
       req.socket.destroy();
     }

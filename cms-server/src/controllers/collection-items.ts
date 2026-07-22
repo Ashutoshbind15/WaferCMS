@@ -24,7 +24,7 @@ import {
   paginateRows,
 } from "@packages/cms-db/pagination";
 import { parseListQuery } from "../lib/pagination.js";
-import { parseIdParam, sendCreatedId, sendNoContent } from "../lib/http.js";
+import { parseIdParam, sendCreatedId, sendNoContent, sendServerError } from "../lib/http.js";
 import {
   isItemValidationError,
   validateItemValues,
@@ -227,9 +227,7 @@ export const listItems = async (req: Request, res: Response) => {
     const result = await listItemsData(collectionId, query, filter);
     res.json(result);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unexpected error";
-    res.status(500).json({ error: message });
+    sendServerError(res, error);
   }
 };
 
@@ -294,7 +292,7 @@ export const createItem = async (req: Request, res: Response) => {
       res.status(400).json({ error: message });
       return;
     }
-    res.status(500).json({ error: message });
+    sendServerError(res, error);
   }
 };
 
@@ -334,7 +332,7 @@ export const updateItem = async (req: Request, res: Response) => {
       res.status(404).json({ error: message });
       return;
     }
-    res.status(500).json({ error: message });
+    sendServerError(res, error);
   }
 };
 
@@ -369,6 +367,6 @@ export const deleteItem = async (req: Request, res: Response) => {
       res.status(404).json({ error: message });
       return;
     }
-    res.status(500).json({ error: message });
+    sendServerError(res, error);
   }
 };

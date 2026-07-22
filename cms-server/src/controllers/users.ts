@@ -6,7 +6,7 @@ import {
   listUsers,
 } from "@packages/cms-db/users";
 import { hashPassword } from "better-auth/crypto";
-import { sendNoContent } from "../lib/http.js";
+import { sendNoContent, sendServerError } from "../lib/http.js";
 import type { CreateUserBody } from "../lib/validation.js";
 
 export const listUsersHandler = async (_req: Request, res: Response) => {
@@ -14,9 +14,7 @@ export const listUsersHandler = async (_req: Request, res: Response) => {
     const users = await listUsers();
     res.json({ data: users });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unexpected error";
-    res.status(500).json({ error: message });
+    sendServerError(res, error);
   }
 };
 
@@ -35,9 +33,7 @@ export const createUserHandler = async (req: Request, res: Response) => {
     await insertUser({ username: trimmedUsername, passwordHash });
     sendNoContent(res);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unexpected error";
-    res.status(500).json({ error: message });
+    sendServerError(res, error);
   }
 };
 
@@ -58,6 +54,6 @@ export const disableUserHandler = async (req: Request, res: Response) => {
       res.status(404).json({ error: message });
       return;
     }
-    res.status(500).json({ error: message });
+    sendServerError(res, error);
   }
 };

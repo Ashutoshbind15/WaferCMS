@@ -14,9 +14,12 @@ import {
   patchFileBodySchema,
   uploadFileBodySchema,
 } from "../lib/validation.js";
+import { uploadMaxBytes } from "../lib/upload-config.js";
 
-const upload = multer({ storage: multer.memoryStorage() });
-
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: uploadMaxBytes() },
+});
 const router: Router = Router();
 
 router.get("/", contentAuthMiddleware, listFiles);

@@ -20,9 +20,13 @@ const s3Client = new S3Client({
   forcePathStyle: true,
 });
 
+export async function headBucket(): Promise<void> {
+  await s3Client.send(new HeadBucketCommand({ Bucket: bucket }));
+}
+
 export async function ensureBucket(): Promise<void> {
   try {
-    await s3Client.send(new HeadBucketCommand({ Bucket: bucket }));
+    await headBucket();
   } catch {
     await s3Client.send(new CreateBucketCommand({ Bucket: bucket }));
   }

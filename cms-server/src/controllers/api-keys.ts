@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import type { Request, Response } from "express";
 import { insertApiKey, listApiKeys, revokeApiKey } from "@packages/cms-db/api-keys";
 import { hashApiKey } from "../lib/api-keys.js";
-import { parseIdParam, sendNoContent } from "../lib/http.js";
+import { parseIdParam, sendNoContent, sendServerError } from "../lib/http.js";
 import type { CreateApiKeyBody } from "../lib/validation.js";
 
 const getPepper = (): string | null => {
@@ -18,9 +18,7 @@ export const listApiKeysHandler = async (_req: Request, res: Response) => {
     const keys = await listApiKeys();
     res.json({ data: keys });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unexpected error";
-    res.status(500).json({ error: message });
+    sendServerError(res, error);
   }
 };
 
@@ -43,9 +41,7 @@ export const createApiKeyHandler = async (req: Request, res: Response) => {
     });
     res.status(201).json({ ...record, rawKey });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unexpected error";
-    res.status(500).json({ error: message });
+    sendServerError(res, error);
   }
 };
 
@@ -66,6 +62,6 @@ export const revokeApiKeyHandler = async (req: Request, res: Response) => {
       res.status(404).json({ error: message });
       return;
     }
-    res.status(500).json({ error: message });
+    sendServerError(res, error);
   }
 };

@@ -54,3 +54,6 @@ COPY packages/rich-text/LICENSE /licenses/rich-text.LICENSE
 COPY --from=build /tmp/THIRD_PARTY_NOTICES /licenses/THIRD_PARTY_NOTICES
 
 EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:80/ >/dev/null || exit 1
